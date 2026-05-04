@@ -3,33 +3,30 @@
 const API_URL = 'admin_api.php';
 let currentAdmin = null;
 
-const isStaticHosting = location.hostname.endsWith('github.io') || location.protocol === 'file:';
 const realFetch = window.fetch.bind(window);
 
-if (isStaticHosting) {
-    window.fetch = function(resource, options = {}) {
-        const url = String(resource);
-        if (!url.includes(API_URL)) {
-            return realFetch(resource, options);
-        }
+window.fetch = function(resource, options = {}) {
+    const url = String(resource);
+    if (!url.includes(API_URL)) {
+        return realFetch(resource, options);
+    }
 
-        const params = new URL(url, location.href).searchParams;
-        const action = params.get('action');
-        const method = (options.method || 'GET').toUpperCase();
-        let payload = {};
+    const params = new URL(url, location.href).searchParams;
+    const action = params.get('action');
+    const method = (options.method || 'GET').toUpperCase();
+    let payload = {};
 
-        try {
-            payload = options.body ? JSON.parse(options.body) : {};
-        } catch (error) {
-            payload = {};
-        }
+    try {
+        payload = options.body ? JSON.parse(options.body) : {};
+    } catch (error) {
+        payload = {};
+    }
 
-        return Promise.resolve({
-            ok: true,
-            json: () => Promise.resolve(handleStaticAdminApi(action, method, payload))
-        });
-    };
-}
+    return Promise.resolve({
+        ok: true,
+        json: () => Promise.resolve(handleStaticAdminApi(action, method, payload))
+    });
+};
 
 function readStore(key) {
     return JSON.parse(localStorage.getItem(key)) || [];

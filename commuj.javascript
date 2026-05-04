@@ -11,7 +11,7 @@ let leadershipRoles = [];
 let allMembers = [];
 let allEvents = [];
 
-const isStaticHosting = location.hostname.endsWith('github.io') || location.protocol === 'file:';
+const frontendOnly = true;
 
 function readList(key) {
     return JSON.parse(localStorage.getItem(key)) || [];
@@ -109,7 +109,7 @@ function loadLeadershipContent() {
     const leadershipContainer = document.getElementById('leadershipContainer');
     if (!leadershipContainer) return;
 
-    const leadershipRequest = isStaticHosting
+    const leadershipRequest = frontendOnly
         ? Promise.resolve(getStaticApiData('getLeaders'))
         : fetch('admin_api.php?action=getLeaders').then(response => response.json());
 
@@ -179,7 +179,7 @@ function loadGalleryContent() {
     const galleryContainer = document.getElementById('galleryContainer');
     if (!galleryContainer) return;
 
-    const galleryRequest = isStaticHosting
+    const galleryRequest = frontendOnly
         ? Promise.resolve(getStaticApiData('getGallery'))
         : fetch('admin_api.php?action=getGallery').then(response => response.json());
 
@@ -1386,7 +1386,6 @@ function closeModal(modalId) {
 // Error Handling
 function handleError(error) {
     console.error('Error:', error);
-    showNotification('An error occurred. Please try again.', 'danger');
 }
 
 window.addEventListener('error', (event) => {
@@ -1623,7 +1622,7 @@ function initializeHadiths() {
 
 // Load all hadiths
 function loadAllHadiths() {
-    const hadithRequest = isStaticHosting
+    const hadithRequest = frontendOnly
         ? Promise.resolve(getStaticApiData('getAllHadiths'))
         : fetch('commuj.php?action=getAll').then(response => response.json());
 
@@ -1647,7 +1646,7 @@ function loadAllHadiths() {
 
 // Load today''s hadith
 function loadDailyHadith() {
-    const dailyRequest = isStaticHosting
+    const dailyRequest = frontendOnly
         ? Promise.resolve(getStaticApiData('getDailyHadith'))
         : fetch('commuj.php?action=getDaily').then(response => response.json());
 
