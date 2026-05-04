@@ -37,7 +37,7 @@ Database (hadiths table)
     ↓
 Public API (commuj.php)
     ↓
-User Dashboard (COMMUJ.html)
+User Dashboard (index.html)
 ```
 
 ## Features

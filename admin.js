@@ -3,6 +3,115 @@
 const API_URL = 'admin_api.php';
 let currentAdmin = null;
 
+const isStaticHosting = location.hostname.endsWith('github.io') || location.protocol === 'file:';
+const realFetch = window.fetch.bind(window);
+
+if (isStaticHosting) {
+    window.fetch = function(resource, options = {}) {
+        const url = String(resource);
+        if (!url.includes(API_URL)) {
+            return realFetch(resource, options);
+        }
+
+        const params = new URL(url, location.href).searchParams;
+        const action = params.get('action');
+        const method = (options.method || 'GET').toUpperCase();
+        let payload = {};
+
+        try {
+            payload = options.body ? JSON.parse(options.body) : {};
+        } catch (error) {
+            payload = {};
+        }
+
+        return Promise.resolve({
+            ok: true,
+            json: () => Promise.resolve(handleStaticAdminApi(action, method, payload))
+        });
+    };
+}
+
+function readStore(key) {
+    return JSON.parse(localStorage.getItem(key)) || [];
+}
+
+function writeStore(key, data) {
+    localStorage.setItem(key, JSON.stringify(data));
+}
+
+function addStoreItem(key, item) {
+    const items = readStore(key);
+    const savedItem = {
+        id: Date.now(),
+        created_at: new Date().toISOString(),
+        ...item
+    };
+    items.push(savedItem);
+    writeStore(key, items);
+    return savedItem;
+}
+
+function deleteStoreItem(key, id) {
+    const items = readStore(key).filter(item => Number(item.id) !== Number(id));
+    writeStore(key, items);
+}
+
+function handleStaticAdminApi(action, method, payload) {
+    switch (action) {
+        case 'getAnnouncements':
+            return { success: true, data: readStore('adminAnnouncements') };
+        case 'createAnnouncement':
+            addStoreItem('adminAnnouncements', payload);
+            return { success: true, message: 'Saved locally' };
+        case 'deleteAnnouncement':
+            deleteStoreItem('adminAnnouncements', payload.announcement_id);
+            return { success: true };
+
+        case 'getEvents':
+            return { success: true, data: readStore('adminEvents') };
+        case 'createEvent':
+            addStoreItem('adminEvents', payload);
+            return { success: true, message: 'Saved locally' };
+        case 'deleteEvent':
+            deleteStoreItem('adminEvents', payload.event_id);
+            return { success: true };
+
+        case 'getLeaders':
+            return { success: true, data: readStore('publicLeaders') };
+        case 'addLeader':
+            addStoreItem('publicLeaders', payload);
+            return { success: true, message: 'Saved locally' };
+        case 'deleteLeader':
+            deleteStoreItem('publicLeaders', payload.leader_id);
+            return { success: true };
+
+        case 'getGallery':
+            return { success: true, data: readStore('galleryItems') };
+        case 'addGalleryItem':
+            addStoreItem('galleryItems', {
+                ...payload,
+                imageData: payload.image_url,
+                imageUrl: payload.image_url
+            });
+            return { success: true, message: 'Saved locally' };
+        case 'deleteGalleryItem':
+            deleteStoreItem('galleryItems', payload.gallery_id);
+            return { success: true };
+
+        case 'getHadiths':
+            return { success: true, data: readStore('adminHadiths') };
+        case 'addHadith':
+            addStoreItem('adminHadiths', payload);
+            return { success: true, message: 'Saved locally' };
+        case 'deleteHadith':
+            deleteStoreItem('adminHadiths', payload.hadith_id);
+            return { success: true };
+
+        default:
+            return { success: false, message: 'Unsupported static action' };
+    }
+}
+
 // Initialize admin panel
 document.addEventListener('DOMContentLoaded', function() {
     checkAdminAuth();
@@ -16,7 +125,7 @@ function checkAdminAuth() {
     const adminRole = localStorage.getItem('currentRole');
     
     if (!adminUser || (adminRole !== 'admin' && adminRole !== 'executive')) {
-        window.location.href = 'COMMUJ.html';
+        window.location.href = 'index.html';
         return;
     }
     
@@ -28,7 +137,7 @@ function checkAdminAuth() {
 function logoutAdmin() {
     localStorage.removeItem('currentUser');
     localStorage.removeItem('currentRole');
-    window.location.href = 'COMMUJ.html';
+    window.location.href = 'index.html';
 }
 
 // Switch between admin views
