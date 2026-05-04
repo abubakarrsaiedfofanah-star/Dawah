@@ -8,6 +8,12 @@ require_once 'db_operations.php';
 
 function setupSampleData() {
     echo "Starting sample data setup...\n\n";
+
+    $defaultPassword = getenv('COMMUJ_SETUP_PASSWORD') ?: bin2hex(random_bytes(8));
+    $adminPassword = getenv('COMMUJ_SETUP_ADMIN_PASSWORD') ?: $defaultPassword;
+    $studentPassword = getenv('COMMUJ_SETUP_STUDENT_PASSWORD') ?: $defaultPassword;
+    $financePassword = getenv('COMMUJ_SETUP_FINANCE_PASSWORD') ?: $defaultPassword;
+    $imamPassword = getenv('COMMUJ_SETUP_IMAM_PASSWORD') ?: $defaultPassword;
     
     // ============================================
     // CREATE SAMPLE USERS
@@ -15,12 +21,12 @@ function setupSampleData() {
     echo "Creating sample users...\n";
     
     $users = [
-        ['username' => 'admin1', 'email' => 'admin@commuj.edu', 'password' => 'admin123', 'role' => 'admin'],
-        ['username' => 'student1', 'email' => 'student1@commuj.edu', 'password' => 'pass123', 'role' => 'student'],
-        ['username' => 'student2', 'email' => 'student2@commuj.edu', 'password' => 'pass123', 'role' => 'student'],
-        ['username' => 'student3', 'email' => 'student3@commuj.edu', 'password' => 'pass123', 'role' => 'student'],
-        ['username' => 'finance', 'email' => 'finance@commuj.edu', 'password' => 'pass123', 'role' => 'finance'],
-        ['username' => 'imam', 'email' => 'imam@commuj.edu', 'password' => 'pass123', 'role' => 'imam'],
+        ['username' => 'admin1', 'email' => 'admin@commuj.edu', 'password' => $adminPassword, 'role' => 'admin'],
+        ['username' => 'student1', 'email' => 'student1@commuj.edu', 'password' => $studentPassword, 'role' => 'student'],
+        ['username' => 'student2', 'email' => 'student2@commuj.edu', 'password' => $studentPassword, 'role' => 'student'],
+        ['username' => 'student3', 'email' => 'student3@commuj.edu', 'password' => $studentPassword, 'role' => 'student'],
+        ['username' => 'finance', 'email' => 'finance@commuj.edu', 'password' => $financePassword, 'role' => 'finance'],
+        ['username' => 'imam', 'email' => 'imam@commuj.edu', 'password' => $imamPassword, 'role' => 'imam'],
     ];
     
     $user_ids = [];
@@ -275,10 +281,10 @@ function setupSampleData() {
     echo "✓ Sample data setup complete!\n";
     echo "================================\n";
     echo "\nTest Credentials:\n";
-    echo "Admin - Username: admin1, Password: admin123\n";
-    echo "Student - Username: student1, Password: pass123\n";
-    echo "Finance - Username: finance, Password: pass123\n";
-    echo "Imam - Username: imam, Password: pass123\n";
+    echo "Admin - Username: admin1, Password: {$adminPassword}\n";
+    echo "Student - Username: student1, Password: {$studentPassword}\n";
+    echo "Finance - Username: finance, Password: {$financePassword}\n";
+    echo "Imam - Username: imam, Password: {$imamPassword}\n";
 }
 
 // Run setup if called directly

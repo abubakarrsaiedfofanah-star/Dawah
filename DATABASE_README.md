@@ -160,22 +160,20 @@ Provides REST API for frontend communication with the database.
 Populates database with sample test data for development.
 
 **Test Accounts:**
-- Admin: `admin1 / admin123`
-- Student: `student1 / pass123`
-- Student: `student2 / pass123`
-- Student: `student3 / pass123`
-- Finance: `finance / pass123`
-- Imam: `imam / pass123`
+- Usernames are created by `setup.php` (`admin1`, `student1`, `student2`, `student3`, `finance`, `imam`)
+- Passwords are generated each time setup runs and printed once in the setup output
+- Optional environment variables: `COMMUJ_SETUP_PASSWORD`, `COMMUJ_SETUP_ADMIN_PASSWORD`, `COMMUJ_SETUP_STUDENT_PASSWORD`, `COMMUJ_SETUP_FINANCE_PASSWORD`, `COMMUJ_SETUP_IMAM_PASSWORD`
 
 ## Database Configuration
 
-Edit `database.php` to configure:
+Set these environment variables in your hosting environment:
 ```php
-define('DB_HOST', 'localhost');      // Database host
-define('DB_USER', 'root');           // Database user
-define('DB_PASSWORD', '');           // Database password
-define('DB_NAME', 'commuj_db');      // Database name
+COMMUJ_DB_HOST=localhost
+COMMUJ_DB_USER=your_database_user
+COMMUJ_DB_PASSWORD=your_database_password
+COMMUJ_DB_NAME=commuj_db
 ```
+`COMMUJ_DB_USER` and `COMMUJ_DB_PASSWORD` are required.
 
 ## Installation Steps
 
@@ -201,7 +199,7 @@ fetch('api.php?action=registerUser', {
     body: JSON.stringify({
         username: 'student1',
         email: 'student1@commuj.edu',
-        password: 'pass123',
+        password: 'use-a-strong-password',
         role: 'student'
     })
 })
@@ -214,7 +212,7 @@ fetch('api.php?action=loginUser', {
     headers: {'Content-Type': 'application/json'},
     body: JSON.stringify({
         username: 'student1',
-        password: 'pass123'
+        password: 'use-a-strong-password'
     })
 })
 ```
@@ -311,7 +309,7 @@ jummah_time
 ## Troubleshooting
 
 **Connection Error:**
-- Check DB_HOST, DB_USER, DB_PASSWORD in database.php
+- Check `COMMUJ_DB_HOST`, `COMMUJ_DB_USER`, and `COMMUJ_DB_PASSWORD` in your environment
 - Ensure MySQL/MariaDB is running
 
 **Table Creation Failed:**

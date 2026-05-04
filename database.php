@@ -1,11 +1,20 @@
 <?php
 // COMMUJ Database Configuration and Connection
 
+function getRequiredEnv($name) {
+    $value = getenv($name);
+    if ($value === false || $value === '') {
+        die("Missing required environment variable: {$name}");
+    }
+    return $value;
+}
+
 // Database Configuration
-define('DB_HOST', 'localhost');
-define('DB_USER', 'root');
-define('DB_PASSWORD', '');
-define('DB_NAME', 'commuj_db');
+// Set these values in your hosting environment instead of committing secrets.
+define('DB_HOST', getenv('COMMUJ_DB_HOST') ?: 'localhost');
+define('DB_USER', getRequiredEnv('COMMUJ_DB_USER'));
+define('DB_PASSWORD', getRequiredEnv('COMMUJ_DB_PASSWORD'));
+define('DB_NAME', getenv('COMMUJ_DB_NAME') ?: 'commuj_db');
 
 // Create connection
 $conn = new mysqli(DB_HOST, DB_USER, DB_PASSWORD);
