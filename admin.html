@@ -1,0 +1,469 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>COMMUJ Admin Panel</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --primary-color: #2c5aa0;
+            --secondary-color: #16a34a;
+        }
+        
+        body {
+            background-color: #f5f5f5;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        .admin-container {
+            min-height: 100vh;
+            display: flex;
+        }
+        
+        .sidebar {
+            background: linear-gradient(135deg, var(--primary-color) 0%, #1a3a5c 100%);
+            color: white;
+            width: 250px;
+            padding: 20px 0;
+            position: fixed;
+            height: 100vh;
+            overflow-y: auto;
+        }
+        
+        .sidebar-header {
+            padding: 20px;
+            text-align: center;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+            margin-bottom: 20px;
+        }
+        
+        .sidebar-header h3 {
+            margin: 0;
+            font-size: 18px;
+        }
+        
+        .nav-menu {
+            list-style: none;
+            padding: 0;
+        }
+        
+        .nav-menu li {
+            padding: 0;
+        }
+        
+        .nav-menu a {
+            display: block;
+            color: #ccc;
+            padding: 12px 20px;
+            text-decoration: none;
+            transition: all 0.3s;
+            border-left: 3px solid transparent;
+        }
+        
+        .nav-menu a:hover,
+        .nav-menu a.active {
+            background: rgba(255,255,255,0.1);
+            color: white;
+            border-left-color: var(--secondary-color);
+        }
+        
+        .main-content {
+            margin-left: 250px;
+            flex: 1;
+            padding: 20px;
+        }
+        
+        .admin-header {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .admin-header h2 {
+            margin: 0;
+            color: var(--primary-color);
+        }
+        
+        .admin-content {
+            display: none;
+        }
+        
+        .admin-content.active {
+            display: block;
+        }
+        
+        .content-card {
+            background: white;
+            padding: 25px;
+            border-radius: 10px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+        
+        .form-section {
+            background: #f9f9f9;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 30px;
+            border: 1px solid #e0e0e0;
+        }
+        
+        .form-section h4 {
+            color: var(--primary-color);
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .btn-primary {
+            background: var(--primary-color);
+            border-color: var(--primary-color);
+        }
+        
+        .btn-primary:hover {
+            background: #1f4080;
+            border-color: #1f4080;
+        }
+        
+        .btn-success {
+            background: var(--secondary-color);
+            border-color: var(--secondary-color);
+        }
+        
+        .btn-success:hover {
+            background: #15803d;
+        }
+        
+        .item-card {
+            background: #f9f9f9;
+            border: 1px solid #e0e0e0;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 12px;
+            display: flex;
+            justify-content: space-between;
+            align-items: start;
+        }
+        
+        .item-info h5 {
+            margin: 0 0 5px 0;
+            color: var(--primary-color);
+        }
+        
+        .item-info p {
+            margin: 3px 0;
+            font-size: 14px;
+            color: #666;
+        }
+        
+        .item-actions {
+            display: flex;
+            gap: 8px;
+        }
+        
+        .badge {
+            font-size: 12px;
+            padding: 5px 10px;
+        }
+        
+        .alert {
+            border-radius: 8px;
+        }
+        
+        .table-responsive {
+            border-radius: 8px;
+            overflow: hidden;
+        }
+        
+        table thead {
+            background: var(--primary-color);
+            color: white;
+        }
+        
+        @media (max-width: 768px) {
+            .sidebar {
+                width: 200px;
+            }
+            
+            .main-content {
+                margin-left: 200px;
+                padding: 15px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="admin-container">
+        <!-- Sidebar -->
+        <div class="sidebar">
+            <div class="sidebar-header">
+                <h3><i class="fas fa-mosque"></i> COMMUJ</h3>
+                <small>Admin Panel</small>
+            </div>
+            
+            <ul class="nav-menu">
+                <li><a href="#" onclick="switchAdminView('dashboard')" class="active"><i class="fas fa-chart-line"></i> Dashboard</a></li>
+                <li><a href="#" onclick="switchAdminView('announcements')"><i class="fas fa-bell"></i> Announcements</a></li>
+                <li><a href="#" onclick="switchAdminView('events')"><i class="fas fa-calendar"></i> Events</a></li>
+                <li><a href="#" onclick="switchAdminView('leadership')"><i class="fas fa-users"></i> Leadership</a></li>
+                <li><a href="#" onclick="switchAdminView('gallery')"><i class="fas fa-images"></i> Gallery</a></li>
+                <li><a href="#" onclick="switchAdminView('hadiths')"><i class="fas fa-book"></i> Hadiths</a></li>
+                <li><a href="#" onclick="logoutAdmin()"><i class="fas fa-sign-out-alt"></i> Logout</a></li>
+            </ul>
+        </div>
+        
+        <!-- Main Content -->
+        <div class="main-content">
+            <div class="admin-header">
+                <h2 id="pageTitle"><i class="fas fa-chart-line"></i> Dashboard</h2>
+                <div>
+                    <span id="adminName">Admin</span> | <a href="#" onclick="logoutAdmin()" class="text-danger text-decoration-none">Logout</a>
+                </div>
+            </div>
+            
+            <!-- Dashboard View -->
+            <div id="dashboardView" class="admin-content active">
+                <div class="row">
+                    <div class="col-md-3 mb-3">
+                        <div class="content-card text-center">
+                            <h5>Total Announcements</h5>
+                            <h2 id="announcementCount" style="color: var(--primary-color);">0</h2>
+                        </div>
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <div class="content-card text-center">
+                            <h5>Active Events</h5>
+                            <h2 id="eventCount" style="color: var(--secondary-color);">0</h2>
+                        </div>
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <div class="content-card text-center">
+                            <h5>Leadership Members</h5>
+                            <h2 id="leaderCount" style="color: #f59e0b;">0</h2>
+                        </div>
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <div class="content-card text-center">
+                            <h5>Gallery Items</h5>
+                            <h2 id="galleryCount" style="color: #8b5cf6;">0</h2>
+                        </div>
+                    </div>
+                </div>
+                <div class="content-card">
+                    <h4><i class="fas fa-info-circle"></i> System Information</h4>
+                    <p>Welcome to COMMUJ Admin Panel. Use the menu on the left to manage announcements, events, leadership members, and gallery items.</p>
+                    <p>All changes you make here will be immediately reflected to regular users on the system.</p>
+                </div>
+            </div>
+            
+            <!-- Announcements View -->
+            <div id="announcementsView" class="admin-content">
+                <div class="content-card">
+                    <div class="form-section">
+                        <h4><i class="fas fa-plus"></i> Create New Announcement</h4>
+                        <div class="form-group mb-3">
+                            <label>Title *</label>
+                            <input type="text" class="form-control" id="announcementTitle" placeholder="Announcement title">
+                        </div>
+                        <div class="form-group mb-3">
+                            <label>Content *</label>
+                            <textarea class="form-control" id="announcementContent" rows="4" placeholder="Announcement content"></textarea>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-group mb-3">
+                                    <label>Priority</label>
+                                    <select class="form-control" id="announcementPriority">
+                                        <option value="low">Low</option>
+                                        <option value="normal" selected>Normal</option>
+                                        <option value="high">High</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group mb-3">
+                                    <label>Expires At (Optional)</label>
+                                    <input type="datetime-local" class="form-control" id="announcementExpires">
+                                </div>
+                            </div>
+                        </div>
+                        <button class="btn btn-success" onclick="createAnnouncement()">
+                            <i class="fas fa-save"></i> Create Announcement
+                        </button>
+                    </div>
+                    
+                    <h4 style="margin-top: 30px;"><i class="fas fa-list"></i> Current Announcements</h4>
+                    <div id="announcementsList"></div>
+                </div>
+            </div>
+            
+            <!-- Events View -->
+            <div id="eventsView" class="admin-content">
+                <div class="content-card">
+                    <div class="form-section">
+                        <h4><i class="fas fa-plus"></i> Create New Event</h4>
+                        <div class="form-group mb-3">
+                            <label>Event Title *</label>
+                            <input type="text" class="form-control" id="eventTitle" placeholder="Event title">
+                        </div>
+                        <div class="form-group mb-3">
+                            <label>Description *</label>
+                            <textarea class="form-control" id="eventDescription" rows="3" placeholder="Event description"></textarea>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-group mb-3">
+                                    <label>Date & Time *</label>
+                                    <input type="datetime-local" class="form-control" id="eventDate">
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group mb-3">
+                                    <label>Location</label>
+                                    <input type="text" class="form-control" id="eventLocation" placeholder="Event location">
+                                </div>
+                            </div>
+                        </div>
+                        <button class="btn btn-success" onclick="createEvent()">
+                            <i class="fas fa-save"></i> Create Event
+                        </button>
+                    </div>
+                    
+                    <h4 style="margin-top: 30px;"><i class="fas fa-list"></i> Upcoming Events</h4>
+                    <div id="eventsList"></div>
+                </div>
+            </div>
+            
+            <!-- Leadership View -->
+            <div id="leadershipView" class="admin-content">
+                <div class="content-card">
+                    <div class="form-section">
+                        <h4><i class="fas fa-plus"></i> Add Leadership Member</h4>
+                        <div class="form-group mb-3">
+                            <label>Name *</label>
+                            <input type="text" class="form-control" id="leaderName" placeholder="Full name">
+                        </div>
+                        <div class="form-group mb-3">
+                            <label>Position *</label>
+                            <input type="text" class="form-control" id="leaderPosition" placeholder="Leadership position">
+                        </div>
+                        <div class="form-group mb-3">
+                            <label>Short Bio</label>
+                            <textarea class="form-control" id="leaderBio" rows="2" placeholder="Brief biography"></textarea>
+                        </div>
+                        <div class="form-group mb-3">
+                            <label>Description</label>
+                            <textarea class="form-control" id="leaderDescription" rows="3" placeholder="Detailed description"></textarea>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-group mb-3">
+                                    <label>Email</label>
+                                    <input type="email" class="form-control" id="leaderEmail" placeholder="Email address">
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group mb-3">
+                                    <label>Phone</label>
+                                    <input type="tel" class="form-control" id="leaderPhone" placeholder="Phone number">
+                                </div>
+                            </div>
+                        </div>
+                        <div class="form-group mb-3">
+                            <label>Photo URL</label>
+                            <input type="url" class="form-control" id="leaderPhotoUrl" placeholder="https://example.com/photo.jpg">
+                        </div>
+                        <button class="btn btn-success" onclick="addLeader()">
+                            <i class="fas fa-save"></i> Add Member
+                        </button>
+                    </div>
+                    
+                    <h4 style="margin-top: 30px;"><i class="fas fa-list"></i> Leadership Members</h4>
+                    <div id="leadershipList"></div>
+                </div>
+            </div>
+            
+            <!-- Gallery View -->
+            <div id="galleryView" class="admin-content">
+                <div class="content-card">
+                    <div class="form-section">
+                        <h4><i class="fas fa-plus"></i> Add Gallery Item</h4>
+                        <div class="form-group mb-3">
+                            <label>Title *</label>
+                            <input type="text" class="form-control" id="galleryTitle" placeholder="Gallery item title">
+                        </div>
+                        <div class="form-group mb-3">
+                            <label>Description</label>
+                            <textarea class="form-control" id="galleryDescription" rows="2" placeholder="Item description"></textarea>
+                        </div>
+                        <div class="form-group mb-3">
+                            <label>Image URL *</label>
+                            <input type="url" class="form-control" id="galleryImageUrl" placeholder="https://example.com/image.jpg">
+                        </div>
+                        <button class="btn btn-success" onclick="addGalleryItem()">
+                            <i class="fas fa-save"></i> Add to Gallery
+                        </button>
+                    </div>
+                    
+                    <h4 style="margin-top: 30px;"><i class="fas fa-list"></i> Gallery Items</h4>
+                    <div id="galleryList"></div>
+                </div>
+            </div>
+            
+            <!-- Hadiths View -->
+            <div id="hadithsView" class="admin-content">
+                <div class="content-card">
+                    <div class="form-section">
+                        <h4><i class="fas fa-plus"></i> Add New Hadith</h4>
+                        <div class="form-group mb-3">
+                            <label>Arabic Text *</label>
+                            <textarea class="form-control" id="hadithArabic" rows="3" placeholder="Hadith in Arabic" dir="rtl"></textarea>
+                        </div>
+                        <div class="form-group mb-3">
+                            <label>English Translation *</label>
+                            <textarea class="form-control" id="hadithEnglish" rows="3" placeholder="English translation of hadith"></textarea>
+                        </div>
+                        <div class="form-group mb-3">
+                            <label>Reference</label>
+                            <input type="text" class="form-control" id="hadithReference" placeholder="e.g., Sahih Bukhari 1901 & Muslim 760">
+                        </div>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-group mb-3">
+                                    <label>Source</label>
+                                    <input type="text" class="form-control" id="hadithSource" placeholder="e.g., Prophet Muhammad (Peace Be Upon Him)">
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group mb-3">
+                                    <label>Category</label>
+                                    <input type="text" class="form-control" id="hadithCategory" placeholder="e.g., Spirituality, Charity, Knowledge">
+                                </div>
+                            </div>
+                        </div>
+                        <button class="btn btn-success" onclick="addHadith()">
+                            <i class="fas fa-save"></i> Add Hadith
+                        </button>
+                    </div>
+                    
+                    <h4 style="margin-top: 30px;"><i class="fas fa-list"></i> All Hadiths</h4>
+                    <div id="hadithsList"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div id="notificationContainer" style="position: fixed; top: 20px; right: 20px; z-index: 1000;"></div>
+    
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="admin.js"></script>
+</body>
+</html>
