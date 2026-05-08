@@ -1,6 +1,7 @@
 <?php
 // COMMUJ Admin Content Management API
 // This file handles admin panel actions for content management
+session_start();
 
 header('Content-Type: application/json');
 header('Access-Control-Allow-Origin: *');
@@ -36,6 +37,74 @@ function respond($success, $message = '', $data = null) {
         'timestamp' => date('Y-m-d H:i:s')
     ]);
     exit;
+}
+
+function adminUserPayload($user) {
+    return [
+        'id' => intval($user['id']),
+        'username' => $user['username'],
+        'email' => $user['email'],
+        'role' => $user['role'],
+        'fullName' => isset($user['full_name']) ? $user['full_name'] : $user['username']
+    ];
+}
+
+function requireAdminSession() {
+    if (
+        empty($_SESSION['admin_user']) ||
+        !in_array($_SESSION['admin_user']['role'], ['admin', 'executive'], true)
+    ) {
+        respond(false, 'Admin login required');
+    }
+}
+
+if ($action === 'loginAdmin' && $method === 'POST') {
+    $username = isset($data['username']) ? trim($data['username']) : '';
+    $password = isset($data['password']) ? $data['password'] : '';
+
+    if ($username === '' || $password === '') {
+        respond(false, 'Admin username and password required');
+    }
+
+    $result = loginUser($username, $password);
+    if (!$result['success'] || empty($result['user'])) {
+        respond(false, 'Invalid admin username or password');
+    }
+
+    $user = $result['user'];
+    if (!in_array($user['role'], ['admin', 'executive'], true)) {
+        respond(false, 'This account is not allowed to access the admin panel');
+    }
+
+    $_SESSION['admin_user'] = adminUserPayload($user);
+    respond(true, 'Admin login successful', $_SESSION['admin_user']);
+}
+
+if ($action === 'checkAdminSession' && $method === 'GET') {
+    if (!empty($_SESSION['admin_user']) && in_array($_SESSION['admin_user']['role'], ['admin', 'executive'], true)) {
+        respond(true, 'Admin session active', $_SESSION['admin_user']);
+    }
+    respond(false, 'Admin login required');
+}
+
+if ($action === 'logoutAdmin' && $method === 'POST') {
+    unset($_SESSION['admin_user']);
+    session_destroy();
+    respond(true, 'Admin logged out');
+}
+
+$publicActions = [
+    'getAnnouncements',
+    'getEvents',
+    'getLeaders',
+    'getGallery',
+    'getPrayerTimes',
+    'getResources',
+    'getHadiths'
+];
+
+if (!in_array($action, $publicActions, true)) {
+    requireAdminSession();
 }
 
 // ============================================

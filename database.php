@@ -7,6 +7,9 @@ define('DB_HOST', getenv('COMMUJ_DB_HOST') ?: 'localhost');
 define('DB_USER', getenv('COMMUJ_DB_USER') ?: 'root');
 define('DB_PASSWORD', getenv('COMMUJ_DB_PASSWORD') ?: '');
 define('DB_NAME', getenv('COMMUJ_DB_NAME') ?: 'commuj_db');
+define('COMMUJ_ADMIN_USERNAME', getenv('COMMUJ_ADMIN_USERNAME') ?: 'admin');
+define('COMMUJ_ADMIN_EMAIL', getenv('COMMUJ_ADMIN_EMAIL') ?: 'commuj.admin@commuj.local');
+define('COMMUJ_ADMIN_PASSWORD', getenv('COMMUJ_ADMIN_PASSWORD') ?: 'COMMUJAdmin@2026');
 
 // Create connection
 $conn = new mysqli(DB_HOST, DB_USER, DB_PASSWORD);
@@ -352,6 +355,23 @@ foreach ($tables as $table_name => $sql) {
     } else {
         $failed_tables[] = array('table' => $table_name, 'error' => $conn->error);
     }
+}
+
+// Ensure the admin panel has a database-backed login account.
+// Default credentials can be changed with COMMUJ_ADMIN_USERNAME / COMMUJ_ADMIN_PASSWORD env vars.
+$admin_password_hash = password_hash(COMMUJ_ADMIN_PASSWORD, PASSWORD_BCRYPT);
+$admin_username = COMMUJ_ADMIN_USERNAME;
+$admin_email = COMMUJ_ADMIN_EMAIL;
+$admin_role = 'admin';
+$admin_status = 'active';
+$stmt_admin = $conn->prepare(
+    "INSERT INTO users (username, email, password, role, status)
+     VALUES (?, ?, ?, ?, ?)
+     ON DUPLICATE KEY UPDATE password = VALUES(password), role = VALUES(role), status = VALUES(status)"
+);
+if ($stmt_admin) {
+    $stmt_admin->bind_param("sssss", $admin_username, $admin_email, $admin_password_hash, $admin_role, $admin_status);
+    $stmt_admin->execute();
 }
 
 // Function to get database connection

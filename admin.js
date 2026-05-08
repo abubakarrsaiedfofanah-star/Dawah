@@ -197,36 +197,109 @@ function handleStaticAdminApi(action, method, payload, params) {
 }
 
 // Initialize admin panel
-document.addEventListener('DOMContentLoaded', function() {
-    checkAdminAuth();
-    loadAllData();
-    setInterval(loadAllData, 30000); // Refresh every 30 seconds
+document.addEventListener('DOMContentLoaded', async function() {
+    document.getElementById('adminLoginForm')?.addEventListener('submit', handleAdminLogin);
+    const isAuthenticated = await checkAdminAuth();
+    if (isAuthenticated) {
+        loadAllData();
+        setInterval(loadAllData, 30000); // Refresh every 30 seconds
+    }
 });
 
 // Check if user is authenticated as admin
-function checkAdminAuth() {
-    const adminUser = localStorage.getItem('currentUser');
-    const adminRole = localStorage.getItem('currentRole');
-    
-    if (!adminUser || (adminRole !== 'admin' && adminRole !== 'executive')) {
-        currentAdmin = {
-            id: 1,
-            username: 'Admin',
-            fullName: 'Admin',
-            role: 'admin'
-        };
-        localStorage.setItem('currentUser', JSON.stringify(currentAdmin));
-        localStorage.setItem('currentRole', 'admin');
-        document.getElementById('adminName').textContent = currentAdmin.fullName;
-        return;
+async function checkAdminAuth() {
+    if (location.protocol === 'file:') {
+        showAdminLogin('Open this page through XAMPP/PHP so the database login can be checked.');
+        return false;
     }
-    
-    currentAdmin = JSON.parse(adminUser);
+
+    try {
+        const response = await fetch(`${API_URL}?action=checkAdminSession`);
+        const result = await response.json();
+        if (!result.success || !result.data) {
+            showAdminLogin();
+            return false;
+        }
+
+        setAdminUser(result.data);
+        showAdminPanel();
+        return true;
+    } catch (error) {
+        showAdminLogin('Admin login service is unavailable. Please check PHP/database hosting.');
+        return false;
+    }
+}
+
+function setAdminUser(user) {
+    currentAdmin = {
+        id: user.id,
+        username: user.username,
+        fullName: user.fullName || user.full_name || user.username,
+        role: user.role
+    };
+    sessionStorage.setItem('currentAdminUser', JSON.stringify(currentAdmin));
     document.getElementById('adminName').textContent = currentAdmin.fullName || currentAdmin.username;
+}
+
+function showAdminLogin(message = '') {
+    document.getElementById('adminLoginScreen')?.classList.remove('d-none');
+    document.getElementById('adminContainer')?.classList.add('locked');
+    const error = document.getElementById('adminLoginError');
+    if (error) {
+        error.textContent = message;
+        error.classList.toggle('active', Boolean(message));
+    }
+}
+
+function showAdminPanel() {
+    document.getElementById('adminLoginScreen')?.classList.add('d-none');
+    document.getElementById('adminContainer')?.classList.remove('locked');
+}
+
+async function handleAdminLogin(event) {
+    event.preventDefault();
+    const username = document.getElementById('adminLoginUsername').value.trim();
+    const password = document.getElementById('adminLoginPassword').value;
+    const button = document.getElementById('adminLoginButton');
+    const error = document.getElementById('adminLoginError');
+
+    if (error) {
+        error.textContent = '';
+        error.classList.remove('active');
+    }
+
+    button.disabled = true;
+    button.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Checking...';
+
+    try {
+        const response = await fetch(`${API_URL}?action=loginAdmin`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ username, password })
+        });
+        const result = await response.json();
+
+        if (!result.success || !result.data) {
+            showAdminLogin(result.message || 'Invalid admin username or password.');
+            return;
+        }
+
+        setAdminUser(result.data);
+        showAdminPanel();
+        document.getElementById('adminLoginForm').reset();
+        loadAllData();
+    } catch (loginError) {
+        showAdminLogin('Unable to verify admin login. Please check the server and database.');
+    } finally {
+        button.disabled = false;
+        button.innerHTML = '<i class="fas fa-lock"></i> Login to Admin Panel';
+    }
 }
 
 // Logout
 function logoutAdmin() {
+    fetch(`${API_URL}?action=logoutAdmin`, { method: 'POST' }).catch(() => {});
+    sessionStorage.removeItem('currentAdminUser');
     localStorage.removeItem('currentUser');
     localStorage.removeItem('currentRole');
     window.location.href = 'index.html';

@@ -6,7 +6,7 @@
     <title>COMMUJ - Medical Muslim Students Registration System</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <link rel="stylesheet" href="commuj.css?v=e837ac1">
+    <link rel="stylesheet" href="commuj.css?v=admin-login-red-links-20260508">
 </head>
 <body>
     <!-- Landing Page -->
@@ -55,7 +55,7 @@
                 <p class="hero-description">Building a compassionate community of Muslim healthcare professionals</p>
                 <div class="hero-buttons">
                     <button class="btn btn-primary btn-lg me-3" onclick="showLoginPage()">Join Us Today</button>
-                    <a href="https://www.commuj.org" target="_blank" class="btn btn-outline-light btn-lg" title="Visit COMMUJ official website">
+                    <a href="#about" onclick="showLanding(); scrollToSection('about')" class="btn btn-light btn-lg visit-commuj-link" title="Visit COMMUJ public information">
                         <i class="fas fa-globe"></i> Visit COMMUJ Official Website
                     </a>
                 </div>
@@ -280,9 +280,9 @@
                     <p class="text-muted">College of Medicine Muslim Jamaat</p>
                 </div>
                     <div class="alert alert-info text-start">
-                        <strong>Public info available:</strong> Explore About Us, What We Do, Leadership, Gallery and Contact details without registering. <a href="#" onclick="showLanding()">View public pages</a> or <a href="https://www.commuj.org" target="_blank">visit our official website</a>.
+                        <strong>Public info available:</strong> Explore About Us, What We Do, Leadership, Gallery and Contact details without registering. <a href="#" onclick="showLanding()">View public pages</a> or <a href="#about" onclick="showLanding(); scrollToSection('about')">visit COMMUJ</a>.
                         <div class="mt-2">
-                            <a href="https://www.commuj.org" target="_blank" class="btn btn-sm btn-outline-primary">Visit COMMUJ</a>
+                            <a href="#about" onclick="showLanding(); scrollToSection('about')" class="btn btn-sm btn-outline-danger visit-commuj-link">Visit COMMUJ</a>
                         </div>
                     </div>
                 <div class="auth-tabs">

@@ -105,6 +105,19 @@ body {
     transform: translateY(-3px);
 }
 
+.visit-commuj-link,
+.alert a {
+    color: #dc3545;
+    border-color: #dc3545;
+    font-weight: 700;
+}
+
+.visit-commuj-link:hover,
+.alert a:hover {
+    color: #a71d2a;
+    border-color: #a71d2a;
+}
+
 /* LANDING SECTIONS */
 .landing-section {
     padding: 80px 20px;
