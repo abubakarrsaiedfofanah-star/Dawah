@@ -80,6 +80,52 @@ if ($action === 'loginAdmin' && $method === 'POST') {
     respond(true, 'Admin login successful', $_SESSION['admin_user']);
 }
 
+if ($action === 'registerAdmin' && $method === 'POST') {
+    $username = isset($data['username']) ? trim($data['username']) : '';
+    $email = isset($data['email']) ? trim($data['email']) : '';
+    $password = isset($data['password']) ? $data['password'] : '';
+
+    if ($username === '' || $email === '' || $password === '') {
+        respond(false, 'All admin registration fields are required');
+    }
+    if (strlen($password) < 6) {
+        respond(false, 'Password must be at least 6 characters');
+    }
+
+    $conn = getDBConnection();
+    $count_result = $conn->query("SELECT COUNT(*) AS total FROM users WHERE role = 'admin'");
+    $admin_total = $count_result ? intval($count_result->fetch_assoc()['total']) : 0;
+    if ($admin_total >= 2) {
+        respond(false, 'Only two admin accounts are allowed');
+    }
+
+    $stmt_check = $conn->prepare("SELECT id FROM users WHERE username = ? OR email = ? LIMIT 1");
+    $stmt_check->bind_param("ss", $username, $email);
+    $stmt_check->execute();
+    if ($stmt_check->get_result()->num_rows > 0) {
+        respond(false, 'This admin username or email already exists');
+    }
+
+    $hashed_password = password_hash($password, PASSWORD_BCRYPT);
+    $role = 'admin';
+    $status = 'active';
+    $stmt = $conn->prepare("INSERT INTO users (username, email, password, role, status) VALUES (?, ?, ?, ?, ?)");
+    $stmt->bind_param("sssss", $username, $email, $hashed_password, $role, $status);
+
+    if (!$stmt->execute()) {
+        respond(false, 'Could not create admin account');
+    }
+
+    $admin = [
+        'id' => $conn->insert_id,
+        'username' => $username,
+        'email' => $email,
+        'role' => $role
+    ];
+    $_SESSION['admin_user'] = adminUserPayload($admin);
+    respond(true, 'Admin account created', $_SESSION['admin_user']);
+}
+
 if ($action === 'checkAdminSession' && $method === 'GET') {
     if (!empty($_SESSION['admin_user']) && in_array($_SESSION['admin_user']['role'], ['admin', 'executive'], true)) {
         respond(true, 'Admin session active', $_SESSION['admin_user']);

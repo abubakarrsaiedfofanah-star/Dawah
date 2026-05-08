@@ -7,7 +7,8 @@ let editingReligiousActivity = null;
 let adminStudentRequesters = [];
 
 const realFetch = window.fetch.bind(window);
-const useStaticAdminApi = false;
+const useStaticAdminApi = location.hostname.endsWith('github.io') || location.protocol === 'file:';
+const LOCAL_ADMIN_ACCOUNTS_KEY = 'commujAdminAccounts';
 
 function resolveAdminUrl(url) {
     if (!url) return '';
@@ -69,6 +70,18 @@ function deleteStoreItem(key, id) {
 
 function handleStaticAdminApi(action, method, payload, params) {
     switch (action) {
+        case 'checkAdminSession': {
+            const sessionAdmin = JSON.parse(sessionStorage.getItem('currentAdminUser') || 'null');
+            return sessionAdmin ? { success: true, data: sessionAdmin } : { success: false, message: 'Admin login required' };
+        }
+        case 'registerAdmin':
+            return registerLocalAdmin(payload);
+        case 'loginAdmin':
+            return loginLocalAdmin(payload);
+        case 'logoutAdmin':
+            sessionStorage.removeItem('currentAdminUser');
+            return { success: true };
+
         case 'getAnnouncements':
             return { success: true, data: readStore('adminAnnouncements') };
         case 'createAnnouncement':
@@ -199,6 +212,7 @@ function handleStaticAdminApi(action, method, payload, params) {
 // Initialize admin panel
 document.addEventListener('DOMContentLoaded', async function() {
     document.getElementById('adminLoginForm')?.addEventListener('submit', handleAdminLogin);
+    document.getElementById('adminRegisterForm')?.addEventListener('submit', handleAdminRegistration);
     const isAuthenticated = await checkAdminAuth();
     if (isAuthenticated) {
         loadAllData();
@@ -208,16 +222,11 @@ document.addEventListener('DOMContentLoaded', async function() {
 
 // Check if user is authenticated as admin
 async function checkAdminAuth() {
-    if (location.protocol === 'file:') {
-        showAdminLogin('Open this page through XAMPP/PHP so the database login can be checked.');
-        return false;
-    }
-
     try {
         const response = await fetch(`${API_URL}?action=checkAdminSession`);
         const result = await response.json();
         if (!result.success || !result.data) {
-            showAdminLogin();
+            showAdminLogin(useStaticAdminApi ? getLocalAdminPrompt() : '');
             return false;
         }
 
@@ -225,9 +234,88 @@ async function checkAdminAuth() {
         showAdminPanel();
         return true;
     } catch (error) {
-        showAdminLogin('Admin login service is unavailable. Please check PHP/database hosting.');
+        showAdminLogin(getLocalAdminPrompt());
         return false;
     }
+}
+
+function getLocalAdminPrompt() {
+    const count = getLocalAdminAccounts().length;
+    if (count === 0) {
+        return 'Create the first admin account. Only two admin accounts are allowed.';
+    }
+    return 'Login with one of the registered admin accounts.';
+}
+
+function getLocalAdminAccounts() {
+    return JSON.parse(localStorage.getItem(LOCAL_ADMIN_ACCOUNTS_KEY) || '[]');
+}
+
+function saveLocalAdminAccounts(accounts) {
+    localStorage.setItem(LOCAL_ADMIN_ACCOUNTS_KEY, JSON.stringify(accounts));
+}
+
+async function hashAdminPassword(password) {
+    if (window.crypto?.subtle) {
+        const data = new TextEncoder().encode(password);
+        const digest = await crypto.subtle.digest('SHA-256', data);
+        return Array.from(new Uint8Array(digest)).map(byte => byte.toString(16).padStart(2, '0')).join('');
+    }
+    return btoa(unescape(encodeURIComponent(password)));
+}
+
+async function registerLocalAdmin(payload) {
+    const username = String(payload.username || '').trim();
+    const email = String(payload.email || '').trim();
+    const password = String(payload.password || '');
+    const accounts = getLocalAdminAccounts();
+
+    if (!username || !email || !password) {
+        return { success: false, message: 'All admin registration fields are required.' };
+    }
+    if (password.length < 6) {
+        return { success: false, message: 'Password must be at least 6 characters.' };
+    }
+    if (accounts.length >= 2) {
+        return { success: false, message: 'Only two admin accounts are allowed.' };
+    }
+    if (accounts.some(account => account.username.toLowerCase() === username.toLowerCase() || account.email.toLowerCase() === email.toLowerCase())) {
+        return { success: false, message: 'This admin username or email already exists.' };
+    }
+
+    const admin = {
+        id: Date.now(),
+        username,
+        email,
+        passwordHash: await hashAdminPassword(password),
+        role: 'admin',
+        fullName: username,
+        created_at: new Date().toISOString()
+    };
+    accounts.push(admin);
+    saveLocalAdminAccounts(accounts);
+
+    const { passwordHash, ...publicAdmin } = admin;
+    sessionStorage.setItem('currentAdminUser', JSON.stringify(publicAdmin));
+    return { success: true, message: 'Admin account created', data: publicAdmin };
+}
+
+async function loginLocalAdmin(payload) {
+    const username = String(payload.username || '').trim();
+    const password = String(payload.password || '');
+    const passwordHash = await hashAdminPassword(password);
+    const account = getLocalAdminAccounts().find(admin =>
+        (admin.username.toLowerCase() === username.toLowerCase() || admin.email.toLowerCase() === username.toLowerCase()) &&
+        admin.passwordHash === passwordHash
+    );
+
+    if (!account) {
+        return { success: false, message: 'Invalid admin username or password.' };
+    }
+
+    const { passwordHash: _passwordHash, ...publicAdmin } = account;
+    sessionStorage.setItem('currentAdminUser', JSON.stringify(publicAdmin));
+    return { success: true, message: 'Admin login successful', data: publicAdmin };
 }
 
 function setAdminUser(user) {
@@ -293,6 +381,52 @@ async function handleAdminLogin(event) {
     } finally {
         button.disabled = false;
         button.innerHTML = '<i class="fas fa-lock"></i> Login to Admin Panel';
+    }
+}
+
+async function handleAdminRegistration(event) {
+    event.preventDefault();
+    const username = document.getElementById('adminRegisterUsername').value.trim();
+    const email = document.getElementById('adminRegisterEmail').value.trim();
+    const password = document.getElementById('adminRegisterPassword').value;
+    const confirmPassword = document.getElementById('adminRegisterConfirmPassword').value;
+    const button = document.getElementById('adminRegisterButton');
+    const error = document.getElementById('adminLoginError');
+
+    if (error) {
+        error.textContent = '';
+        error.classList.remove('active');
+    }
+    if (password !== confirmPassword) {
+        showAdminLogin('Passwords do not match.');
+        return;
+    }
+
+    button.disabled = true;
+    button.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Creating...';
+
+    try {
+        const response = await fetch(`${API_URL}?action=registerAdmin`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ username, email, password })
+        });
+        const result = await response.json();
+
+        if (!result.success || !result.data) {
+            showAdminLogin(result.message || 'Could not create admin account.');
+            return;
+        }
+
+        setAdminUser(result.data);
+        showAdminPanel();
+        document.getElementById('adminRegisterForm').reset();
+        loadAllData();
+    } catch (registerError) {
+        showAdminLogin('Could not create admin account. Please try again.');
+    } finally {
+        button.disabled = false;
+        button.innerHTML = '<i class="fas fa-user-plus"></i> Create Admin Account';
     }
 }
 
