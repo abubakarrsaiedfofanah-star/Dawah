@@ -1,10 +1,12 @@
 <?php
-// COMMUJ Database API Endpoints
+// Dawa'ah Database API Endpoints
+session_start();
 
 header('Content-Type: application/json');
 header('Access-Control-Allow-Origin: *');
 header('Access-Control-Allow-Methods: GET, POST, PUT, DELETE, OPTIONS');
 header('Access-Control-Allow-Headers: Content-Type');
+header('Access-Control-Allow-Credentials: true');
 
 require_once 'database.php';
 require_once 'db_operations.php';
@@ -16,7 +18,15 @@ $method = $_SERVER['REQUEST_METHOD'];
 // Parse JSON body if POST/PUT
 $data = array();
 if ($method === 'POST' || $method === 'PUT') {
-    $data = json_decode(file_get_contents('php://input'), true);
+    $content_type = isset($_SERVER['CONTENT_TYPE']) ? $_SERVER['CONTENT_TYPE'] : '';
+    if (stripos($content_type, 'multipart/form-data') !== false) {
+        $data = $_POST;
+    } else {
+        $data = json_decode(file_get_contents('php://input'), true);
+        if (!is_array($data)) {
+            $data = array();
+        }
+    }
 }
 
 // Response helper
@@ -30,6 +40,102 @@ function respond($success, $message = '', $data = null) {
     exit;
 }
 
+function rolePermissions() {
+    $member = array(
+        'view_profile',
+        'view_membership',
+        'register_events',
+        'view_prayer_times',
+        'view_announcements',
+        'view_resources',
+        'welfare_request',
+        'view_payments',
+        'view_donations',
+        'register_volunteer'
+    );
+    $leadership = array_merge($member, array(
+        'manage_members',
+        'manage_events',
+        'manage_welfare',
+        'manage_leadership',
+        'manage_gallery',
+        'manage_contact',
+        'view_reports',
+        'generate_reports',
+        'create_announcements'
+    ));
+
+    return array(
+        'student' => $member,
+        'executive' => $leadership,
+        'chairman' => $leadership,
+        'chairlady' => $leadership,
+        'secretary' => $leadership,
+        'admin' => $leadership,
+        'treasurer' => array_merge($member, array('manage_payments', 'view_reports', 'generate_reports')),
+        'imam' => array('view_profile', 'view_prayer_times', 'view_announcements', 'view_resources', 'manage_prayer_times', 'manage_lectures', 'create_announcements')
+    );
+}
+
+function actorRole($data) {
+    if (!empty($_SESSION['user']) && isset($_SESSION['user']['role'])) {
+        return $_SESSION['user']['role'];
+    }
+    return '';
+}
+
+function requirePermission($permission, $data) {
+    $role = actorRole($data);
+    $permissions = rolePermissions();
+    if (!$role || !isset($permissions[$role]) || !in_array($permission, $permissions[$role], true)) {
+        respond(false, 'Access denied for this role');
+    }
+}
+
+function uploadProfilePhoto($field_name = 'passport_photo_file') {
+    if (!isset($_FILES[$field_name]) || $_FILES[$field_name]['error'] === UPLOAD_ERR_NO_FILE) {
+        return array('success' => true, 'path' => '');
+    }
+
+    if ($_FILES[$field_name]['error'] !== UPLOAD_ERR_OK) {
+        return array('success' => false, 'error' => 'Photo upload failed');
+    }
+
+    $max_size = 2 * 1024 * 1024;
+    if ($_FILES[$field_name]['size'] > $max_size) {
+        return array('success' => false, 'error' => 'Photo must be 2MB or smaller');
+    }
+
+    $tmp_name = $_FILES[$field_name]['tmp_name'];
+    $image_info = getimagesize($tmp_name);
+    if ($image_info === false) {
+        return array('success' => false, 'error' => 'Please upload a valid image file');
+    }
+
+    $allowed = array(
+        IMAGETYPE_JPEG => 'jpg',
+        IMAGETYPE_PNG => 'png',
+        IMAGETYPE_WEBP => 'webp',
+        IMAGETYPE_GIF => 'gif'
+    );
+    if (!isset($allowed[$image_info[2]])) {
+        return array('success' => false, 'error' => 'Photo must be JPG, PNG, WebP, or GIF');
+    }
+
+    $upload_dir = __DIR__ . DIRECTORY_SEPARATOR . 'uploads' . DIRECTORY_SEPARATOR . 'profile_photos';
+    if (!is_dir($upload_dir) && !mkdir($upload_dir, 0755, true)) {
+        return array('success' => false, 'error' => 'Could not create photo upload folder');
+    }
+
+    $filename = 'profile_' . date('YmdHis') . '_' . bin2hex(random_bytes(6)) . '.' . $allowed[$image_info[2]];
+    $destination = $upload_dir . DIRECTORY_SEPARATOR . $filename;
+    if (!move_uploaded_file($tmp_name, $destination)) {
+        return array('success' => false, 'error' => 'Could not save uploaded photo');
+    }
+
+    return array('success' => true, 'path' => 'uploads/profile_photos/' . $filename);
+}
+
 // ============================================
 // USER ENDPOINTS
 // ============================================
@@ -39,6 +145,10 @@ if ($action === 'registerUser' && $method === 'POST') {
     $email = isset($data['email']) ? $data['email'] : '';
     $password = isset($data['password']) ? $data['password'] : '';
     $role = isset($data['role']) ? $data['role'] : 'student';
+
+    if ($role === 'admin') {
+        respond(false, 'Admin accounts must be created from admin.html. Only the first main admin can register there; other admins are added inside the admin panel.');
+    }
     
     if (empty($username) || empty($email) || empty($password)) {
         respond(false, 'Missing required fields');
@@ -57,7 +167,23 @@ if ($action === 'loginUser' && $method === 'POST') {
     }
     
     $result = loginUser($username, $password);
+    if ($result['success'] && isset($result['user'])) {
+        session_regenerate_id(true);
+        $_SESSION['user'] = $result['user'];
+    }
     respond($result['success'], $result['success'] ? 'Login successful' : $result['error'], $result['user'] ?? null);
+}
+
+if ($action === 'getSession' && $method === 'GET') {
+    if (!empty($_SESSION['user'])) {
+        respond(true, 'Session active', $_SESSION['user']);
+    }
+    respond(false, 'No active session');
+}
+
+if ($action === 'logoutUser' && $method === 'POST') {
+    unset($_SESSION['user']);
+    respond(true, 'Logged out');
 }
 
 if ($action === 'getUser' && $method === 'GET') {
@@ -86,8 +212,19 @@ if ($action === 'registerStudent' && $method === 'POST') {
     if ($user_id === 0) {
         respond(false, 'User ID required');
     }
+
+    $photo_upload = uploadProfilePhoto();
+    if (!$photo_upload['success']) {
+        respond(false, $photo_upload['error']);
+    }
+    if ($photo_upload['path'] !== '') {
+        $data['passport_photo'] = $photo_upload['path'];
+    }
     
     $result = registerStudent($user_id, $data);
+    if ($result['success'] && isset($data['passport_photo'])) {
+        $result['passport_photo'] = $data['passport_photo'];
+    }
     respond($result['success'], $result['success'] ? 'Student registered' : $result['error'], $result);
 }
 
@@ -131,13 +268,52 @@ if ($action === 'updateStudentProfile' && $method === 'POST') {
         respond(false, 'Student database ID required');
     }
 
+    $photo_upload = uploadProfilePhoto();
+    if (!$photo_upload['success']) {
+        respond(false, $photo_upload['error']);
+    }
+    if ($photo_upload['path'] !== '') {
+        $data['passport_photo'] = $photo_upload['path'];
+    }
+
     $result = updateStudentProfile($student_db_id, $data);
+    if ($result['success'] && isset($data['passport_photo'])) {
+        $result['passport_photo'] = $data['passport_photo'];
+    }
     respond($result['success'], $result['success'] ? 'Profile updated' : $result['error'], $result);
 }
 
 if ($action === 'getAllStudents' && $method === 'GET') {
+    $query_actor = array(
+        'actor_user_id' => isset($_GET['actor_user_id']) ? intval($_GET['actor_user_id']) : 0,
+        'actor_role' => isset($_GET['actor_role']) ? $_GET['actor_role'] : ''
+    );
+    requirePermission('manage_members', $query_actor);
     $students = getAllStudents();
     respond(true, 'Students retrieved', $students);
+}
+
+if ($action === 'updateStudentStatus' && $method === 'POST') {
+    requirePermission('manage_members', $data);
+    $student_db_id = isset($data['student_db_id']) ? intval($data['student_db_id']) : 0;
+    $status = isset($data['status']) ? $data['status'] : '';
+    if ($student_db_id === 0 || $status === '') {
+        respond(false, 'Student database ID and status are required');
+    }
+
+    $result = updateStudentStatus($student_db_id, $status);
+    respond($result['success'], $result['success'] ? 'Student status updated' : $result['error'], $result);
+}
+
+if ($action === 'deleteStudent' && $method === 'POST') {
+    requirePermission('manage_members', $data);
+    $student_db_id = isset($data['student_db_id']) ? intval($data['student_db_id']) : 0;
+    if ($student_db_id === 0) {
+        respond(false, 'Student database ID required');
+    }
+
+    $result = deleteStudentRecord($student_db_id);
+    respond($result['success'], $result['success'] ? 'Student deleted' : $result['error'], $result);
 }
 
 // ============================================
@@ -145,6 +321,7 @@ if ($action === 'getAllStudents' && $method === 'GET') {
 // ============================================
 
 if ($action === 'createEvent' && $method === 'POST') {
+    requirePermission('manage_events', $data);
     $result = createEvent($data);
     respond($result['success'], $result['success'] ? 'Event created' : $result['error'], $result);
 }
@@ -183,6 +360,7 @@ if ($action === 'getPrayerTimes' && $method === 'GET') {
 }
 
 if ($action === 'setPrayerTimes' && $method === 'POST') {
+    requirePermission('manage_prayer_times', $data);
     $date = isset($data['date']) ? $data['date'] : date('Y-m-d');
     
     $times = [
@@ -222,11 +400,17 @@ if ($action === 'createWelfareRequest' && $method === 'POST') {
 }
 
 if ($action === 'getPendingWelfare' && $method === 'GET') {
+    $query_actor = array(
+        'actor_user_id' => isset($_GET['actor_user_id']) ? intval($_GET['actor_user_id']) : 0,
+        'actor_role' => isset($_GET['actor_role']) ? $_GET['actor_role'] : ''
+    );
+    requirePermission('manage_welfare', $query_actor);
     $requests = getPendingWelfareRequests();
     respond(true, 'Welfare requests retrieved', $requests);
 }
 
 if ($action === 'approveWelfare' && $method === 'POST') {
+    requirePermission('manage_welfare', $data);
     $request_id = isset($data['request_id']) ? intval($data['request_id']) : 0;
     $approved_by = isset($data['approved_by']) ? intval($data['approved_by']) : 0;
     $notes = isset($data['notes']) ? $data['notes'] : '';
@@ -251,16 +435,18 @@ if ($action === 'recordPayment' && $method === 'POST') {
     $payment_method = isset($data['payment_method']) ? $data['payment_method'] : null;
     $transaction_id = isset($data['transaction_id']) ? $data['transaction_id'] : null;
     $notes = isset($data['notes']) ? $data['notes'] : null;
+    $status = isset($data['status']) ? $data['status'] : 'pending';
     
     if ($student_id === 0 || empty($payment_type) || $amount === 0 || empty($transaction_id)) {
         respond(false, 'Missing required fields');
     }
     
-    $result = recordPayment($student_id, $payment_type, $amount, $due_date, $payment_method, $transaction_id, $notes);
+    $result = recordPayment($student_id, $payment_type, $amount, $due_date, $payment_method, $transaction_id, $notes, $status);
     respond($result['success'], $result['success'] ? 'Payment recorded' : $result['error'], $result);
 }
 
 if ($action === 'completePayment' && $method === 'POST') {
+    requirePermission('manage_payments', $data);
     $payment_id = isset($data['payment_id']) ? intval($data['payment_id']) : 0;
     $transaction_id = isset($data['transaction_id']) ? $data['transaction_id'] : null;
     
@@ -270,6 +456,21 @@ if ($action === 'completePayment' && $method === 'POST') {
     
     $result = completePayment($payment_id, $transaction_id);
     respond($result['success'], $result['success'] ? 'Payment completed' : $result['error'], $result);
+}
+
+if ($action === 'updatePaymentStatus' && $method === 'POST') {
+    requirePermission('manage_payments', $data);
+    $payment_id = isset($data['payment_id']) ? intval($data['payment_id']) : 0;
+    $status = isset($data['status']) ? $data['status'] : '';
+    $transaction_id = isset($data['transaction_id']) ? $data['transaction_id'] : null;
+    $notes = isset($data['notes']) ? $data['notes'] : null;
+
+    if ($payment_id === 0 || $status === '') {
+        respond(false, 'Payment ID and status are required');
+    }
+
+    $result = updatePaymentStatus($payment_id, $status, $transaction_id, $notes);
+    respond($result['success'], $result['success'] ? 'Payment status updated' : $result['error'], $result);
 }
 
 // ============================================
@@ -285,13 +486,28 @@ if ($action === 'recordDonation' && $method === 'POST') {
     $purpose = isset($data['purpose']) ? $data['purpose'] : '';
     $payment_method = isset($data['payment_method']) ? $data['payment_method'] : null;
     $transaction_id = isset($data['transaction_id']) ? $data['transaction_id'] : null;
+    $status = isset($data['status']) ? $data['status'] : 'pending';
     
     if (empty($donor_name) || empty($donor_email) || $amount === 0 || empty($transaction_id)) {
         respond(false, 'Missing required fields');
     }
     
-    $result = recordDonation($donor_id, $donor_name, $donor_email, $amount, $donation_type, $purpose, $payment_method, $transaction_id);
+    $result = recordDonation($donor_id, $donor_name, $donor_email, $amount, $donation_type, $purpose, $payment_method, $transaction_id, $status);
     respond($result['success'], $result['success'] ? 'Donation recorded' : $result['error'], $result);
+}
+
+if ($action === 'updateDonationStatus' && $method === 'POST') {
+    requirePermission('manage_payments', $data);
+    $donation_id = isset($data['donation_id']) ? intval($data['donation_id']) : 0;
+    $status = isset($data['status']) ? $data['status'] : '';
+    $transaction_id = isset($data['transaction_id']) ? $data['transaction_id'] : null;
+
+    if ($donation_id === 0 || $status === '') {
+        respond(false, 'Donation ID and status are required');
+    }
+
+    $result = updateDonationStatus($donation_id, $status, $transaction_id);
+    respond($result['success'], $result['success'] ? 'Donation status updated' : $result['error'], $result);
 }
 
 if ($action === 'getDonationStats' && $method === 'GET') {
@@ -305,6 +521,7 @@ if ($action === 'getDonationStats' && $method === 'GET') {
 // ============================================
 
 if ($action === 'assignLeadership' && $method === 'POST') {
+    requirePermission('manage_leadership', $data);
     $student_id = isset($data['student_id']) ? intval($data['student_id']) : 0;
     $position = isset($data['position']) ? $data['position'] : '';
     $department = isset($data['department']) ? $data['department'] : '';
@@ -328,6 +545,7 @@ if ($action === 'getLeadership' && $method === 'GET') {
 // ============================================
 
 if ($action === 'createAnnouncement' && $method === 'POST') {
+    requirePermission('create_announcements', $data);
     $title = isset($data['title']) ? $data['title'] : '';
     $content = isset($data['content']) ? $data['content'] : '';
     $author_id = isset($data['author_id']) ? intval($data['author_id']) : 0;
@@ -352,6 +570,7 @@ if ($action === 'getAnnouncements' && $method === 'GET') {
 // ============================================
 
 if ($action === 'createVolunteerOp' && $method === 'POST') {
+    requirePermission('manage_events', $data);
     $title = isset($data['title']) ? $data['title'] : '';
     $description = isset($data['description']) ? $data['description'] : '';
     $required_hours = isset($data['required_hours']) ? intval($data['required_hours']) : 0;

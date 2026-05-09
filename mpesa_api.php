@@ -117,15 +117,15 @@ function initiateStkPush($payload) {
         }
         $payment_id = intval($payment['payment_id']);
         $donation_id = null;
-        $account_reference = 'COMMUJ-PAY-' . $payment_id;
+        $account_reference = "Dawa'ah-PAY-" . $payment_id;
     } else {
         $donation = recordDonation(
             isset($payload['donor_id']) ? intval($payload['donor_id']) : 0,
             isset($payload['donor_name']) ? $payload['donor_name'] : 'Donor',
-            isset($payload['donor_email']) ? $payload['donor_email'] : 'donor@commuj.local',
+            isset($payload['donor_email']) ? $payload['donor_email'] : 'donor@dawaah.local',
             $amount,
             isset($payload['donation_type']) ? $payload['donation_type'] : 'Donation',
-            isset($payload['purpose']) ? $payload['purpose'] : 'COMMUJ donation',
+            isset($payload['purpose']) ? $payload['purpose'] : "Dawa'ah donation",
             'M-Pesa STK Push',
             $transaction_id,
             'pending'
@@ -135,7 +135,7 @@ function initiateStkPush($payload) {
         }
         $payment_id = null;
         $donation_id = intval($donation['donation_id']);
-        $account_reference = 'COMMUJ-DON-' . $donation_id;
+        $account_reference = "Dawa'ah-DON-" . $donation_id;
     }
 
     $token = mpesaAccessToken();
@@ -156,7 +156,7 @@ function initiateStkPush($payload) {
         'PhoneNumber' => $phone,
         'CallBackURL' => MPESA_CALLBACK_URL,
         'AccountReference' => $account_reference,
-        'TransactionDesc' => 'COMMUJ payment'
+        'TransactionDesc' => "Dawa'ah payment"
     );
 
     $ch = curl_init(mpesaBaseUrl() . '/mpesa/stkpush/v1/processrequest');

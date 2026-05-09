@@ -1,5 +1,5 @@
 <?php
-// COMMUJ Admin Content Management API
+// Dawa'ah Admin Content Management API
 // This file handles admin panel actions for content management
 session_start();
 
@@ -10,6 +10,9 @@ header('Access-Control-Allow-Headers: Content-Type');
 
 require_once 'database.php';
 require_once 'db_operations.php';
+
+define('ADMIN_ACCOUNT_LIMIT', 3);
+$skip_auto_audit = false;
 
 // Get action from request
 $action = isset($_GET['action']) ? $_GET['action'] : '';
@@ -30,6 +33,7 @@ if ($method === 'POST' || $method === 'PUT' || $method === 'DELETE') {
 
 // Response helper
 function respond($success, $message = '', $data = null) {
+    maybeLogSuccessfulAdminAction($success, $message, $data);
     echo json_encode([
         'success' => $success,
         'message' => $message,
@@ -39,13 +43,47 @@ function respond($success, $message = '', $data = null) {
     exit;
 }
 
+function getMainAdminId() {
+    $conn = getDBConnection();
+    $result = $conn->query("SELECT id FROM users WHERE role = 'admin' AND username <> 'system_admin' ORDER BY id ASC LIMIT 1");
+    return $result && $result->num_rows ? intval($result->fetch_assoc()['id']) : 0;
+}
+
+function isMainAdminId($admin_id) {
+    $admin_id = intval($admin_id);
+    if ($admin_id <= 0) {
+        return false;
+    }
+    $conn = getDBConnection();
+    $stmt = $conn->prepare("SELECT username, email FROM users WHERE id = ? AND role = 'admin' LIMIT 1");
+    if ($stmt) {
+        $stmt->bind_param("i", $admin_id);
+        $stmt->execute();
+        $result = $stmt->get_result();
+        if ($result->num_rows > 0) {
+            $user = $result->fetch_assoc();
+            $username = strtolower($user['username']);
+            $email = strtolower($user['email']);
+            if (
+                $username === strtolower(DAWAAH_ADMIN_USERNAME) ||
+                $email === strtolower(DAWAAH_ADMIN_EMAIL)
+            ) {
+                return true;
+            }
+        }
+    }
+    return $admin_id === getMainAdminId();
+}
+
 function adminUserPayload($user) {
+    $admin_id = intval($user['id']);
     return [
-        'id' => intval($user['id']),
+        'id' => $admin_id,
         'username' => $user['username'],
         'email' => $user['email'],
         'role' => $user['role'],
-        'fullName' => isset($user['full_name']) ? $user['full_name'] : $user['username']
+        'fullName' => isset($user['full_name']) ? $user['full_name'] : $user['username'],
+        'isMainAdmin' => isMainAdminId($admin_id)
     ];
 }
 
@@ -56,6 +94,129 @@ function requireAdminSession() {
     ) {
         respond(false, 'Admin login required');
     }
+}
+
+function requireMainAdminRole() {
+    requireAdminSession();
+    if ($_SESSION['admin_user']['role'] !== 'admin' || !isMainAdminId($_SESSION['admin_user']['id'])) {
+        respond(false, 'Only the main admin can manage admin accounts');
+    }
+}
+
+function sanitizeAuditDetails($value) {
+    if (!is_array($value)) {
+        return $value;
+    }
+    $safe = [];
+    foreach ($value as $key => $item) {
+        if (stripos($key, 'password') !== false) {
+            $safe[$key] = '[hidden]';
+        } else {
+            $safe[$key] = is_array($item) ? sanitizeAuditDetails($item) : $item;
+        }
+    }
+    return $safe;
+}
+
+function logAdminActivity($admin_id, $action_name, $details = []) {
+    $admin_id = intval($admin_id);
+    if ($admin_id <= 0) {
+        return;
+    }
+    $conn = getDBConnection();
+    $table_name = 'admin_panel';
+    $new_values = json_encode(sanitizeAuditDetails($details));
+    $ip_address = isset($_SERVER['REMOTE_ADDR']) ? $_SERVER['REMOTE_ADDR'] : '';
+    $user_agent = isset($_SERVER['HTTP_USER_AGENT']) ? substr($_SERVER['HTTP_USER_AGENT'], 0, 500) : '';
+    $stmt = $conn->prepare("INSERT INTO audit_log (user_id, action, table_name, new_values, ip_address, user_agent) VALUES (?, ?, ?, ?, ?, ?)");
+    if ($stmt) {
+        $stmt->bind_param("isssss", $admin_id, $action_name, $table_name, $new_values, $ip_address, $user_agent);
+        $stmt->execute();
+    }
+}
+
+function maybeLogSuccessfulAdminAction($success, $message, $response_data) {
+    global $action, $method, $data, $skip_auto_audit;
+    if ($skip_auto_audit || !$success || empty($_SESSION['admin_user']) || !in_array($method, ['POST', 'PUT', 'DELETE'], true)) {
+        return;
+    }
+    if (in_array($action, ['loginAdmin', 'logoutAdmin'], true)) {
+        return;
+    }
+    logAdminActivity($_SESSION['admin_user']['id'], $action, [
+        'method' => $method,
+        'message' => $message,
+        'request' => $data,
+        'response' => $response_data
+    ]);
+}
+
+function approvalRequiredActions() {
+    return [
+        'createAnnouncement',
+        'deleteAnnouncement',
+        'createEvent',
+        'deleteEvent',
+        'addLeader',
+        'deleteLeader',
+        'addGalleryItem',
+        'deleteGalleryItem',
+        'addHadith',
+        'deleteHadith',
+        'updateWelfareStatus',
+        'setPrayerTimes',
+        'addResource',
+        'deleteResource',
+        'approvePayment',
+        'approveDonation',
+        'seedSampleData'
+    ];
+}
+
+function queueAdminApprovalIfNeeded() {
+    global $action, $method, $data, $skip_auto_audit;
+    if (
+        empty($_SESSION['admin_user']) ||
+        isMainAdminId($_SESSION['admin_user']['id']) ||
+        !in_array($action, approvalRequiredActions(), true) ||
+        !in_array($method, ['POST', 'PUT', 'DELETE'], true)
+    ) {
+        return;
+    }
+
+    $skip_auto_audit = true;
+    logAdminActivity($_SESSION['admin_user']['id'], 'pendingAdminApproval', [
+        'requested_action' => $action,
+        'method' => $method,
+        'request' => $data
+    ]);
+    respond(true, 'Sent to main admin for approval', ['pending_approval' => true]);
+}
+
+function countManagedAdmins() {
+    $conn = getDBConnection();
+    $result = $conn->query("SELECT COUNT(*) AS total FROM users WHERE role = 'admin' AND username <> 'system_admin'");
+    return $result ? intval($result->fetch_assoc()['total']) : 0;
+}
+
+function listManagedAdmins() {
+    $conn = getDBConnection();
+    $admins = [];
+    $result = $conn->query("SELECT id, username, email, role, status, created_at, last_login FROM users WHERE role = 'admin' AND username <> 'system_admin' ORDER BY id ASC");
+    if ($result) {
+        while ($row = $result->fetch_assoc()) {
+            $admins[] = [
+                'id' => intval($row['id']),
+                'username' => $row['username'],
+                'email' => $row['email'],
+                'role' => $row['role'],
+                'status' => $row['status'],
+                'created_at' => $row['created_at'],
+                'last_login' => $row['last_login']
+            ];
+        }
+    }
+    return $admins;
 }
 
 if ($action === 'loginAdmin' && $method === 'POST') {
@@ -77,7 +238,17 @@ if ($action === 'loginAdmin' && $method === 'POST') {
     }
 
     $_SESSION['admin_user'] = adminUserPayload($user);
+    logAdminActivity($_SESSION['admin_user']['id'], 'loginAdmin', ['message' => 'Admin logged in']);
     respond(true, 'Admin login successful', $_SESSION['admin_user']);
+}
+
+if ($action === 'getAdminSetupStatus' && $method === 'GET') {
+    $admin_total = countManagedAdmins();
+    respond(true, 'Admin setup status retrieved', [
+        'admin_count' => $admin_total,
+        'admin_limit' => ADMIN_ACCOUNT_LIMIT,
+        'can_register_first_admin' => $admin_total === 0
+    ]);
 }
 
 if ($action === 'registerAdmin' && $method === 'POST') {
@@ -93,10 +264,12 @@ if ($action === 'registerAdmin' && $method === 'POST') {
     }
 
     $conn = getDBConnection();
-    $count_result = $conn->query("SELECT COUNT(*) AS total FROM users WHERE role = 'admin'");
-    $admin_total = $count_result ? intval($count_result->fetch_assoc()['total']) : 0;
-    if ($admin_total >= 2) {
-        respond(false, 'Only two admin accounts are allowed');
+    $admin_total = countManagedAdmins();
+    if ($admin_total > 0) {
+        respond(false, 'Only the first admin can register here. Other admins must be added inside the admin panel.');
+    }
+    if ($admin_total >= ADMIN_ACCOUNT_LIMIT) {
+        respond(false, 'Only three admin accounts are allowed');
     }
 
     $stmt_check = $conn->prepare("SELECT id FROM users WHERE username = ? OR email = ? LIMIT 1");
@@ -123,17 +296,22 @@ if ($action === 'registerAdmin' && $method === 'POST') {
         'role' => $role
     ];
     $_SESSION['admin_user'] = adminUserPayload($admin);
+    logAdminActivity($_SESSION['admin_user']['id'], 'registerAdmin', ['message' => 'First admin registered']);
     respond(true, 'Admin account created', $_SESSION['admin_user']);
 }
 
 if ($action === 'checkAdminSession' && $method === 'GET') {
     if (!empty($_SESSION['admin_user']) && in_array($_SESSION['admin_user']['role'], ['admin', 'executive'], true)) {
+        $_SESSION['admin_user']['isMainAdmin'] = isMainAdminId($_SESSION['admin_user']['id']);
         respond(true, 'Admin session active', $_SESSION['admin_user']);
     }
     respond(false, 'Admin login required');
 }
 
 if ($action === 'logoutAdmin' && $method === 'POST') {
+    if (!empty($_SESSION['admin_user'])) {
+        logAdminActivity($_SESSION['admin_user']['id'], 'logoutAdmin', ['message' => 'Admin logged out']);
+    }
     unset($_SESSION['admin_user']);
     session_destroy();
     respond(true, 'Admin logged out');
@@ -152,6 +330,487 @@ $publicActions = [
 if (!in_array($action, $publicActions, true)) {
     requireAdminSession();
 }
+
+function executeApprovedAdminAction($requested_action, $request) {
+    if ($requested_action === 'createAnnouncement') {
+        return createAnnouncement(
+            $request['title'] ?? '',
+            $request['content'] ?? '',
+            intval($request['author_id'] ?? 0),
+            $request['priority'] ?? 'normal',
+            $request['expires_at'] ?? null
+        );
+    }
+    if ($requested_action === 'deleteAnnouncement') return deleteAnnouncement(intval($request['announcement_id'] ?? 0));
+    if ($requested_action === 'createEvent') {
+        return createEvent([
+            'title' => $request['title'] ?? '',
+            'description' => $request['description'] ?? '',
+            'event_date' => $request['event_date'] ?? '',
+            'location' => $request['location'] ?? '',
+            'category' => $request['category'] ?? 'general',
+            'organizer_id' => $request['organizer_id'] ?? null,
+            'status' => $request['status'] ?? 'upcoming',
+            'max_participants' => intval($request['max_participants'] ?? ($request['capacity'] ?? 100))
+        ]);
+    }
+    if ($requested_action === 'deleteEvent') return deleteEvent(intval($request['event_id'] ?? 0));
+    if ($requested_action === 'addLeader') {
+        return addPublicLeader([
+            'name' => $request['name'] ?? '',
+            'position' => $request['position'] ?? '',
+            'bio' => $request['bio'] ?? '',
+            'course' => $request['course'] ?? '',
+            'year_of_study' => $request['year_of_study'] ?? '',
+            'description' => $request['description'] ?? '',
+            'email' => $request['email'] ?? '',
+            'phone' => $request['phone'] ?? '',
+            'user_id' => intval($request['user_id'] ?? 0),
+            'photo_url' => $request['photo_url'] ?? null
+        ]);
+    }
+    if ($requested_action === 'deleteLeader') return deletePublicLeader(intval($request['leader_id'] ?? 0));
+    if ($requested_action === 'addGalleryItem') {
+        $image_url = $request['image_url'] ?? '';
+        if (strpos($image_url, 'data:image/') === 0) {
+            $saved_image = saveGalleryDataImage($image_url);
+            if (!$saved_image['success']) return ['success' => false, 'error' => $saved_image['error']];
+            $image_url = $saved_image['path'];
+        }
+        return addGalleryItem([
+            'title' => $request['title'] ?? '',
+            'description' => $request['description'] ?? '',
+            'image_url' => $image_url,
+            'uploaded_by' => intval($request['uploaded_by'] ?? 0)
+        ]);
+    }
+    if ($requested_action === 'deleteGalleryItem') return deleteGalleryItem(intval($request['gallery_id'] ?? 0));
+    if ($requested_action === 'addHadith') {
+        return addHadith([
+            'arabic' => $request['arabic'] ?? '',
+            'english' => $request['english'] ?? '',
+            'reference' => $request['reference'] ?? '',
+            'source' => $request['source'] ?? '',
+            'category' => $request['category'] ?? ''
+        ]);
+    }
+    if ($requested_action === 'deleteHadith') return deleteHadith(intval($request['hadith_id'] ?? 0));
+    if ($requested_action === 'updateWelfareStatus') return updateWelfareStatus(intval($request['request_id'] ?? 0), $request['status'] ?? '', $request['notes'] ?? '', intval($request['approved_by'] ?? 0));
+    if ($requested_action === 'setPrayerTimes') {
+        return setPrayerTimes($request['date'] ?? date('Y-m-d'), [
+            'fajr' => $request['fajr'] ?? null,
+            'dhuhr' => $request['dhuhr'] ?? null,
+            'asr' => $request['asr'] ?? null,
+            'maghrib' => $request['maghrib'] ?? null,
+            'isha' => $request['isha'] ?? null,
+            'iqamah_fajr' => $request['iqamah_fajr'] ?? null,
+            'iqamah_dhuhr' => $request['iqamah_dhuhr'] ?? null,
+            'iqamah_asr' => $request['iqamah_asr'] ?? null,
+            'iqamah_maghrib' => $request['iqamah_maghrib'] ?? null,
+            'iqamah_isha' => $request['iqamah_isha'] ?? null,
+            'jummah_time' => $request['jummah_time'] ?? null
+        ]);
+    }
+    if ($requested_action === 'addResource') return addResource($request);
+    if ($requested_action === 'deleteResource') return deleteResource(intval($request['resource_id'] ?? 0));
+    if ($requested_action === 'approvePayment') return completePayment(intval($request['payment_id'] ?? 0), 'ADMIN-PAY-' . intval($request['payment_id'] ?? 0) . '-' . time());
+    if ($requested_action === 'approveDonation') return completeDonation(intval($request['donation_id'] ?? 0), 'ADMIN-DON-' . intval($request['donation_id'] ?? 0) . '-' . time());
+    if ($requested_action === 'seedSampleData') return seedAdminSampleData();
+    return ['success' => false, 'error' => 'Unsupported approval action'];
+}
+
+if ($action === 'listAdminAccounts' && $method === 'GET') {
+    requireMainAdminRole();
+    $admins = listManagedAdmins();
+    $current_id = intval($_SESSION['admin_user']['id']);
+    foreach ($admins as &$admin) {
+        $admin['is_current'] = intval($admin['id']) === $current_id;
+    }
+    respond(true, 'Admin accounts retrieved', [
+        'admins' => $admins,
+        'admin_count' => count($admins),
+        'admin_limit' => ADMIN_ACCOUNT_LIMIT
+    ]);
+}
+
+if ($action === 'createAdminAccount' && $method === 'POST') {
+    requireMainAdminRole();
+    $username = isset($data['username']) ? trim($data['username']) : '';
+    $email = isset($data['email']) ? trim($data['email']) : '';
+    $password = isset($data['password']) ? $data['password'] : '';
+
+    if ($username === '' || $email === '' || $password === '') {
+        respond(false, 'All admin fields are required');
+    }
+    if (strlen($password) < 6) {
+        respond(false, 'Password must be at least 6 characters');
+    }
+    if (countManagedAdmins() >= ADMIN_ACCOUNT_LIMIT) {
+        respond(false, 'This admin can only add two other admins');
+    }
+
+    $conn = getDBConnection();
+    $stmt_check = $conn->prepare("SELECT id FROM users WHERE username = ? OR email = ? LIMIT 1");
+    $stmt_check->bind_param("ss", $username, $email);
+    $stmt_check->execute();
+    if ($stmt_check->get_result()->num_rows > 0) {
+        respond(false, 'This admin username or email already exists');
+    }
+
+    $hashed_password = password_hash($password, PASSWORD_BCRYPT);
+    $role = 'admin';
+    $status = 'active';
+    $stmt = $conn->prepare("INSERT INTO users (username, email, password, role, status) VALUES (?, ?, ?, ?, ?)");
+    $stmt->bind_param("sssss", $username, $email, $hashed_password, $role, $status);
+    if (!$stmt->execute()) {
+        respond(false, 'Could not create admin account');
+    }
+
+    respond(true, 'Admin account added', [
+        'id' => $conn->insert_id,
+        'username' => $username,
+        'email' => $email,
+        'role' => $role,
+        'status' => $status
+    ]);
+}
+
+if ($action === 'deleteAdminAccount' && $method === 'DELETE') {
+    requireMainAdminRole();
+    $admin_id = isset($data['admin_id']) ? intval($data['admin_id']) : 0;
+    $current_id = intval($_SESSION['admin_user']['id']);
+    if ($admin_id <= 0) {
+        respond(false, 'Admin ID required');
+    }
+    if ($admin_id === $current_id) {
+        respond(false, 'You cannot remove your own admin account while logged in');
+    }
+    if (countManagedAdmins() <= 1) {
+        respond(false, 'At least one admin account must remain');
+    }
+
+    $conn = getDBConnection();
+    $stmt = $conn->prepare("UPDATE users SET role = 'student', status = 'inactive' WHERE id = ? AND role = 'admin'");
+    $stmt->bind_param("i", $admin_id);
+    $stmt->execute();
+    if ($stmt->affected_rows < 1) {
+        respond(false, 'Admin account not found');
+    }
+    respond(true, 'Admin account removed');
+}
+
+if ($action === 'changeAdminPassword' && $method === 'POST') {
+    requireAdminSession();
+    $current_password = isset($data['current_password']) ? $data['current_password'] : '';
+    $new_password = isset($data['new_password']) ? $data['new_password'] : '';
+    if ($current_password === '' || $new_password === '') {
+        respond(false, 'Current and new password are required');
+    }
+    if (strlen($new_password) < 6) {
+        respond(false, 'New password must be at least 6 characters');
+    }
+
+    $conn = getDBConnection();
+    $admin_id = intval($_SESSION['admin_user']['id']);
+    $stmt = $conn->prepare("SELECT password FROM users WHERE id = ? AND role = 'admin' LIMIT 1");
+    $stmt->bind_param("i", $admin_id);
+    $stmt->execute();
+    $result = $stmt->get_result();
+    if ($result->num_rows < 1 || !password_verify($current_password, $result->fetch_assoc()['password'])) {
+        respond(false, 'Current password is incorrect');
+    }
+
+    $hashed_password = password_hash($new_password, PASSWORD_BCRYPT);
+    $stmt_update = $conn->prepare("UPDATE users SET password = ? WHERE id = ?");
+    $stmt_update->bind_param("si", $hashed_password, $admin_id);
+    if (!$stmt_update->execute()) {
+        respond(false, 'Could not change password');
+    }
+    respond(true, 'Password changed successfully');
+}
+
+if ($action === 'resetAdminPassword' && $method === 'POST') {
+    requireAdminSession();
+    $admin_id = isset($data['admin_id']) ? intval($data['admin_id']) : 0;
+    $new_password = isset($data['new_password']) ? $data['new_password'] : '';
+    if ($admin_id <= 0 || $new_password === '') {
+        respond(false, 'Admin and new password are required');
+    }
+    if (strlen($new_password) < 6) {
+        respond(false, 'New password must be at least 6 characters');
+    }
+    $current_id = intval($_SESSION['admin_user']['id']);
+    if ($admin_id !== $current_id && !isMainAdminId($current_id)) {
+        respond(false, 'Only the main admin can reset another admin password');
+    }
+
+    $conn = getDBConnection();
+    $stmt_check = $conn->prepare("SELECT id FROM users WHERE id = ? AND role = 'admin' LIMIT 1");
+    $stmt_check->bind_param("i", $admin_id);
+    $stmt_check->execute();
+    if ($stmt_check->get_result()->num_rows < 1) {
+        respond(false, 'Admin account not found');
+    }
+
+    $hashed_password = password_hash($new_password, PASSWORD_BCRYPT);
+    $stmt_update = $conn->prepare("UPDATE users SET password = ? WHERE id = ?");
+    $stmt_update->bind_param("si", $hashed_password, $admin_id);
+    if (!$stmt_update->execute()) {
+        respond(false, 'Could not reset password');
+    }
+    respond(true, 'Admin password reset successfully');
+}
+
+if ($action === 'getAdminActivityLogs' && $method === 'GET') {
+    requireMainAdminRole();
+    $conn = getDBConnection();
+    $logs = [];
+    $result = $conn->query(
+        "SELECT a.id, a.user_id, u.username, u.email, a.action, a.new_values, a.ip_address, a.created_at
+         FROM audit_log a
+         LEFT JOIN users u ON a.user_id = u.id
+         WHERE a.table_name = 'admin_panel' AND (u.username IS NULL OR u.username <> 'system_admin')
+         ORDER BY a.created_at DESC
+         LIMIT 100"
+    );
+    if ($result) {
+        while ($row = $result->fetch_assoc()) {
+            $details = json_decode($row['new_values'], true);
+            $logs[] = [
+                'id' => intval($row['id']),
+                'admin_id' => intval($row['user_id']),
+                'username' => $row['username'],
+                'email' => $row['email'],
+                'action' => $row['action'],
+                'details' => is_array($details) ? $details : [],
+                'ip_address' => $row['ip_address'],
+                'created_at' => $row['created_at']
+            ];
+        }
+    }
+    respond(true, 'Admin activity logs retrieved', $logs);
+}
+
+if ($action === 'getMyAdminActivityLogs' && $method === 'GET') {
+    requireAdminSession();
+    $conn = getDBConnection();
+    $admin_id = intval($_SESSION['admin_user']['id']);
+    $logs = [];
+    $stmt = $conn->prepare(
+        "SELECT a.id, a.user_id, u.username, u.email, a.action, a.new_values, a.ip_address, a.created_at
+         FROM audit_log a
+         LEFT JOIN users u ON a.user_id = u.id
+         WHERE a.table_name = 'admin_panel' AND a.user_id = ?
+         ORDER BY a.created_at DESC
+         LIMIT 50"
+    );
+    $stmt->bind_param("i", $admin_id);
+    $stmt->execute();
+    $result = $stmt->get_result();
+    if ($result) {
+        while ($row = $result->fetch_assoc()) {
+            $details = json_decode($row['new_values'], true);
+            $logs[] = [
+                'id' => intval($row['id']),
+                'admin_id' => intval($row['user_id']),
+                'username' => $row['username'],
+                'email' => $row['email'],
+                'action' => $row['action'],
+                'details' => is_array($details) ? $details : [],
+                'ip_address' => $row['ip_address'],
+                'created_at' => $row['created_at']
+            ];
+        }
+    }
+    respond(true, 'My admin activity logs retrieved', $logs);
+}
+
+function getAdminActivityLog($log_id) {
+    $conn = getDBConnection();
+    $stmt = $conn->prepare("SELECT a.*, u.username FROM audit_log a LEFT JOIN users u ON a.user_id = u.id WHERE a.id = ? AND a.table_name = 'admin_panel' LIMIT 1");
+    $stmt->bind_param("i", $log_id);
+    $stmt->execute();
+    $result = $stmt->get_result();
+    return $result->num_rows ? $result->fetch_assoc() : null;
+}
+
+function getAuditValue($details, $key) {
+    if (isset($details['response'][$key])) return intval($details['response'][$key]);
+    if (isset($details['request'][$key])) return intval($details['request'][$key]);
+    if (isset($details[$key])) return intval($details[$key]);
+    return 0;
+}
+
+if ($action === 'opposeAdminActivity' && $method === 'POST') {
+    requireMainAdminRole();
+    $log_id = isset($data['log_id']) ? intval($data['log_id']) : 0;
+    $reason = isset($data['reason']) ? trim($data['reason']) : '';
+    if ($log_id <= 0) {
+        respond(false, 'Activity log ID required');
+    }
+    $log = getAdminActivityLog($log_id);
+    if (!$log) {
+        respond(false, 'Activity log not found');
+    }
+    logAdminActivity($_SESSION['admin_user']['id'], 'opposeAdminActivity', [
+        'log_id' => $log_id,
+        'opposed_admin' => $log['username'],
+        'opposed_action' => $log['action'],
+        'reason' => $reason
+    ]);
+    respond(true, 'Activity opposed and recorded');
+}
+
+if ($action === 'deleteAdminActivityItem' && $method === 'POST') {
+    requireMainAdminRole();
+    $log_id = isset($data['log_id']) ? intval($data['log_id']) : 0;
+    if ($log_id <= 0) {
+        respond(false, 'Activity log ID required');
+    }
+    $log = getAdminActivityLog($log_id);
+    if (!$log) {
+        respond(false, 'Activity log not found');
+    }
+    $details = json_decode($log['new_values'], true);
+    if (!is_array($details)) {
+        $details = [];
+    }
+
+    $delete_result = ['success' => false, 'error' => 'This activity cannot be deleted automatically'];
+    if ($log['action'] === 'createAnnouncement') {
+        $delete_result = deleteAnnouncement(getAuditValue($details, 'announcement_id'));
+    } elseif ($log['action'] === 'createEvent') {
+        $delete_result = deleteEvent(getAuditValue($details, 'event_id'));
+    } elseif ($log['action'] === 'addLeader') {
+        $delete_result = deletePublicLeader(getAuditValue($details, 'leader_id'));
+    } elseif ($log['action'] === 'addGalleryItem') {
+        $delete_result = deleteGalleryItem(getAuditValue($details, 'gallery_id'));
+    } elseif ($log['action'] === 'addHadith') {
+        $delete_result = deleteHadith(getAuditValue($details, 'hadith_id'));
+    } elseif ($log['action'] === 'addResource') {
+        $delete_result = deleteResource(getAuditValue($details, 'resource_id'));
+    }
+
+    if (empty($delete_result['success'])) {
+        respond(false, isset($delete_result['error']) ? $delete_result['error'] : 'Could not delete item');
+    }
+
+    logAdminActivity($_SESSION['admin_user']['id'], 'deleteAdminActivityItem', [
+        'log_id' => $log_id,
+        'opposed_admin' => $log['username'],
+        'opposed_action' => $log['action'],
+        'reason' => isset($data['reason']) ? trim($data['reason']) : ''
+    ]);
+    respond(true, 'Item deleted and action recorded');
+}
+
+if ($action === 'approvePendingAdminActivity' && $method === 'POST') {
+    requireMainAdminRole();
+    $log_id = isset($data['log_id']) ? intval($data['log_id']) : 0;
+    $log = getAdminActivityLog($log_id);
+    if (!$log || $log['action'] !== 'pendingAdminApproval') {
+        respond(false, 'Pending approval item not found');
+    }
+    $details = json_decode($log['new_values'], true);
+    $requested_action = $details['requested_action'] ?? '';
+    $request = isset($details['request']) && is_array($details['request']) ? $details['request'] : [];
+    $result = executeApprovedAdminAction($requested_action, $request);
+    if (empty($result['success'])) {
+        respond(false, $result['error'] ?? 'Could not approve action');
+    }
+    logAdminActivity($_SESSION['admin_user']['id'], 'approvePendingAdminActivity', [
+        'log_id' => $log_id,
+        'approved_admin' => $log['username'],
+        'approved_action' => $requested_action,
+        'result' => $result
+    ]);
+    respond(true, 'Pending action approved and applied', $result);
+}
+
+if ($action === 'rejectPendingAdminActivity' && $method === 'POST') {
+    requireMainAdminRole();
+    $log_id = isset($data['log_id']) ? intval($data['log_id']) : 0;
+    $reason = isset($data['reason']) ? trim($data['reason']) : '';
+    $log = getAdminActivityLog($log_id);
+    if (!$log || $log['action'] !== 'pendingAdminApproval') {
+        respond(false, 'Pending approval item not found');
+    }
+    $details = json_decode($log['new_values'], true);
+    logAdminActivity($_SESSION['admin_user']['id'], 'rejectPendingAdminActivity', [
+        'log_id' => $log_id,
+        'rejected_admin' => $log['username'],
+        'rejected_action' => $details['requested_action'] ?? '',
+        'reason' => $reason
+    ]);
+    respond(true, 'Pending action rejected and recorded');
+}
+
+if ($action === 'undoMyAdminActivityItem' && $method === 'POST') {
+    requireAdminSession();
+    $log_id = isset($data['log_id']) ? intval($data['log_id']) : 0;
+    if ($log_id <= 0) {
+        respond(false, 'Activity log ID required');
+    }
+    $log = getAdminActivityLog($log_id);
+    if (!$log) {
+        respond(false, 'Activity log not found');
+    }
+    if (intval($log['user_id']) !== intval($_SESSION['admin_user']['id'])) {
+        respond(false, 'You can only undo your own admin actions');
+    }
+    $details = json_decode($log['new_values'], true);
+    if (!is_array($details)) {
+        $details = [];
+    }
+
+    $undo_result = ['success' => false, 'error' => 'This activity cannot be undone automatically'];
+    if ($log['action'] === 'createAnnouncement') {
+        $undo_result = deleteAnnouncement(getAuditValue($details, 'announcement_id'));
+    } elseif ($log['action'] === 'createEvent') {
+        $undo_result = deleteEvent(getAuditValue($details, 'event_id'));
+    } elseif ($log['action'] === 'addLeader') {
+        $undo_result = deletePublicLeader(getAuditValue($details, 'leader_id'));
+    } elseif ($log['action'] === 'addGalleryItem') {
+        $undo_result = deleteGalleryItem(getAuditValue($details, 'gallery_id'));
+    } elseif ($log['action'] === 'addHadith') {
+        $undo_result = deleteHadith(getAuditValue($details, 'hadith_id'));
+    } elseif ($log['action'] === 'addResource') {
+        $undo_result = deleteResource(getAuditValue($details, 'resource_id'));
+    } elseif ($log['action'] === 'setPrayerTimes') {
+        $request = isset($details['request']) && is_array($details['request']) ? $details['request'] : [];
+        $previous = isset($request['_previous_prayer_times']) && is_array($request['_previous_prayer_times']) ? $request['_previous_prayer_times'] : null;
+        if ($previous && !empty($previous['date'])) {
+            $undo_result = setPrayerTimes($previous['date'], [
+                'fajr' => $previous['fajr'] ?? null,
+                'dhuhr' => $previous['dhuhr'] ?? null,
+                'asr' => $previous['asr'] ?? null,
+                'maghrib' => $previous['maghrib'] ?? null,
+                'isha' => $previous['isha'] ?? null,
+                'iqamah_fajr' => $previous['iqamah_fajr'] ?? null,
+                'iqamah_dhuhr' => $previous['iqamah_dhuhr'] ?? null,
+                'iqamah_asr' => $previous['iqamah_asr'] ?? null,
+                'iqamah_maghrib' => $previous['iqamah_maghrib'] ?? null,
+                'iqamah_isha' => $previous['iqamah_isha'] ?? null,
+                'jummah_time' => $previous['jummah_time'] ?? null
+            ]);
+        } else {
+            $undo_result = ['success' => false, 'error' => 'No previous prayer timetable was saved for this action'];
+        }
+    }
+
+    if (empty($undo_result['success'])) {
+        respond(false, isset($undo_result['error']) ? $undo_result['error'] : 'Could not undo item');
+    }
+
+    logAdminActivity($_SESSION['admin_user']['id'], 'undoMyAdminActivityItem', [
+        'log_id' => $log_id,
+        'undone_action' => $log['action'],
+        'reason' => isset($data['reason']) ? trim($data['reason']) : ''
+    ]);
+    respond(true, 'Your action was undone and recorded');
+}
+
+queueAdminApprovalIfNeeded();
 
 // ============================================
 // ANNOUNCEMENTS MANAGEMENT
@@ -284,6 +943,8 @@ if ($action === 'addLeader' && $method === 'POST') {
     $name = isset($data['name']) ? $data['name'] : '';
     $position = isset($data['position']) ? $data['position'] : '';
     $bio = isset($data['bio']) ? $data['bio'] : '';
+    $course = isset($data['course']) ? $data['course'] : '';
+    $year_of_study = isset($data['year_of_study']) ? $data['year_of_study'] : '';
     $description = isset($data['description']) ? $data['description'] : '';
     $email = isset($data['email']) ? $data['email'] : '';
     $phone = isset($data['phone']) ? $data['phone'] : '';
@@ -297,6 +958,8 @@ if ($action === 'addLeader' && $method === 'POST') {
         'name' => $name,
         'position' => $position,
         'bio' => $bio,
+        'course' => $course,
+        'year_of_study' => $year_of_study,
         'description' => $description,
         'email' => $email,
         'phone' => $phone,
@@ -438,6 +1101,7 @@ if ($action === 'getPrayerTimes' && $method === 'GET') {
 
 if ($action === 'setPrayerTimes' && $method === 'POST') {
     $date = isset($data['date']) ? $data['date'] : date('Y-m-d');
+    $data['_previous_prayer_times'] = getPrayerTimes($date);
     $times = [
         'fajr' => $data['fajr'] ?? null,
         'dhuhr' => $data['dhuhr'] ?? null,

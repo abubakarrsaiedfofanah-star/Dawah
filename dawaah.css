@@ -1,4 +1,4 @@
-/* COMMUJ - Complete CSS Stylesheet */
+/* Dawa'ah - Complete CSS Stylesheet */
 
 :root {
     --primary-color: #dc3545;
@@ -80,6 +80,25 @@ a:not(.btn):not(.nav-link):not(.navbar-brand):hover {
     font-weight: 700;
     margin-bottom: 10px;
     text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 18px;
+    flex-wrap: wrap;
+}
+
+.hero-logo {
+    width: min(340px, 82vw);
+    height: auto;
+    display: block;
+    background: #fff;
+    border-radius: 8px;
+    padding: 8px 14px;
+    box-shadow: 0 14px 35px rgba(0, 0, 0, 0.22);
+}
+
+.hero-title__icon {
+    font-size: 0.72em;
 }
 
 .hero-subtitle {
@@ -125,14 +144,14 @@ a:not(.btn):not(.nav-link):not(.navbar-brand):hover {
     transform: translateY(-3px);
 }
 
-.visit-commuj-link,
+.visit-dawaah-link,
 .alert a {
     color: #dc3545;
     border-color: #dc3545;
     font-weight: 700;
 }
 
-.visit-commuj-link:hover,
+.visit-dawaah-link:hover,
 .alert a:hover {
     color: #a71d2a;
     border-color: #a71d2a;
@@ -421,6 +440,21 @@ a:not(.btn):not(.nav-link):not(.navbar-brand):hover {
     font-size: 16px;
 }
 
+.footer-brand {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.footer-brand__image {
+    width: 130px;
+    height: auto;
+    display: block;
+    background: #fff;
+    border-radius: 6px;
+    padding: 3px 6px;
+}
+
 .landing-footer p {
     color: #aaa;
     font-size: 14px;
@@ -706,6 +740,14 @@ a:not(.btn):not(.nav-link):not(.navbar-brand):hover {
     margin-bottom: 15px;
 }
 
+.auth-logo {
+    width: min(260px, 76vw);
+    height: auto;
+    display: block;
+    margin: 0 auto 16px;
+    border-radius: 8px;
+}
+
 .brand-title {
     color: var(--primary-color);
     font-weight: 700;
@@ -795,7 +837,27 @@ a:not(.btn):not(.nav-link):not(.navbar-brand):hover {
 .navbar-brand {
     font-weight: 700;
     font-size: 24px;
-    letter-spacing: 1px;
+    letter-spacing: 0;
+}
+
+.brand-logo {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    min-width: 0;
+}
+
+.brand-logo__image {
+    width: 132px;
+    height: auto;
+    display: block;
+    background: #fff;
+    border-radius: 6px;
+    padding: 3px 6px;
+}
+
+.brand-logo__icon {
+    font-size: 1.05em;
 }
 
 .navbar-text {
@@ -1000,6 +1062,22 @@ a:not(.btn):not(.nav-link):not(.navbar-brand):hover {
     font-size: 80px;
     color: var(--primary-color);
     margin-bottom: 15px;
+}
+
+.profile-photo__image {
+    width: 96px;
+    height: 96px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 3px solid rgba(0, 128, 0, 0.18);
+}
+
+.member-photo-thumb {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 2px solid rgba(0, 128, 0, 0.14);
 }
 
 .profile-card h5 {
@@ -1540,6 +1618,23 @@ a:not(.btn):not(.nav-link):not(.navbar-brand):hover {
 
 /* RESPONSIVE */
 @media (max-width: 768px) {
+    .landing-hero {
+        padding: 70px 16px;
+    }
+
+    .hero-title {
+        font-size: 46px;
+        gap: 12px;
+    }
+
+    .hero-logo {
+        width: min(260px, 84vw);
+    }
+
+    .brand-logo__image {
+        width: 112px;
+    }
+
     .sidebar-menu {
         max-height: 300px;
     }

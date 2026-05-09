@@ -1,7 +1,7 @@
-# COMMUJ Admin System - Setup & Usage Guide
+# Dawa'ah Admin System - Setup & Usage Guide
 
 ## Overview
-The COMMUJ system now includes a dedicated **Admin Panel** where administrators and executives can manage all public-facing content. Everything they add is automatically saved to the database and displayed to all regular users across the system.
+The Dawa'ah system now includes a dedicated **Admin Panel** where administrators and executives can manage all public-facing content. Everything they add is automatically saved to the database and displayed to all regular users across the system.
 
 ## New Files Created
 
@@ -26,7 +26,7 @@ The COMMUJ system now includes a dedicated **Admin Panel** where administrators 
 ## How It Works
 
 ### Admin Workflow
-1. **Admin logs in** to the main COMMUJ system with `admin` or `executive` role
+1. **Admin logs in** to the main Dawa'ah system with `admin` or `executive` role
 2. **Clicks "Content Manager"** in the Admin Panel menu (or visit `admin.html` directly)
 3. **Creates content** (announcements, events, leadership, gallery)
 4. **Data is saved** to the database automatically
@@ -236,7 +236,7 @@ Statistics update automatically every 30 seconds.
 
 ## Next Steps
 
-1. **Login as admin/executive** with your COMMUJ credentials
+1. **Login as admin/executive** with your Dawa'ah credentials
 2. **Access admin panel** from the dashboard menu
 3. **Start adding content** - leadership members, events, announcements
 4. **Monitor dashboard** to see usage statistics
@@ -244,4 +244,4 @@ Statistics update automatically every 30 seconds.
 
 ---
 
-For technical support or questions, contact the COMMUJ IT team.
+For technical support or questions, contact the Dawa'ah IT team.

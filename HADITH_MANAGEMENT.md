@@ -35,7 +35,7 @@ Admin API (admin_api.php)
     ↓
 Database (hadiths table)
     ↓
-Public API (commuj.php)
+Public API (dawaah.php)
     ↓
 User Dashboard (index.html)
 ```
@@ -67,11 +67,11 @@ User Dashboard (index.html)
 - `PUT admin_api.php?action=updateHadith` - Update hadith
 - `DELETE admin_api.php?action=deleteHadith` - Delete hadith
 
-### Public API (commuj.php)
-- `GET commuj.php?action=getAll` - Get all hadiths (for users)
-- `GET commuj.php?action=getDaily` - Get today's hadith (for dashboard)
-- `GET commuj.php?action=getById&id=1` - Get specific hadith
-- `GET commuj.php?action=getToday` - Get today's hadith (alternative)
+### Public API (dawaah.php)
+- `GET dawaah.php?action=getAll` - Get all hadiths (for users)
+- `GET dawaah.php?action=getDaily` - Get today's hadith (for dashboard)
+- `GET dawaah.php?action=getById&id=1` - Get specific hadith
+- `GET dawaah.php?action=getToday` - Get today's hadith (alternative)
 
 ## Database Table Structure
 
@@ -106,13 +106,13 @@ POST admin_api.php?action=addHadith
 
 ### Getting All Hadiths
 ```
-GET commuj.php?action=getAll
+GET dawaah.php?action=getAll
 Response: Array of all hadiths in database
 ```
 
 ### Getting Today's Hadith
 ```
-GET commuj.php?action=getDaily
+GET dawaah.php?action=getDaily
 Response: Today's selected hadith (same for all users)
 ```
 
@@ -131,15 +131,15 @@ The system uses a smart algorithm to ensure all users see the **same hadith** on
    - `loadHadiths()` - Fetches and displays all hadiths
    - `deleteHadithItem()` - Deletes a hadith
 3. **admin_api.php** - Backend API endpoints for admin operations
-4. **commuj.php** - Public API that fetches from database
+4. **dawaah.php** - Public API that fetches from database
 5. **db_operations.php** - Database helper functions
    - `addHadith()` - Database insert
    - `getAllHadiths()` - Fetch all
    - `getDailyHadith()` - Get today's hadith
    - `updateHadith()` - Update existing
    - `deleteHadith()` - Delete from database
-6. **commuj.javascript** - User frontend
-   - Already calls `commuj.php?action=getDaily`
+6. **dawaah.javascript** - User frontend
+   - Already calls `dawaah.php?action=getDaily`
    - Displays hadiths on dashboard
    - Navigation functions already in place
 

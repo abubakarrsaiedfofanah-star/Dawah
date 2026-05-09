@@ -1,7 +1,7 @@
-# COMMUJ Database System Documentation
+# Dawa'ah Database System Documentation
 
 ## Overview
-The COMMUJ database system is built on MySQL and includes comprehensive functionality for managing students, events, prayer times, welfare, donations, and more.
+The Dawa'ah database system is built on MySQL and includes comprehensive functionality for managing students, events, prayer times, welfare, donations, and more.
 
 ## Database Files
 
@@ -162,18 +162,18 @@ Populates database with sample test data for development.
 **Test Accounts:**
 - Usernames are created by `setup.php` (`admin1`, `student1`, `student2`, `student3`, `finance`, `imam`)
 - Passwords are generated each time setup runs and printed once in the setup output
-- Optional environment variables: `COMMUJ_SETUP_PASSWORD`, `COMMUJ_SETUP_ADMIN_PASSWORD`, `COMMUJ_SETUP_STUDENT_PASSWORD`, `COMMUJ_SETUP_FINANCE_PASSWORD`, `COMMUJ_SETUP_IMAM_PASSWORD`
+- Optional environment variables: `DAWAAH_SETUP_PASSWORD`, `DAWAAH_SETUP_ADMIN_PASSWORD`, `DAWAAH_SETUP_STUDENT_PASSWORD`, `DAWAAH_SETUP_FINANCE_PASSWORD`, `DAWAAH_SETUP_IMAM_PASSWORD`
 
 ## Database Configuration
 
 Set these environment variables in your hosting environment:
 ```php
-COMMUJ_DB_HOST=localhost
-COMMUJ_DB_USER=your_database_user
-COMMUJ_DB_PASSWORD=your_database_password
-COMMUJ_DB_NAME=commuj_db
+DAWAAH_DB_HOST=localhost
+DAWAAH_DB_USER=your_database_user
+DAWAAH_DB_PASSWORD=your_database_password
+DAWAAH_DB_NAME=dawaah_db
 ```
-`COMMUJ_DB_USER` and `COMMUJ_DB_PASSWORD` are required.
+`DAWAAH_DB_USER` and `DAWAAH_DB_PASSWORD` are required.
 
 ## Installation Steps
 
@@ -198,7 +198,7 @@ fetch('api.php?action=registerUser', {
     headers: {'Content-Type': 'application/json'},
     body: JSON.stringify({
         username: 'student1',
-        email: 'student1@commuj.edu',
+        email: 'student1@dawaah.edu',
         password: 'use-a-strong-password',
         role: 'student'
     })
@@ -309,7 +309,7 @@ jummah_time
 ## Troubleshooting
 
 **Connection Error:**
-- Check `COMMUJ_DB_HOST`, `COMMUJ_DB_USER`, and `COMMUJ_DB_PASSWORD` in your environment
+- Check `DAWAAH_DB_HOST`, `DAWAAH_DB_USER`, and `DAWAAH_DB_PASSWORD` in your environment
 - Ensure MySQL/MariaDB is running
 
 **Table Creation Failed:**
@@ -335,4 +335,4 @@ jummah_time
 
 ## Support
 
-For issues or questions about the database system, contact the COMMUJ technical team.
+For issues or questions about the database system, contact the Dawa'ah technical team.

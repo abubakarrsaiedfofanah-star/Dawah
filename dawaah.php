@@ -1,5 +1,5 @@
 <?php
-// COMMUJ Hadith Management System
+// Dawa'ah Hadith Management System
 
 header('Content-Type: application/json');
 header('Access-Control-Allow-Origin: *');

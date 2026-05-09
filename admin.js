@@ -1,4 +1,4 @@
-// COMMUJ Admin Panel JavaScript
+// Dawa'ah Admin Panel JavaScript
 
 const XAMPP_BASE_URL = 'http://localhost/comahs/';
 const API_URL = location.protocol === 'file:' ? XAMPP_BASE_URL + 'admin_api.php' : 'admin_api.php';
@@ -8,12 +8,20 @@ let adminStudentRequesters = [];
 
 const realFetch = window.fetch.bind(window);
 const useStaticAdminApi = location.hostname.endsWith('github.io') || location.protocol === 'file:';
-const LOCAL_ADMIN_ACCOUNTS_KEY = 'commujAdminAccounts';
+const LOCAL_ADMIN_ACCOUNTS_KEY = 'DawaahAdminAccounts';
+const LOCAL_ADMIN_CLEANUP_KEY = 'DawaahAdminAccountsMainOnlyCleanup20260509';
+const LOCAL_ADMIN_FULL_RESET_KEY = 'DawaahAdminFullReset20260509';
+const ADMIN_LOGIN_FAILURE_KEY = 'DawaahAdminLoginFailures';
 const DEFAULT_ADMIN_USERNAME = 'admin';
-const DEFAULT_ADMIN_EMAIL = 'commuj.admin@commuj.local';
-const DEFAULT_ADMIN_PASSWORD = 'COMMUJAdmin@2026';
+const DEFAULT_ADMIN_EMAIL = 'dawaah.admin@dawaah.local';
+const DEFAULT_ADMIN_PASSWORD = 'DawaahAdmin@2026';
 const ADMIN_HASH_ALGORITHM = 'PBKDF2-SHA-256';
 const ADMIN_HASH_ITERATIONS = 150000;
+const ADMIN_ACCOUNT_LIMIT = 3;
+const ADMIN_SESSION_TIMEOUT_MS = 30 * 60 * 1000;
+const ADMIN_LOGIN_LOCKOUT_MS = 5 * 60 * 1000;
+const ADMIN_MAX_FAILED_LOGINS = 5;
+let adminSessionTimeoutId = null;
 
 function resolveAdminUrl(url) {
     if (!url) return '';
@@ -45,6 +53,10 @@ window.fetch = function(resource, options = {}) {
     return Promise.resolve({
         ok: true,
         json: () => Promise.resolve(handleStaticAdminApi(action, method, payload, params))
+            .then(result => {
+                logStaticContentActivity(action, method, payload, result);
+                return result;
+            })
     });
 };
 
@@ -73,11 +85,315 @@ function deleteStoreItem(key, id) {
     writeStore(key, items);
 }
 
+function logStaticContentActivity(action, method, payload, result) {
+    const trackedActions = [
+        'createAnnouncement',
+        'deleteAnnouncement',
+        'createEvent',
+        'deleteEvent',
+        'addLeader',
+        'deleteLeader',
+        'addGalleryItem',
+        'deleteGalleryItem',
+        'addHadith',
+        'deleteHadith',
+        'updateWelfareStatus',
+        'setPrayerTimes',
+        'saveReligiousActivity',
+        'deleteReligiousActivity',
+        'addResource',
+        'deleteResource',
+        'approvePayment',
+        'approveDonation',
+        'seedSampleData'
+    ];
+    if (!result?.success || !trackedActions.includes(action) || !['POST', 'PUT', 'DELETE'].includes(method)) {
+        return;
+    }
+    logLocalAdminActivity(action, {
+        method,
+        message: result.message || 'Saved locally',
+        request: payload,
+        response: result.data || {}
+    });
+}
+
+function shouldQueueLocalApproval(action, method) {
+    return ['POST', 'PUT', 'DELETE'].includes(method) && [
+        'createAnnouncement',
+        'deleteAnnouncement',
+        'createEvent',
+        'deleteEvent',
+        'addLeader',
+        'deleteLeader',
+        'addGalleryItem',
+        'deleteGalleryItem',
+        'addHadith',
+        'deleteHadith',
+        'updateWelfareStatus',
+        'setPrayerTimes',
+        'saveReligiousActivity',
+        'deleteReligiousActivity',
+        'addResource',
+        'deleteResource',
+        'approvePayment',
+        'approveDonation',
+        'seedSampleData'
+    ].includes(action);
+}
+
+function approveLocalPendingAdminActivity(logId) {
+    const log = readStore('adminActivityLogs').find(item => Number(item.id) === Number(logId));
+    if (!log || log.action !== 'pendingAdminApproval') {
+        return { success: false, message: 'Pending approval item not found.' };
+    }
+    const details = log.details || {};
+    const requestedAction = details.requested_action;
+    const request = details.request || {};
+    const result = runApprovedLocalAction(requestedAction, request);
+    if (!result.success) return result;
+    logLocalAdminActivity('approvePendingAdminActivity', {
+        log_id: logId,
+        approved_admin: log.username || '',
+        approved_action: requestedAction,
+        result: result.data || {}
+    });
+    return { success: true, message: 'Pending action approved and applied', data: result.data || {} };
+}
+
+function runApprovedLocalAction(actionName, request) {
+    if (actionName === 'createAnnouncement') {
+        const item = addStoreItem('adminAnnouncements', request);
+        return { success: true, data: { announcement_id: item.id, id: item.id } };
+    }
+    if (actionName === 'deleteAnnouncement') {
+        deleteStoreItem('adminAnnouncements', request.announcement_id);
+        return { success: true };
+    }
+    if (actionName === 'createEvent') {
+        const item = addStoreItem('adminEvents', request);
+        return { success: true, data: { event_id: item.id, id: item.id } };
+    }
+    if (actionName === 'deleteEvent') {
+        deleteStoreItem('adminEvents', request.event_id);
+        return { success: true };
+    }
+    if (actionName === 'addLeader') {
+        const item = addStoreItem('publicLeaders', request);
+        return { success: true, data: { leader_id: item.id, id: item.id } };
+    }
+    if (actionName === 'deleteLeader') {
+        deleteStoreItem('publicLeaders', request.leader_id);
+        return { success: true };
+    }
+    if (actionName === 'addGalleryItem') {
+        const item = addStoreItem('galleryItems', { ...request, imageData: request.image_url, imageUrl: request.image_url });
+        return { success: true, data: { gallery_id: item.id, id: item.id } };
+    }
+    if (actionName === 'deleteGalleryItem') {
+        deleteStoreItem('galleryItems', request.gallery_id);
+        return { success: true };
+    }
+    if (actionName === 'addHadith') {
+        const item = addStoreItem('adminHadiths', request);
+        return { success: true, data: { hadith_id: item.id, id: item.id } };
+    }
+    if (actionName === 'deleteHadith') {
+        deleteStoreItem('adminHadiths', request.hadith_id);
+        return { success: true };
+    }
+    if (actionName === 'addResource') {
+        const item = addStoreItem('adminResources', request);
+        return { success: true, data: { resource_id: item.id, id: item.id } };
+    }
+    if (actionName === 'deleteResource') {
+        deleteStoreItem('adminResources', request.resource_id);
+        return { success: true };
+    }
+    if (actionName === 'setPrayerTimes') {
+        localStorage.setItem('adminPrayerTimes', JSON.stringify(request));
+        return { success: true };
+    }
+    if (actionName === 'saveReligiousActivity') {
+        applyReligiousActivityRequest(request);
+        return { success: true };
+    }
+    if (actionName === 'deleteReligiousActivity') {
+        applyReligiousDeleteRequest(request);
+        return { success: true };
+    }
+    return { success: false, message: 'This pending action cannot be approved automatically.' };
+}
+
+function deleteLocalAdminActivityItem(logId) {
+    const log = readStore('adminActivityLogs').find(item => Number(item.id) === Number(logId));
+    if (!log) {
+        return { success: false, message: 'Activity log not found.' };
+    }
+
+    const details = log.details || {};
+    const target = getActivityTarget(log.action, details);
+    if (!target) {
+        return { success: false, message: 'This activity cannot be deleted automatically.' };
+    }
+
+    deleteStoreItem(target.store, target.id);
+    logLocalAdminActivity('deleteAdminActivityItem', {
+        log_id: logId,
+        opposed_admin: log.username || '',
+        opposed_action: log.action
+    });
+    return { success: true, message: 'Item deleted and action recorded.' };
+}
+
+function undoLocalAdminActivityItem(logId) {
+    const sessionAdmin = JSON.parse(sessionStorage.getItem('currentAdminUser') || 'null');
+    const log = readStore('adminActivityLogs').find(item => Number(item.id) === Number(logId));
+    if (!log) {
+        return { success: false, message: 'Activity log not found.' };
+    }
+    if (Number(log.admin_id) !== Number(sessionAdmin?.id)) {
+        return { success: false, message: 'You can only undo your own admin actions.' };
+    }
+
+    const religiousUndo = undoLocalReligiousActivity(log.action, log.details || {});
+    if (religiousUndo) {
+        logLocalAdminActivity('undoMyAdminActivityItem', {
+            log_id: logId,
+            undone_action: log.action
+        });
+        return { success: true, message: 'Your action was undone and recorded.' };
+    }
+
+    const prayerUndo = undoLocalPrayerTimes(log.action, log.details || {});
+    if (prayerUndo) {
+        logLocalAdminActivity('undoMyAdminActivityItem', {
+            log_id: logId,
+            undone_action: log.action
+        });
+        return { success: true, message: 'Your action was undone and recorded.' };
+    }
+
+    if (undoLocalReligiousActivity(log.action, log.details || {}) || undoLocalPrayerTimes(log.action, log.details || {})) {
+        logLocalAdminActivity('deleteAdminActivityItem', {
+            log_id: logId,
+            opposed_admin: log.username || '',
+            opposed_action: log.action
+        });
+        return { success: true, message: 'Item deleted and action recorded.' };
+    }
+
+    const target = getActivityTarget(log.action, log.details || {});
+    if (!target) {
+        return { success: false, message: 'This activity cannot be undone automatically.' };
+    }
+
+    deleteStoreItem(target.store, target.id);
+    logLocalAdminActivity('undoMyAdminActivityItem', {
+        log_id: logId,
+        undone_action: log.action
+    });
+    return { success: true, message: 'Your action was undone and recorded.' };
+}
+
+function undoLocalReligiousActivity(actionName, details) {
+    if (!['saveReligiousActivity', 'deleteReligiousActivity'].includes(actionName)) {
+        return false;
+    }
+    const request = details.request || details;
+    const type = request.type;
+    const key = type === 'lecture' ? 'lectures' : type;
+    if (!['jummah', 'ramadan', 'lectures'].includes(key)) return false;
+
+    const data = getReligiousActivities();
+    const item = request.item || null;
+    const previousItem = request.previous_item || null;
+
+    if (actionName === 'deleteReligiousActivity' && previousItem) {
+        data[key] = upsertReligiousActivity(data[key] || [], previousItem, previousItem.id);
+    } else if (previousItem) {
+        data[key] = upsertReligiousActivity(data[key] || [], previousItem, previousItem.id);
+    } else if (item?.id) {
+        data[key] = (data[key] || []).filter(existing => Number(existing.id) !== Number(item.id));
+    } else {
+        return false;
+    }
+
+    saveReligiousActivities(data);
+    renderReligiousActivitiesAdmin();
+    return true;
+}
+
+function undoLocalPrayerTimes(actionName, details) {
+    if (actionName !== 'setPrayerTimes') return false;
+    const request = details.request || details;
+    const previous = request._previous_prayer_times;
+    if (!previous || !previous.date) return false;
+    localStorage.setItem('adminPrayerTimes', JSON.stringify(previous));
+    renderPrayerPreview(previous);
+    return true;
+}
+
+function getActivityTarget(actionName, details) {
+    const response = details.response || {};
+    const request = details.request || {};
+    const mappings = {
+        createAnnouncement: { store: 'adminAnnouncements', keys: ['announcement_id', 'id'] },
+        createEvent: { store: 'adminEvents', keys: ['event_id', 'id'] },
+        addLeader: { store: 'publicLeaders', keys: ['leader_id', 'id'] },
+        addGalleryItem: { store: 'galleryItems', keys: ['gallery_id', 'id'] },
+        addHadith: { store: 'adminHadiths', keys: ['hadith_id', 'id'] },
+        addResource: { store: 'adminResources', keys: ['resource_id', 'id'] },
+        saveReligiousActivity: { store: null, keys: ['id'] },
+        setPrayerTimes: { store: null, keys: ['date'] }
+    };
+    const mapping = mappings[actionName];
+    if (!mapping) return null;
+    if (actionName === 'saveReligiousActivity') {
+        const request = details.request || details;
+        return request.item?.id ? { store: 'religious', id: request.item.id } : null;
+    }
+    if (actionName === 'setPrayerTimes') {
+        const request = details.request || details;
+        return request._previous_prayer_times?.date ? { store: 'prayerTimes', id: request._previous_prayer_times.date } : null;
+    }
+
+    const id = mapping.keys.map(key => response[key] || request[key] || details[key]).find(Boolean);
+    return id ? { store: mapping.store, id } : null;
+}
+
 function handleStaticAdminApi(action, method, payload, params) {
+    if (
+        !isCurrentLocalMainAdmin() &&
+        shouldQueueLocalApproval(action, method)
+    ) {
+        logLocalAdminActivity('pendingAdminApproval', {
+            requested_action: action,
+            method,
+            request: payload
+        });
+        return { success: true, message: 'Sent to main admin for approval', data: { pending_approval: true } };
+    }
+
     switch (action) {
         case 'checkAdminSession': {
             const sessionAdmin = JSON.parse(sessionStorage.getItem('currentAdminUser') || 'null');
-            return sessionAdmin ? { success: true, data: sessionAdmin } : { success: false, message: 'Admin login required' };
+            if (!sessionAdmin) {
+                return { success: false, message: 'Admin login required' };
+            }
+            const storedAdmin = findLocalAdminAccount(sessionAdmin);
+            return { success: true, data: storedAdmin ? publicAdminAccount(storedAdmin) : sessionAdmin };
+        }
+        case 'getAdminSetupStatus': {
+            const adminCount = getLocalAdminAccounts().length;
+            return {
+                success: true,
+                data: {
+                    admin_count: adminCount,
+                    admin_limit: ADMIN_ACCOUNT_LIMIT,
+                    can_register_first_admin: adminCount === 0
+                }
+            };
         }
         case 'registerAdmin':
             return registerLocalAdmin(payload);
@@ -86,12 +402,59 @@ function handleStaticAdminApi(action, method, payload, params) {
         case 'logoutAdmin':
             sessionStorage.removeItem('currentAdminUser');
             return { success: true };
+        case 'listAdminAccounts':
+            if (!isCurrentLocalMainAdmin()) return { success: false, message: 'Only the main admin can manage admin accounts.' };
+            return listLocalAdminAccounts();
+        case 'createAdminAccount':
+            if (!isCurrentLocalMainAdmin()) return { success: false, message: 'Only the main admin can manage admin accounts.' };
+            return createLocalAdminByAdmin(payload);
+        case 'deleteAdminAccount':
+            if (!isCurrentLocalMainAdmin()) return { success: false, message: 'Only the main admin can manage admin accounts.' };
+            return deleteLocalAdminAccount(payload.admin_id);
+        case 'changeAdminPassword':
+            return changeLocalAdminPassword(payload);
+        case 'resetAdminPassword':
+            return resetLocalAdminPassword(payload);
+        case 'getAdminActivityLogs':
+            if (!isCurrentLocalMainAdmin()) return { success: false, message: 'Only the main admin can view admin activity.' };
+            return { success: true, data: readStore('adminActivityLogs').slice(-100).reverse() };
+        case 'getMyAdminActivityLogs': {
+            const sessionAdmin = JSON.parse(sessionStorage.getItem('currentAdminUser') || 'null');
+            const logs = readStore('adminActivityLogs')
+                .filter(log => Number(log.admin_id) === Number(sessionAdmin?.id))
+                .slice(-50)
+                .reverse();
+            return { success: true, data: logs };
+        }
+        case 'opposeAdminActivity':
+            if (!isCurrentLocalMainAdmin()) return { success: false, message: 'Only the main admin can oppose admin activity.' };
+            logLocalAdminActivity('opposeAdminActivity', {
+                log_id: payload.log_id,
+                reason: payload.reason || ''
+            });
+            return { success: true, message: 'Activity opposed and recorded' };
+        case 'deleteAdminActivityItem':
+            if (!isCurrentLocalMainAdmin()) return { success: false, message: 'Only the main admin can delete admin activity items.' };
+            return deleteLocalAdminActivityItem(payload.log_id);
+        case 'approvePendingAdminActivity':
+            if (!isCurrentLocalMainAdmin()) return { success: false, message: 'Only the main admin can approve pending actions.' };
+            return approveLocalPendingAdminActivity(payload.log_id);
+        case 'rejectPendingAdminActivity':
+            if (!isCurrentLocalMainAdmin()) return { success: false, message: 'Only the main admin can reject pending actions.' };
+            logLocalAdminActivity('rejectPendingAdminActivity', {
+                log_id: payload.log_id,
+                reason: payload.reason || ''
+            });
+            return { success: true, message: 'Pending action rejected and recorded' };
+        case 'undoMyAdminActivityItem':
+            return undoLocalAdminActivityItem(payload.log_id);
 
         case 'getAnnouncements':
             return { success: true, data: readStore('adminAnnouncements') };
-        case 'createAnnouncement':
-            addStoreItem('adminAnnouncements', payload);
-            return { success: true, message: 'Saved locally' };
+        case 'createAnnouncement': {
+            const item = addStoreItem('adminAnnouncements', payload);
+            return { success: true, message: 'Saved locally', data: { announcement_id: item.id, id: item.id } };
+        }
         case 'deleteAnnouncement':
             deleteStoreItem('adminAnnouncements', payload.announcement_id);
             return { success: true };
@@ -100,40 +463,44 @@ function handleStaticAdminApi(action, method, payload, params) {
             return { success: true, data: readStore('adminEvents') };
         case 'getEventRegistrations':
             return { success: true, data: readStore('registeredEvents') };
-        case 'createEvent':
-            addStoreItem('adminEvents', payload);
-            return { success: true, message: 'Saved locally' };
+        case 'createEvent': {
+            const item = addStoreItem('adminEvents', payload);
+            return { success: true, message: 'Saved locally', data: { event_id: item.id, id: item.id } };
+        }
         case 'deleteEvent':
             deleteStoreItem('adminEvents', payload.event_id);
             return { success: true };
 
         case 'getLeaders':
             return { success: true, data: readStore('publicLeaders') };
-        case 'addLeader':
-            addStoreItem('publicLeaders', payload);
-            return { success: true, message: 'Saved locally' };
+        case 'addLeader': {
+            const item = addStoreItem('publicLeaders', payload);
+            return { success: true, message: 'Saved locally', data: { leader_id: item.id, id: item.id } };
+        }
         case 'deleteLeader':
             deleteStoreItem('publicLeaders', payload.leader_id);
             return { success: true };
 
         case 'getGallery':
             return { success: true, data: readStore('galleryItems') };
-        case 'addGalleryItem':
-            addStoreItem('galleryItems', {
+        case 'addGalleryItem': {
+            const item = addStoreItem('galleryItems', {
                 ...payload,
                 imageData: payload.image_url,
                 imageUrl: payload.image_url
             });
-            return { success: true, message: 'Saved locally' };
+            return { success: true, message: 'Saved locally', data: { gallery_id: item.id, id: item.id } };
+        }
         case 'deleteGalleryItem':
             deleteStoreItem('galleryItems', payload.gallery_id);
             return { success: true };
 
         case 'getHadiths':
             return { success: true, data: readStore('adminHadiths') };
-        case 'addHadith':
-            addStoreItem('adminHadiths', payload);
-            return { success: true, message: 'Saved locally' };
+        case 'addHadith': {
+            const item = addStoreItem('adminHadiths', payload);
+            return { success: true, message: 'Saved locally', data: { hadith_id: item.id, id: item.id } };
+        }
         case 'deleteHadith':
             deleteStoreItem('adminHadiths', payload.hadith_id);
             return { success: true };
@@ -180,15 +547,16 @@ function handleStaticAdminApi(action, method, payload, params) {
             return { success: true };
         case 'getResources':
             return { success: true, data: readStore('adminResources') };
-        case 'addResource':
-            addStoreItem('adminResources', payload);
-            return { success: true };
+        case 'addResource': {
+            const item = addStoreItem('adminResources', payload);
+            return { success: true, message: 'Saved locally', data: { resource_id: item.id, id: item.id } };
+        }
         case 'deleteResource':
             deleteStoreItem('adminResources', payload.resource_id);
             return { success: true };
         case 'seedSampleData':
             addStoreItem('adminAnnouncements', {
-                title: 'Welcome to COMMUJ',
+                title: "Welcome to Dawa'ah",
                 content: 'This is a sample announcement. Open through XAMPP/PHP to save sample records into MySQL.',
                 priority: 'medium',
                 author_name: 'Admin'
@@ -198,14 +566,14 @@ function handleStaticAdminApi(action, method, payload, params) {
                 description: 'This sample resource is saved in browser storage because the page is not running through XAMPP/PHP.',
                 resource_type: 'article',
                 category: 'Student Support',
-                url: 'https://www.commuj.org'
+                url: 'https://www.dawaah.org'
             });
             addStoreItem('galleryItems', {
                 title: 'Sample Gallery Item',
                 description: 'This sample gallery item is saved locally. Use XAMPP/PHP for database saving.',
-                image_url: 'https://via.placeholder.com/800x500.png?text=COMMUJ+Gallery',
-                imageData: 'https://via.placeholder.com/800x500.png?text=COMMUJ+Gallery',
-                imageUrl: 'https://via.placeholder.com/800x500.png?text=COMMUJ+Gallery'
+                image_url: 'https://via.placeholder.com/800x500.png?text=Dawaah+Gallery',
+                imageData: 'https://via.placeholder.com/800x500.png?text=Dawaah+Gallery',
+                imageUrl: 'https://via.placeholder.com/800x500.png?text=Dawaah+Gallery'
             });
             return { success: true, message: 'Saved sample records locally' };
 
@@ -216,13 +584,24 @@ function handleStaticAdminApi(action, method, payload, params) {
 
 // Initialize admin panel
 document.addEventListener('DOMContentLoaded', async function() {
+    normalizeLocalAdminAccountsOnce();
     document.getElementById('adminLoginForm')?.addEventListener('submit', handleAdminLogin);
     document.getElementById('adminRegisterForm')?.addEventListener('submit', handleAdminRegistration);
+    document.getElementById('adminCreateForm')?.addEventListener('submit', handleManagedAdminCreate);
+    document.getElementById('adminChangePasswordForm')?.addEventListener('submit', handleAdminPasswordChange);
+    await refreshAdminSetupUi();
     const isAuthenticated = await checkAdminAuth();
     if (isAuthenticated) {
+        startAdminSessionTimer();
         loadAllData();
         setInterval(loadAllData, 30000); // Refresh every 30 seconds
     }
+});
+
+['click', 'keydown', 'mousemove', 'touchstart'].forEach(eventName => {
+    document.addEventListener(eventName, () => {
+        if (currentAdmin) startAdminSessionTimer();
+    }, { passive: true });
 });
 
 // Check if user is authenticated as admin
@@ -247,9 +626,29 @@ async function checkAdminAuth() {
 function getLocalAdminPrompt() {
     const count = getLocalAdminAccounts().length;
     if (count === 0) {
-        return 'Create the first admin account. Only two admin accounts are allowed.';
+        return 'Create the first admin account. After that, admins are added inside the panel.';
     }
-    return 'Login with one of the registered admin accounts.';
+    return 'Login with an admin account. New admins must be added inside the panel.';
+}
+
+async function refreshAdminSetupUi() {
+    const registerItem = document.getElementById('adminRegisterTabItem');
+    const registerButton = document.getElementById('adminRegisterTabBtn');
+    const loginButton = document.getElementById('adminLoginTabBtn');
+    try {
+        const response = await fetch(`${API_URL}?action=getAdminSetupStatus`);
+        const result = await response.json();
+        const canRegister = Boolean(result.success && result.data?.can_register_first_admin);
+        registerItem?.classList.toggle('d-none', !canRegister);
+        if (!canRegister && loginButton) {
+            bootstrap.Tab.getOrCreateInstance(loginButton).show();
+        } else if (registerButton) {
+            bootstrap.Tab.getOrCreateInstance(registerButton).show();
+        }
+    } catch (error) {
+        const canRegister = useStaticAdminApi && getLocalAdminAccounts().length === 0;
+        registerItem?.classList.toggle('d-none', !canRegister);
+    }
 }
 
 function getLocalAdminAccounts() {
@@ -258,6 +657,84 @@ function getLocalAdminAccounts() {
 
 function saveLocalAdminAccounts(accounts) {
     localStorage.setItem(LOCAL_ADMIN_ACCOUNTS_KEY, JSON.stringify(accounts));
+}
+
+function getLocalMainAdminId() {
+    const accounts = getLocalAdminAccounts();
+    const defaultAdmin = accounts.find(account =>
+        account.username?.toLowerCase() === DEFAULT_ADMIN_USERNAME ||
+        account.email?.toLowerCase() === DEFAULT_ADMIN_EMAIL
+    );
+    return Number((defaultAdmin || accounts[0] || {}).id || 0);
+}
+
+function normalizeLocalAdminAccountsOnce() {
+    if (useStaticAdminApi && !localStorage.getItem(LOCAL_ADMIN_FULL_RESET_KEY)) {
+        localStorage.removeItem(LOCAL_ADMIN_ACCOUNTS_KEY);
+        localStorage.removeItem('adminActivityLogs');
+        sessionStorage.removeItem('currentAdminUser');
+        localStorage.setItem(LOCAL_ADMIN_FULL_RESET_KEY, '1');
+        return;
+    }
+    if (!useStaticAdminApi || localStorage.getItem(LOCAL_ADMIN_CLEANUP_KEY)) return;
+    const accounts = getLocalAdminAccounts();
+    if (!accounts.length) {
+        localStorage.setItem(LOCAL_ADMIN_CLEANUP_KEY, '1');
+        return;
+    }
+    const mainAdmin = accounts.find(account =>
+        account.username?.toLowerCase() === DEFAULT_ADMIN_USERNAME ||
+        account.email?.toLowerCase() === DEFAULT_ADMIN_EMAIL
+    ) || accounts[0];
+    saveLocalAdminAccounts([mainAdmin]);
+    sessionStorage.removeItem('currentAdminUser');
+    localStorage.setItem(LOCAL_ADMIN_CLEANUP_KEY, '1');
+}
+
+function isCurrentLocalMainAdmin() {
+    const sessionAdmin = JSON.parse(sessionStorage.getItem('currentAdminUser') || 'null');
+    return isLocalMainAdminCandidate(sessionAdmin);
+}
+
+function findLocalAdminAccount(adminLike) {
+    const accounts = getLocalAdminAccounts();
+    return accounts.find(admin => Number(admin.id) === Number(adminLike.id)) ||
+        accounts.find(admin =>
+            String(admin.username || '').toLowerCase() === String(adminLike.username || '').toLowerCase() ||
+            String(admin.email || '').toLowerCase() === String(adminLike.email || '').toLowerCase()
+        );
+}
+
+function isLocalMainAdminCandidate(adminLike) {
+    if (!adminLike) return false;
+    const accounts = getLocalAdminAccounts();
+    if (accounts.length <= 1) return true;
+    const username = String(adminLike.username || '').toLowerCase();
+    const email = String(adminLike.email || '').toLowerCase();
+    return Number(adminLike.id) === getLocalMainAdminId() ||
+        username === DEFAULT_ADMIN_USERNAME ||
+        email === DEFAULT_ADMIN_EMAIL;
+}
+
+function isKnownMainAdminIdentity(adminLike) {
+    if (!adminLike) return false;
+    const username = String(adminLike.username || '').toLowerCase();
+    const email = String(adminLike.email || '').toLowerCase();
+    return username === DEFAULT_ADMIN_USERNAME ||
+        email === DEFAULT_ADMIN_EMAIL;
+}
+
+function logLocalAdminActivity(actionName, details = {}) {
+    const sessionAdmin = JSON.parse(sessionStorage.getItem('currentAdminUser') || 'null');
+    if (!sessionAdmin) return;
+    addStoreItem('adminActivityLogs', {
+        admin_id: sessionAdmin.id,
+        username: sessionAdmin.username,
+        email: sessionAdmin.email || '',
+        action: actionName,
+        details,
+        ip_address: 'local browser'
+    });
 }
 
 function bytesToHex(bytes) {
@@ -337,7 +814,10 @@ function publicAdminAccount(admin) {
         passwordAlgorithm,
         ...publicAdmin
     } = admin;
-    return publicAdmin;
+    return {
+        ...publicAdmin,
+        isMainAdmin: Number(admin.id) === getLocalMainAdminId()
+    };
 }
 
 async function registerLocalAdmin(payload) {
@@ -352,8 +832,8 @@ async function registerLocalAdmin(payload) {
     if (password.length < 6) {
         return { success: false, message: 'Password must be at least 6 characters.' };
     }
-    if (accounts.length >= 2) {
-        return { success: false, message: 'Only two admin accounts are allowed.' };
+    if (accounts.length > 0) {
+        return { success: false, message: 'Only the first admin can register here. Other admins must be added inside the admin panel.' };
     }
     if (accounts.some(account => account.username.toLowerCase() === username.toLowerCase() || account.email.toLowerCase() === email.toLowerCase())) {
         return { success: false, message: 'This admin username or email already exists.' };
@@ -374,29 +854,182 @@ async function registerLocalAdmin(payload) {
 
     const publicAdmin = publicAdminAccount(admin);
     sessionStorage.setItem('currentAdminUser', JSON.stringify(publicAdmin));
+    logLocalAdminActivity('registerAdmin', { message: 'First admin registered' });
     return { success: true, message: 'Admin account created', data: publicAdmin };
+}
+
+function listLocalAdminAccounts() {
+    const sessionAdmin = JSON.parse(sessionStorage.getItem('currentAdminUser') || 'null');
+    const admins = getLocalAdminAccounts().map(admin => ({
+        ...publicAdminAccount(admin),
+        status: admin.status || 'active',
+        is_current: sessionAdmin && Number(sessionAdmin.id) === Number(admin.id)
+    }));
+    return {
+        success: true,
+        data: {
+            admins,
+            admin_count: admins.length,
+            admin_limit: ADMIN_ACCOUNT_LIMIT
+        }
+    };
+}
+
+async function createLocalAdminByAdmin(payload) {
+    const username = String(payload.username || '').trim();
+    const email = String(payload.email || '').trim();
+    const password = String(payload.password || '');
+    const accounts = getLocalAdminAccounts();
+
+    if (!username || !email || !password) {
+        return { success: false, message: 'All admin fields are required.' };
+    }
+    if (password.length < 6) {
+        return { success: false, message: 'Password must be at least 6 characters.' };
+    }
+    if (accounts.length >= ADMIN_ACCOUNT_LIMIT) {
+        return { success: false, message: 'This admin can only add two other admins.' };
+    }
+    if (accounts.some(account => account.username.toLowerCase() === username.toLowerCase() || account.email.toLowerCase() === email.toLowerCase())) {
+        return { success: false, message: 'This admin username or email already exists.' };
+    }
+
+    const passwordRecord = await hashAdminPassword(password);
+    const admin = {
+        id: Date.now(),
+        username,
+        email,
+        ...passwordRecord,
+        role: 'admin',
+        status: 'active',
+        fullName: username,
+        created_at: new Date().toISOString()
+    };
+    accounts.push(admin);
+    saveLocalAdminAccounts(accounts);
+    logLocalAdminActivity('createAdminAccount', { username, email });
+    return { success: true, message: 'Admin account added', data: publicAdminAccount(admin) };
+}
+
+function deleteLocalAdminAccount(adminId) {
+    const sessionAdmin = JSON.parse(sessionStorage.getItem('currentAdminUser') || 'null');
+    const accounts = getLocalAdminAccounts();
+    if (Number(adminId) === Number(sessionAdmin?.id)) {
+        return { success: false, message: 'You cannot remove your own admin account while logged in.' };
+    }
+    if (accounts.length <= 1) {
+        return { success: false, message: 'At least one admin account must remain.' };
+    }
+    const nextAccounts = accounts.filter(account => Number(account.id) !== Number(adminId));
+    if (nextAccounts.length === accounts.length) {
+        return { success: false, message: 'Admin account not found.' };
+    }
+    saveLocalAdminAccounts(nextAccounts);
+    logLocalAdminActivity('deleteAdminAccount', { admin_id: adminId });
+    return { success: true, message: 'Admin account removed.' };
+}
+
+async function verifyLocalAdminPassword(account, password) {
+    if (account.passwordSalt && account.passwordAlgorithm === ADMIN_HASH_ALGORITHM) {
+        const passwordRecord = await hashAdminPassword(password, account.passwordSalt);
+        return account.passwordHash === passwordRecord.passwordHash;
+    }
+    if (account.passwordSalt && account.passwordAlgorithm === 'SHA-256-FALLBACK') {
+        return account.passwordHash === await legacyHashAdminPassword(`${account.passwordSalt}:${password}`);
+    }
+    return account.passwordHash === await legacyHashAdminPassword(password);
+}
+
+async function changeLocalAdminPassword(payload) {
+    const currentPassword = String(payload.current_password || '');
+    const newPassword = String(payload.new_password || '');
+    const sessionAdmin = JSON.parse(sessionStorage.getItem('currentAdminUser') || 'null');
+    const accounts = getLocalAdminAccounts();
+    const index = accounts.findIndex(account => Number(account.id) === Number(sessionAdmin?.id));
+    if (index < 0) {
+        return { success: false, message: 'Current admin account not found.' };
+    }
+    if (!currentPassword || !newPassword) {
+        return { success: false, message: 'Current and new password are required.' };
+    }
+    if (newPassword.length < 6) {
+        return { success: false, message: 'New password must be at least 6 characters.' };
+    }
+    if (!(await verifyLocalAdminPassword(accounts[index], currentPassword))) {
+        return { success: false, message: 'Current password is incorrect.' };
+    }
+    accounts[index] = {
+        ...accounts[index],
+        ...(await hashAdminPassword(newPassword))
+    };
+    saveLocalAdminAccounts(accounts);
+    logLocalAdminActivity('changeAdminPassword', { admin_id: accounts[index].id });
+    return { success: true, message: 'Password changed successfully.' };
+}
+
+async function resetLocalAdminPassword(payload) {
+    const adminId = Number(payload.admin_id);
+    const newPassword = String(payload.new_password || '');
+    const accounts = getLocalAdminAccounts();
+    const index = accounts.findIndex(account => Number(account.id) === adminId);
+    if (index < 0) {
+        return { success: false, message: 'Admin account not found.' };
+    }
+    if (newPassword.length < 6) {
+        return { success: false, message: 'New password must be at least 6 characters.' };
+    }
+    const sessionAdmin = JSON.parse(sessionStorage.getItem('currentAdminUser') || 'null');
+    if (Number(sessionAdmin?.id) !== adminId && !isCurrentLocalMainAdmin()) {
+        return { success: false, message: 'Only the main admin can reset another admin password.' };
+    }
+    accounts[index] = {
+        ...accounts[index],
+        ...(await hashAdminPassword(newPassword))
+    };
+    saveLocalAdminAccounts(accounts);
+    logLocalAdminActivity('resetAdminPassword', { admin_id: adminId });
+    return { success: true, message: 'Admin password reset successfully.' };
 }
 
 async function loginLocalAdmin(payload) {
     const username = String(payload.username || '').trim();
     const password = String(payload.password || '');
     const accounts = getLocalAdminAccounts();
+    const wantsDefaultMainAdmin = username.toLowerCase() === DEFAULT_ADMIN_USERNAME && password === DEFAULT_ADMIN_PASSWORD;
     const defaultAdminAlreadySaved = accounts.some(admin =>
         admin.username.toLowerCase() === DEFAULT_ADMIN_USERNAME ||
         admin.email.toLowerCase() === DEFAULT_ADMIN_EMAIL
     );
 
-    if (
-        accounts.length < 2 &&
-        !defaultAdminAlreadySaved &&
-        username.toLowerCase() === DEFAULT_ADMIN_USERNAME &&
-        password === DEFAULT_ADMIN_PASSWORD
-    ) {
+    if (wantsDefaultMainAdmin && !defaultAdminAlreadySaved) {
+        saveLocalAdminAccounts([]);
+        localStorage.removeItem(LOCAL_ADMIN_CLEANUP_KEY);
         return registerLocalAdmin({
             username: DEFAULT_ADMIN_USERNAME,
             email: DEFAULT_ADMIN_EMAIL,
             password: DEFAULT_ADMIN_PASSWORD
         });
+    }
+
+    if (wantsDefaultMainAdmin && defaultAdminAlreadySaved) {
+        const adminIndex = accounts.findIndex(admin =>
+            admin.username.toLowerCase() === DEFAULT_ADMIN_USERNAME ||
+            admin.email.toLowerCase() === DEFAULT_ADMIN_EMAIL
+        );
+        const repairedAdmin = {
+            ...accounts[adminIndex],
+            username: DEFAULT_ADMIN_USERNAME,
+            email: DEFAULT_ADMIN_EMAIL,
+            role: 'admin',
+            status: 'active',
+            fullName: accounts[adminIndex].fullName || DEFAULT_ADMIN_USERNAME,
+            ...(await hashAdminPassword(DEFAULT_ADMIN_PASSWORD))
+        };
+        saveLocalAdminAccounts([repairedAdmin]);
+        const publicAdmin = publicAdminAccount(repairedAdmin);
+        sessionStorage.setItem('currentAdminUser', JSON.stringify(publicAdmin));
+        logLocalAdminActivity('loginAdmin', { message: 'Main admin login repaired and logged in' });
+        return { success: true, message: 'Admin login successful', data: publicAdmin };
     }
 
     const accountIndex = accounts.findIndex(admin =>
@@ -439,18 +1072,31 @@ async function loginLocalAdmin(payload) {
 
     const publicAdmin = publicAdminAccount(accounts[accountIndex]);
     sessionStorage.setItem('currentAdminUser', JSON.stringify(publicAdmin));
+    logLocalAdminActivity('loginAdmin', { message: 'Admin logged in' });
     return { success: true, message: 'Admin login successful', data: publicAdmin };
 }
 
 function setAdminUser(user) {
+    const storedAdmin = useStaticAdminApi ? findLocalAdminAccount(user) : null;
+    const resolvedUser = storedAdmin ? publicAdminAccount(storedAdmin) : user;
+    const inferredMainAdmin = Boolean(resolvedUser.isMainAdmin) ||
+        isKnownMainAdminIdentity(resolvedUser) ||
+        (useStaticAdminApi && isLocalMainAdminCandidate(resolvedUser));
     currentAdmin = {
-        id: user.id,
-        username: user.username,
-        fullName: user.fullName || user.full_name || user.username,
-        role: user.role
+        id: resolvedUser.id,
+        username: resolvedUser.username,
+        fullName: resolvedUser.fullName || resolvedUser.full_name || resolvedUser.username,
+        role: resolvedUser.role,
+        isMainAdmin: inferredMainAdmin
     };
     sessionStorage.setItem('currentAdminUser', JSON.stringify(currentAdmin));
     document.getElementById('adminName').textContent = currentAdmin.fullName || currentAdmin.username;
+    updateAdminAccessUi();
+}
+
+function updateAdminAccessUi() {
+    const mainAdminAccountTools = document.getElementById('mainAdminAccountTools');
+    mainAdminAccountTools?.classList.toggle('d-none', !currentAdmin?.isMainAdmin);
 }
 
 function showAdminLogin(message = '') {
@@ -466,10 +1112,16 @@ function showAdminLogin(message = '') {
 function showAdminPanel() {
     document.getElementById('adminLoginScreen')?.classList.add('d-none');
     document.getElementById('adminContainer')?.classList.remove('locked');
+    updateAdminAccessUi();
 }
 
 async function handleAdminLogin(event) {
     event.preventDefault();
+    const lockout = getAdminLoginLockout();
+    if (lockout.locked) {
+        showAdminLogin(`Too many failed attempts. Try again in ${lockout.minutes} minute(s).`);
+        return;
+    }
     const username = document.getElementById('adminLoginUsername').value.trim();
     const password = document.getElementById('adminLoginPassword').value;
     const button = document.getElementById('adminLoginButton');
@@ -492,13 +1144,16 @@ async function handleAdminLogin(event) {
         const result = await response.json();
 
         if (!result.success || !result.data) {
+            recordAdminLoginFailure();
             showAdminLogin(result.message || 'Invalid admin username or password.');
             return;
         }
 
+        clearAdminLoginFailures();
         setAdminUser(result.data);
         showAdminPanel();
         document.getElementById('adminLoginForm').reset();
+        startAdminSessionTimer();
         loadAllData();
     } catch (loginError) {
         showAdminLogin('Unable to verify admin login. Please check the server and database.');
@@ -506,6 +1161,41 @@ async function handleAdminLogin(event) {
         button.disabled = false;
         button.innerHTML = '<i class="fas fa-lock"></i> Login to Admin Panel';
     }
+}
+
+function getAdminLoginFailures() {
+    return JSON.parse(localStorage.getItem(ADMIN_LOGIN_FAILURE_KEY) || '{"count":0,"lockedUntil":0}');
+}
+
+function getAdminLoginLockout() {
+    const failures = getAdminLoginFailures();
+    const now = Date.now();
+    if (Number(failures.lockedUntil || 0) > now) {
+        return {
+            locked: true,
+            minutes: Math.ceil((Number(failures.lockedUntil) - now) / 60000)
+        };
+    }
+    return { locked: false, minutes: 0 };
+}
+
+function recordAdminLoginFailure() {
+    const failures = getAdminLoginFailures();
+    const count = Number(failures.count || 0) + 1;
+    const lockedUntil = count >= ADMIN_MAX_FAILED_LOGINS ? Date.now() + ADMIN_LOGIN_LOCKOUT_MS : 0;
+    localStorage.setItem(ADMIN_LOGIN_FAILURE_KEY, JSON.stringify({ count, lockedUntil }));
+}
+
+function clearAdminLoginFailures() {
+    localStorage.removeItem(ADMIN_LOGIN_FAILURE_KEY);
+}
+
+function startAdminSessionTimer() {
+    clearTimeout(adminSessionTimeoutId);
+    adminSessionTimeoutId = setTimeout(() => {
+        showNotification('Admin session timed out for security. Please log in again.', 'warning');
+        setTimeout(logoutAdmin, 1200);
+    }, ADMIN_SESSION_TIMEOUT_MS);
 }
 
 async function handleAdminRegistration(event) {
@@ -545,6 +1235,7 @@ async function handleAdminRegistration(event) {
         setAdminUser(result.data);
         showAdminPanel();
         document.getElementById('adminRegisterForm').reset();
+        refreshAdminSetupUi();
         loadAllData();
     } catch (registerError) {
         showAdminLogin('Could not create admin account. Please try again.');
@@ -556,6 +1247,7 @@ async function handleAdminRegistration(event) {
 
 // Logout
 function logoutAdmin() {
+    logLocalAdminActivity('logoutAdmin', { message: 'Admin logged out' });
     fetch(`${API_URL}?action=logoutAdmin`, { method: 'POST' }).catch(() => {});
     sessionStorage.removeItem('currentAdminUser');
     localStorage.removeItem('currentUser');
@@ -595,6 +1287,7 @@ function switchAdminView(viewName) {
             'gallery': '<i class="fas fa-images"></i> Gallery',
             'welfare': '<i class="fas fa-hands-helping"></i> Welfare',
             'prayer': '<i class="fas fa-mosque"></i> Prayer & Religious Activities',
+            'account': '<i class="fas fa-user-gear"></i> My Account',
             'resources': '<i class="fas fa-folder-open"></i> Resources',
             'hadiths': '<i class="fas fa-book"></i> Hadiths'
         };
@@ -647,12 +1340,493 @@ function loadViewData(viewName) {
         case 'resources':
             loadResourcesAdmin();
             break;
+        case 'account':
+            loadAccountAdminTools();
+            break;
     }
 }
 
 // Load all data for dashboard
 function loadAllData() {
     loadDashboardStats();
+}
+
+function loadAccountAdminTools() {
+    updateAdminAccessUi();
+    loadMyAdminActivityLogs();
+    if (!currentAdmin?.isMainAdmin) {
+        return;
+    }
+    loadAdminAccounts();
+    loadAdminActivityLogs();
+}
+
+function loadMyAdminActivityLogs() {
+    fetch(`${API_URL}?action=getMyAdminActivityLogs`)
+    .then(response => response.json())
+    .then(result => {
+        if (!result.success) {
+            throw new Error(result.message || 'Could not load your activity');
+        }
+        renderActivityLogTable('myAdminActivityLogList', result.data || [], {
+            showMainAdminActions: false,
+            showUndoActions: true
+        });
+    })
+    .catch(error => {
+        const container = document.getElementById('myAdminActivityLogList');
+        if (container) container.innerHTML = `<p class="text-danger">${escapeAdminText(error.message || 'Could not load your activity')}</p>`;
+    });
+}
+
+function escapeAdminText(value) {
+    const div = document.createElement('div');
+    div.textContent = value ?? '';
+    return div.innerHTML;
+}
+
+function loadAdminAccounts() {
+    fetch(`${API_URL}?action=listAdminAccounts`)
+    .then(response => response.json())
+    .then(result => {
+        if (!result.success) {
+            throw new Error(result.message || 'Could not load admin accounts');
+        }
+
+        const payload = result.data || {};
+        const admins = payload.admins || [];
+        const limit = payload.admin_limit || ADMIN_ACCOUNT_LIMIT;
+        const count = payload.admin_count ?? admins.length;
+        const badge = document.getElementById('adminAccountLimitBadge');
+        const createButton = document.getElementById('managedAdminCreateButton');
+        const container = document.getElementById('adminAccountsList');
+
+        if (badge) badge.textContent = `${count} / ${limit} admins`;
+        if (createButton) createButton.disabled = count >= limit;
+
+        if (!container) return;
+        if (!admins.length) {
+            container.innerHTML = '<p class="text-muted">No admin accounts found.</p>';
+            return;
+        }
+
+        container.innerHTML = `
+            <div class="table-responsive">
+                <table class="table table-striped align-middle">
+                    <thead>
+                        <tr>
+                            <th>Username</th>
+                            <th>Email</th>
+                            <th>Status</th>
+                            <th>Created</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${admins.map(admin => `
+                            <tr>
+                                <td>${escapeAdminText(admin.username)} ${admin.is_current ? '<span class="badge bg-success ms-1">You</span>' : ''}</td>
+                                <td>${escapeAdminText(admin.email)}</td>
+                                <td><span class="badge bg-${admin.status === 'active' ? 'success' : 'secondary'}">${escapeAdminText(admin.status || 'active')}</span></td>
+                                <td>${admin.created_at ? new Date(admin.created_at).toLocaleString() : '-'}</td>
+                                <td>
+                                    <button class="btn btn-sm btn-outline-primary me-1" onclick="resetManagedAdminPassword(${Number(admin.id)})">
+                                        <i class="fas fa-key"></i> Reset
+                                    </button>
+                                    <button class="btn btn-sm btn-outline-danger" ${admin.is_current ? 'disabled' : ''} onclick="removeManagedAdmin(${Number(admin.id)})">
+                                        <i class="fas fa-trash"></i> Remove
+                                    </button>
+                                </td>
+                            </tr>
+                        `).join('')}
+                    </tbody>
+                </table>
+            </div>
+        `;
+    })
+    .catch(error => {
+        console.error('Error loading admin accounts:', error);
+        showNotification(error.message || 'Error loading admin accounts', 'danger');
+    });
+}
+
+function loadAdminActivityLogs() {
+    fetch(`${API_URL}?action=getAdminActivityLogs`)
+    .then(response => response.json())
+    .then(result => {
+        if (!result.success) {
+            throw new Error(result.message || 'Could not load admin activity');
+        }
+        renderActivityLogTable('adminActivityLogList', result.data || [], {
+            showMainAdminActions: true,
+            showUndoActions: false
+        });
+    })
+    .catch(error => {
+        const container = document.getElementById('adminActivityLogList');
+        if (container) container.innerHTML = `<p class="text-danger">${escapeAdminText(error.message || 'Could not load admin activity')}</p>`;
+    });
+}
+
+function renderActivityLogTable(containerId, logs, options = {}) {
+    const container = document.getElementById(containerId);
+    if (!container) return;
+    if (!logs.length) {
+        container.innerHTML = '<p class="text-muted">No admin activity recorded yet.</p>';
+        return;
+    }
+
+    container.innerHTML = `
+            <div class="table-responsive">
+                <table class="table table-striped table-sm align-middle">
+                    <thead>
+                        <tr>
+                            <th>Admin Who Did It</th>
+                            <th>Action</th>
+                            <th>Details</th>
+                            <th>IP</th>
+                            <th>Time</th>
+                            ${options.showMainAdminActions ? '<th>Main Admin Action</th>' : ''}
+                            ${options.showUndoActions ? '<th>Undo</th>' : ''}
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${logs.map(log => `
+                            <tr>
+                                <td>${escapeAdminText(log.username || 'Unknown')}</td>
+                                <td><span class="badge bg-secondary">${escapeAdminText(formatAdminAction(log.action))}</span></td>
+                                <td>${escapeAdminText(formatAdminActivityDetails(log.details))}</td>
+                                <td>${escapeAdminText(log.ip_address || '-')}</td>
+                                <td>${log.created_at ? new Date(log.created_at).toLocaleString() : '-'}</td>
+                                ${options.showMainAdminActions ? `<td>${renderAdminActivityControls(log)}</td>` : ''}
+                                ${options.showUndoActions ? `<td>${renderUndoActivityControls(log)}</td>` : ''}
+                            </tr>
+                        `).join('')}
+                    </tbody>
+                </table>
+            </div>
+        `;
+}
+
+function renderAdminActivityControls(log) {
+    if (log.action === 'pendingAdminApproval') {
+        return `
+            <button class="btn btn-sm btn-success me-1" onclick="approvePendingAdminActivity(${Number(log.id)})">Approve</button>
+            <button class="btn btn-sm btn-outline-danger" onclick="rejectPendingAdminActivity(${Number(log.id)})">Reject</button>
+        `;
+    }
+    if (['opposeAdminActivity', 'deleteAdminActivityItem', 'undoMyAdminActivityItem'].includes(log.action)) {
+        return '<span class="text-muted">Recorded</span>';
+    }
+    const deleteButton = canDeleteActivityItem(log)
+        ? `<button class="btn btn-sm btn-outline-danger me-1" onclick="deleteActivityItemFromLog(${Number(log.id)})">Delete Item</button>`
+        : '';
+    return `
+        ${deleteButton}
+        <button class="btn btn-sm btn-outline-warning" onclick="opposeAdminActivity(${Number(log.id)})">Oppose</button>
+    `;
+}
+
+function renderUndoActivityControls(log) {
+    if (['opposeAdminActivity', 'deleteAdminActivityItem', 'undoMyAdminActivityItem'].includes(log.action)) {
+        return '<span class="text-muted">Recorded</span>';
+    }
+    if (!canDeleteActivityItem(log)) {
+        return '<span class="text-muted">Not undoable</span>';
+    }
+    return `<button class="btn btn-sm btn-outline-danger" onclick="undoMyAdminActivity(${Number(log.id)})">Undo</button>`;
+}
+
+function canDeleteActivityItem(log) {
+    return Boolean(getActivityTarget(log.action, log.details || {}));
+}
+
+function opposeAdminActivity(logId) {
+    const reason = prompt('Reason for opposing this admin action?');
+    if (reason === null) return;
+    fetch(`${API_URL}?action=opposeAdminActivity`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ log_id: logId, reason })
+    })
+    .then(response => response.json())
+    .then(result => {
+        if (!result.success) throw new Error(result.message || 'Could not record opposition');
+        showNotification('Opposition recorded', 'success');
+        loadAdminActivityLogs();
+    })
+    .catch(error => showNotification(error.message || 'Could not record opposition', 'danger'));
+}
+
+function deleteActivityItemFromLog(logId) {
+    const reason = prompt('Reason for deleting/opposing this admin action?');
+    if (reason === null) return;
+    fetch(`${API_URL}?action=deleteAdminActivityItem`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ log_id: logId, reason })
+    })
+    .then(response => response.json())
+    .then(result => {
+        if (!result.success) throw new Error(result.message || 'Could not delete item');
+        showNotification('Item deleted and action recorded', 'success');
+        loadAdminActivityLogs();
+        loadDashboardStats();
+    })
+    .catch(error => showNotification(error.message || 'Could not delete item', 'danger'));
+}
+
+function approvePendingAdminActivity(logId) {
+    if (!confirm('Approve and apply this pending sub-admin action?')) return;
+    fetch(`${API_URL}?action=approvePendingAdminActivity`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ log_id: logId })
+    })
+    .then(response => response.json())
+    .then(result => {
+        if (!result.success) throw new Error(result.message || 'Could not approve action');
+        showNotification('Pending action approved and applied', 'success');
+        loadAdminActivityLogs();
+        loadDashboardStats();
+    })
+    .catch(error => showNotification(error.message || 'Could not approve action', 'danger'));
+}
+
+function rejectPendingAdminActivity(logId) {
+    const reason = prompt('Reason for rejecting this pending action?');
+    if (reason === null) return;
+    fetch(`${API_URL}?action=rejectPendingAdminActivity`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ log_id: logId, reason })
+    })
+    .then(response => response.json())
+    .then(result => {
+        if (!result.success) throw new Error(result.message || 'Could not reject action');
+        showNotification('Pending action rejected', 'success');
+        loadAdminActivityLogs();
+    })
+    .catch(error => showNotification(error.message || 'Could not reject action', 'danger'));
+}
+
+function undoMyAdminActivity(logId) {
+    const reason = prompt('Reason for undoing this action?');
+    if (reason === null) return;
+    fetch(`${API_URL}?action=undoMyAdminActivityItem`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ log_id: logId, reason })
+    })
+    .then(response => response.json())
+    .then(result => {
+        if (!result.success) throw new Error(result.message || 'Could not undo action');
+        showNotification('Your action was undone', 'success');
+        loadMyAdminActivityLogs();
+        if (currentAdmin?.isMainAdmin) {
+            loadAdminActivityLogs();
+        }
+        loadDashboardStats();
+    })
+    .catch(error => showNotification(error.message || 'Could not undo action', 'danger'));
+}
+
+function formatAdminAction(actionName) {
+    const labels = {
+        loginAdmin: 'Login',
+        logoutAdmin: 'Logout',
+        registerAdmin: 'Registered first admin',
+        createAdminAccount: 'Added admin',
+        deleteAdminAccount: 'Removed admin',
+        resetAdminPassword: 'Reset password',
+        changeAdminPassword: 'Changed own password',
+        createAnnouncement: 'Created announcement',
+        deleteAnnouncement: 'Deleted announcement',
+        createEvent: 'Created event',
+        deleteEvent: 'Deleted event',
+        addLeader: 'Added leader',
+        deleteLeader: 'Deleted leader',
+        addGalleryItem: 'Added gallery item',
+        deleteGalleryItem: 'Deleted gallery item',
+        addHadith: 'Added hadith',
+        deleteHadith: 'Deleted hadith',
+        updateWelfareStatus: 'Updated welfare',
+        setPrayerTimes: 'Updated prayer times',
+        saveReligiousActivity: 'Saved religious activity',
+        deleteReligiousActivity: 'Deleted religious activity',
+        addResource: 'Added resource',
+        deleteResource: 'Deleted resource',
+        approvePayment: 'Approved payment',
+        approveDonation: 'Approved donation',
+        seedSampleData: 'Added sample data',
+        pendingAdminApproval: 'Pending main admin approval',
+        approvePendingAdminActivity: 'Approved pending action',
+        rejectPendingAdminActivity: 'Rejected pending action',
+        opposeAdminActivity: 'Opposed admin action',
+        deleteAdminActivityItem: 'Deleted item from activity',
+        undoMyAdminActivityItem: 'Undid own action'
+    };
+    return labels[actionName] || actionName || 'Action';
+}
+
+function formatAdminActivityDetails(details) {
+    if (!details || typeof details !== 'object') return '-';
+    const request = details.request || details;
+    const nestedItem = request.item || request.previous_item || null;
+    const interestingKeys = [
+        'title',
+        'requested_action',
+        'approved_action',
+        'rejected_action',
+        'undone_action',
+        'reason',
+        'name',
+        'position',
+        'category',
+        'resource_type',
+        'type',
+        'location',
+        'event_date',
+        'date',
+        'status',
+        'priority',
+        'username',
+        'email',
+        'admin_id',
+        'event_id',
+        'announcement_id',
+        'leader_id',
+        'gallery_id',
+        'resource_id',
+        'hadith_id',
+        'request_id',
+        'payment_id',
+        'donation_id'
+    ];
+    const parts = interestingKeys
+        .filter(key => request[key] !== undefined && request[key] !== null && request[key] !== '')
+        .map(key => `${key.replaceAll('_', ' ')}: ${request[key]}`);
+    if (nestedItem) {
+        ['title', 'event', 'topic', 'date', 'schedule', 'speaker', 'time'].forEach(key => {
+            if (nestedItem[key] !== undefined && nestedItem[key] !== null && nestedItem[key] !== '') {
+                parts.push(`${key}: ${nestedItem[key]}`);
+            }
+        });
+    }
+    if (parts.length) {
+        return parts.join(', ');
+    }
+    if (details.message) return details.message;
+    return JSON.stringify(request).slice(0, 120);
+}
+
+async function handleManagedAdminCreate(event) {
+    event.preventDefault();
+    const username = document.getElementById('managedAdminUsername').value.trim();
+    const email = document.getElementById('managedAdminEmail').value.trim();
+    const password = document.getElementById('managedAdminPassword').value;
+    const button = document.getElementById('managedAdminCreateButton');
+
+    button.disabled = true;
+    button.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Adding...';
+    try {
+        const response = await fetch(`${API_URL}?action=createAdminAccount`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ username, email, password })
+        });
+        const result = await response.json();
+        if (!result.success) {
+            throw new Error(result.message || 'Could not add admin account');
+        }
+        document.getElementById('adminCreateForm').reset();
+        showNotification('Admin account added successfully', 'success');
+        loadAdminAccounts();
+    } catch (error) {
+        showNotification(error.message || 'Could not add admin account', 'danger');
+    } finally {
+        button.disabled = false;
+        button.innerHTML = '<i class="fas fa-save"></i> Add Admin';
+    }
+}
+
+function removeManagedAdmin(adminId) {
+    if (!confirm('Remove this admin from admin-panel access?')) return;
+    fetch(`${API_URL}?action=deleteAdminAccount`, {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ admin_id: adminId })
+    })
+    .then(response => response.json())
+    .then(result => {
+        if (!result.success) throw new Error(result.message || 'Could not remove admin account');
+        showNotification('Admin account removed', 'success');
+        loadAdminAccounts();
+    })
+    .catch(error => showNotification(error.message || 'Could not remove admin account', 'danger'));
+}
+
+function resetManagedAdminPassword(adminId) {
+    const newPassword = prompt('Enter a new password for this admin. Minimum 6 characters.');
+    if (newPassword === null) return;
+    if (newPassword.length < 6) {
+        showNotification('New password must be at least 6 characters', 'warning');
+        return;
+    }
+
+    fetch(`${API_URL}?action=resetAdminPassword`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ admin_id: adminId, new_password: newPassword })
+    })
+    .then(response => response.json())
+    .then(result => {
+        if (!result.success) throw new Error(result.message || 'Could not reset password');
+        showNotification('Admin password reset successfully', 'success');
+    })
+    .catch(error => showNotification(error.message || 'Could not reset password', 'danger'));
+}
+
+function resetMyAdminPassword() {
+    if (!currentAdmin?.id) {
+        showNotification('Current admin account not found', 'danger');
+        return;
+    }
+    resetManagedAdminPassword(currentAdmin.id);
+}
+
+async function handleAdminPasswordChange(event) {
+    event.preventDefault();
+    const currentPassword = document.getElementById('adminCurrentPassword').value;
+    const newPassword = document.getElementById('adminNewPassword').value;
+    const confirmPassword = document.getElementById('adminConfirmNewPassword').value;
+    const button = document.getElementById('adminChangePasswordButton');
+
+    if (newPassword !== confirmPassword) {
+        showNotification('New passwords do not match', 'warning');
+        return;
+    }
+
+    button.disabled = true;
+    button.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving...';
+    try {
+        const response = await fetch(`${API_URL}?action=changeAdminPassword`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ current_password: currentPassword, new_password: newPassword })
+        });
+        const result = await response.json();
+        if (!result.success) {
+            throw new Error(result.message || 'Could not change password');
+        }
+        document.getElementById('adminChangePasswordForm').reset();
+        showNotification('Password changed successfully', 'success');
+    } catch (error) {
+        showNotification(error.message || 'Could not change password', 'danger');
+    } finally {
+        button.disabled = false;
+        button.innerHTML = '<i class="fas fa-key"></i> Change Password';
+    }
 }
 
 function loadDashboardStats() {
@@ -685,6 +1859,19 @@ function loadDashboardStats() {
 function setText(id, value) {
     const element = document.getElementById(id);
     if (element) element.textContent = value;
+}
+
+function togglePasswordVisibility(inputId, button) {
+    const input = document.getElementById(inputId);
+    if (!input) return;
+
+    const shouldShow = input.type === 'password';
+    input.type = shouldShow ? 'text' : 'password';
+    button?.setAttribute('aria-label', shouldShow ? 'Hide password' : 'Show password');
+    const icon = button?.querySelector('i');
+    if (icon) {
+        icon.className = shouldShow ? 'fas fa-eye-slash' : 'fas fa-eye';
+    }
 }
 
 function formatMoney(value) {
@@ -739,7 +1926,7 @@ function renderDashboardDetail(type, rows) {
                 <thead><tr>${columns.map(col => `<th>${col.replaceAll('_', ' ')}</th>`).join('')}${showApprovalActions ? '<th>Action</th>' : ''}</tr></thead>
                 <tbody>
                     ${rows.map(row => `
-                        <tr>${columns.map(col => `<td>${formatCell(row[col])}</td>`).join('')}${showApprovalActions ? `<td>${renderApprovalAction(type, row)}</td>` : ''}</tr>
+                        <tr>${columns.map(col => `<td>${formatCell(row[col], col)}</td>`).join('')}${showApprovalActions ? `<td>${renderApprovalAction(type, row)}</td>` : ''}</tr>
                     `).join('')}
                 </tbody>
             </table>
@@ -798,9 +1985,16 @@ function approveDonationRecord(donationId) {
     .catch(error => showNotification(error.message, 'danger'));
 }
 
-function formatCell(value) {
+function formatCell(value, column = '') {
     if (value === null || value === undefined || value === '') return '-';
     const text = String(value);
+    const isPhotoColumn = /photo|image|avatar/i.test(column);
+    if ((isPhotoColumn || text.startsWith('data:image/')) && text.startsWith('data:image/')) {
+        return `<img src="${text}" alt="Member photo" style="width:42px;height:42px;border-radius:50%;object-fit:cover;border:2px solid rgba(0,128,0,.18);">`;
+    }
+    if (isPhotoColumn && (text.startsWith('uploads/') || text.startsWith('http'))) {
+        return `<img src="${resolveAdminUrl(text)}" alt="Member photo" style="width:42px;height:42px;border-radius:50%;object-fit:cover;border:2px solid rgba(0,128,0,.18);">`;
+    }
     if (text.startsWith('uploads/') || text.startsWith('http')) {
         return `<a href="${resolveAdminUrl(text)}" target="_blank">Open</a>`;
     }
@@ -1131,6 +2325,8 @@ function loadEventCount() {
 function addLeader() {
     const name = document.getElementById('leaderName').value.trim();
     const position = document.getElementById('leaderPosition').value.trim();
+    const course = document.getElementById('leaderCourse').value.trim();
+    const yearOfStudy = document.getElementById('leaderYearOfStudy').value.trim();
     const bio = document.getElementById('leaderBio').value.trim();
     const description = document.getElementById('leaderDescription').value.trim();
     const email = document.getElementById('leaderEmail').value.trim();
@@ -1145,6 +2341,8 @@ function addLeader() {
     const data = {
         name: name,
         position: position,
+        course: course,
+        year_of_study: yearOfStudy,
         bio: bio,
         description: description,
         email: email,
@@ -1166,6 +2364,8 @@ function addLeader() {
             showNotification('Leadership member added successfully!', 'success');
             document.getElementById('leaderName').value = '';
             document.getElementById('leaderPosition').value = '';
+            document.getElementById('leaderCourse').value = '';
+            document.getElementById('leaderYearOfStudy').value = '';
             document.getElementById('leaderBio').value = '';
             document.getElementById('leaderDescription').value = '';
             document.getElementById('leaderEmail').value = '';
@@ -1198,6 +2398,8 @@ function loadLeadership() {
                 <div class="item-info flex-grow-1">
                     <h5>${leader.name}</h5>
                     <p><strong>Position:</strong> ${leader.position}</p>
+                    <p><strong>Course:</strong> ${leader.course || 'N/A'}</p>
+                    <p><strong>Year of Study:</strong> ${leader.year_of_study || 'N/A'}</p>
                     <p><strong>Email:</strong> ${leader.email || 'N/A'}</p>
                     <p><strong>Phone:</strong> ${leader.phone || 'N/A'}</p>
                     <p>${leader.bio}</p>
@@ -1808,6 +3010,7 @@ function loadPrayerAdmin() {
 }
 
 function savePrayerTimes() {
+    const previousPrayerTimes = JSON.parse(localStorage.getItem('adminPrayerTimes') || 'null');
     const data = {
         date: document.getElementById('prayerDate').value || new Date().toISOString().slice(0, 10),
         fajr: document.getElementById('prayerFajr').value,
@@ -1815,7 +3018,8 @@ function savePrayerTimes() {
         asr: document.getElementById('prayerAsr').value,
         maghrib: document.getElementById('prayerMaghrib').value,
         isha: document.getElementById('prayerIsha').value,
-        jummah_time: document.getElementById('prayerJummah').value
+        jummah_time: document.getElementById('prayerJummah').value,
+        _previous_prayer_times: previousPrayerTimes
     };
     fetch(`${API_URL}?action=setPrayerTimes`, {
         method: 'POST',
@@ -1857,6 +3061,8 @@ function saveReligiousActivity(type) {
     const data = getReligiousActivities();
     let item = null;
     const editId = editingReligiousActivity?.type === type ? editingReligiousActivity.id : null;
+    const key = type === 'lecture' ? 'lectures' : type;
+    const previousItem = editId ? (data[key] || []).find(existing => Number(existing.id) === Number(editId)) : null;
 
     if (type === 'jummah') {
         const date = document.getElementById('jummahDate').value;
@@ -1869,6 +3075,11 @@ function saveReligiousActivity(type) {
             return;
         }
         item = { id: editId || Date.now(), date, time, topic, speaker, note };
+        if (!isCurrentLocalMainAdmin() && useStaticAdminApi) {
+            queueLocalReligiousApproval(type, item, previousItem, editId);
+            ['jummahDate', 'jummahTime', 'jummahTopic', 'jummahSpeaker', 'jummahNote'].forEach(id => document.getElementById(id).value = '');
+            return;
+        }
         data.jummah = upsertReligiousActivity(data.jummah, item, editId);
         ['jummahDate', 'jummahTime', 'jummahTopic', 'jummahSpeaker', 'jummahNote'].forEach(id => document.getElementById(id).value = '');
     }
@@ -1883,6 +3094,11 @@ function saveReligiousActivity(type) {
             return;
         }
         item = { id: editId || Date.now(), event: eventName, date, time, note };
+        if (!isCurrentLocalMainAdmin() && useStaticAdminApi) {
+            queueLocalReligiousApproval(type, item, previousItem, editId);
+            ['ramadanEvent', 'ramadanDate', 'ramadanTime', 'ramadanNote'].forEach(id => document.getElementById(id).value = '');
+            return;
+        }
         data.ramadan = upsertReligiousActivity(data.ramadan, item, editId);
         ['ramadanEvent', 'ramadanDate', 'ramadanTime', 'ramadanNote'].forEach(id => document.getElementById(id).value = '');
     }
@@ -1897,15 +3113,62 @@ function saveReligiousActivity(type) {
             return;
         }
         item = { id: editId || Date.now(), title, schedule, speaker, description };
+        if (!isCurrentLocalMainAdmin() && useStaticAdminApi) {
+            queueLocalReligiousApproval(type, item, previousItem, editId);
+            ['lectureTitle', 'lectureSchedule', 'lectureSpeaker', 'lectureDescription'].forEach(id => document.getElementById(id).value = '');
+            return;
+        }
         data.lectures = upsertReligiousActivity(data.lectures, item, editId);
         ['lectureTitle', 'lectureSchedule', 'lectureSpeaker', 'lectureDescription'].forEach(id => document.getElementById(id).value = '');
     }
 
     saveReligiousActivities(data);
+    logLocalAdminActivity('saveReligiousActivity', {
+        type,
+        item,
+        previous_item: previousItem || null,
+        mode: editId ? 'update' : 'create'
+    });
     editingReligiousActivity = null;
     resetReligiousActivityButtons();
     renderReligiousActivitiesAdmin();
     showNotification(editId ? 'Religious activity updated for users.' : 'Religious activity saved for users.', 'success');
+}
+
+function queueLocalReligiousApproval(type, item, previousItem, editId) {
+    logLocalAdminActivity('pendingAdminApproval', {
+        requested_action: 'saveReligiousActivity',
+        method: 'POST',
+        request: {
+            type,
+            item,
+            previous_item: previousItem || null,
+            mode: editId ? 'update' : 'create'
+        }
+    });
+    editingReligiousActivity = null;
+    resetReligiousActivityButtons();
+    showNotification('Sent to main admin for approval.', 'info');
+}
+
+function applyReligiousActivityRequest(request) {
+    const data = getReligiousActivities();
+    const type = request.type;
+    const key = type === 'lecture' ? 'lectures' : type;
+    if (!['jummah', 'ramadan', 'lectures'].includes(key) || !request.item) return;
+    data[key] = upsertReligiousActivity(data[key] || [], request.item, request.item.id);
+    saveReligiousActivities(data);
+    renderReligiousActivitiesAdmin();
+}
+
+function applyReligiousDeleteRequest(request) {
+    const data = getReligiousActivities();
+    const type = request.type;
+    const key = type === 'lecture' ? 'lectures' : type;
+    if (!['jummah', 'ramadan', 'lectures'].includes(key)) return;
+    data[key] = (data[key] || []).filter(item => Number(item.id) !== Number(request.item_id));
+    saveReligiousActivities(data);
+    renderReligiousActivitiesAdmin();
 }
 
 function upsertReligiousActivity(items, item, editId) {
@@ -1959,8 +3222,27 @@ function resetReligiousActivityButtons() {
 function deleteReligiousActivity(type, id) {
     const data = getReligiousActivities();
     const key = type === 'lecture' ? 'lectures' : type;
+    const previousItem = (data[key] || []).find(item => Number(item.id) === Number(id));
+    if (!isCurrentLocalMainAdmin() && useStaticAdminApi) {
+        logLocalAdminActivity('pendingAdminApproval', {
+            requested_action: 'deleteReligiousActivity',
+            method: 'DELETE',
+            request: {
+                type,
+                item_id: id,
+                previous_item: previousItem || null
+            }
+        });
+        showNotification('Sent to main admin for approval.', 'info');
+        return;
+    }
     data[key] = (data[key] || []).filter(item => Number(item.id) !== Number(id));
     saveReligiousActivities(data);
+    logLocalAdminActivity('deleteReligiousActivity', {
+        type,
+        item_id: id,
+        previous_item: previousItem || null
+    });
     renderReligiousActivitiesAdmin();
     showNotification('Religious activity removed.', 'success');
 }

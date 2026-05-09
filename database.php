@@ -1,15 +1,15 @@
 <?php
-// COMMUJ Database Configuration and Connection
+// Dawa'ah Database Configuration and Connection
 
 // Database Configuration
 // XAMPP defaults are root with an empty password. Hosting can override with env vars.
-define('DB_HOST', getenv('COMMUJ_DB_HOST') ?: 'localhost');
-define('DB_USER', getenv('COMMUJ_DB_USER') ?: 'root');
-define('DB_PASSWORD', getenv('COMMUJ_DB_PASSWORD') ?: '');
-define('DB_NAME', getenv('COMMUJ_DB_NAME') ?: 'commuj_db');
-define('COMMUJ_ADMIN_USERNAME', getenv('COMMUJ_ADMIN_USERNAME') ?: 'admin');
-define('COMMUJ_ADMIN_EMAIL', getenv('COMMUJ_ADMIN_EMAIL') ?: 'commuj.admin@commuj.local');
-define('COMMUJ_ADMIN_PASSWORD', getenv('COMMUJ_ADMIN_PASSWORD') ?: 'COMMUJAdmin@2026');
+define('DB_HOST', getenv('DAWAAH_DB_HOST') ?: 'localhost');
+define('DB_USER', getenv('DAWAAH_DB_USER') ?: 'root');
+define('DB_PASSWORD', getenv('DAWAAH_DB_PASSWORD') ?: '');
+define('DB_NAME', getenv('DAWAAH_DB_NAME') ?: 'dawaah_db');
+define('DAWAAH_ADMIN_USERNAME', getenv('DAWAAH_ADMIN_USERNAME') ?: 'admin');
+define('DAWAAH_ADMIN_EMAIL', getenv('DAWAAH_ADMIN_EMAIL') ?: 'dawaah.admin@dawaah.local');
+define('DAWAAH_ADMIN_PASSWORD', getenv('DAWAAH_ADMIN_PASSWORD') ?: 'DawaahAdmin@2026');
 
 // Create connection
 $conn = new mysqli(DB_HOST, DB_USER, DB_PASSWORD);
@@ -39,7 +39,7 @@ $sql_users = "CREATE TABLE IF NOT EXISTS users (
     username VARCHAR(50) UNIQUE NOT NULL,
     email VARCHAR(100) UNIQUE NOT NULL,
     password VARCHAR(255) NOT NULL,
-    role ENUM('student', 'executive', 'imam', 'finance', 'admin') DEFAULT 'student',
+    role ENUM('student', 'executive', 'chairman', 'chairlady', 'secretary', 'treasurer', 'imam', 'admin') DEFAULT 'student',
     status ENUM('active', 'inactive', 'suspended') DEFAULT 'active',
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
@@ -57,8 +57,10 @@ $sql_students = "CREATE TABLE IF NOT EXISTS students (
     phone VARCHAR(20),
     gender ENUM('male', 'female', 'other'),
     nationality VARCHAR(100),
+    school VARCHAR(150),
     course VARCHAR(100),
     year_of_study VARCHAR(50),
+    semester VARCHAR(20),
     degree_type ENUM('diploma', 'degree'),
     home_address TEXT,
     emergency_contact VARCHAR(100),
@@ -225,6 +227,25 @@ $sql_leadership = "CREATE TABLE IF NOT EXISTS leadership_roles (
     FOREIGN KEY (student_id) REFERENCES students(id) ON DELETE CASCADE
 )";
 
+// PUBLIC LEADERSHIP PROFILES TABLE
+$sql_leadership_profiles = "CREATE TABLE IF NOT EXISTS leadership_profiles (
+    id INT PRIMARY KEY AUTO_INCREMENT,
+    name VARCHAR(100) NOT NULL,
+    position VARCHAR(100) NOT NULL,
+    course VARCHAR(150),
+    year_of_study VARCHAR(50),
+    bio TEXT,
+    description TEXT,
+    email VARCHAR(100),
+    phone VARCHAR(20),
+    photo_url VARCHAR(255),
+    user_id INT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    status ENUM('active', 'inactive') DEFAULT 'active',
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE SET NULL
+)";
+
 // HADITHS TABLE
 $sql_hadiths = "CREATE TABLE IF NOT EXISTS hadiths (
     id INT PRIMARY KEY AUTO_INCREMENT,
@@ -337,6 +358,7 @@ $tables = array(
     "donations" => $sql_donations,
     "mpesa_transactions" => $sql_mpesa_transactions,
     "leadership_roles" => $sql_leadership,
+    "leadership_profiles" => $sql_leadership_profiles,
     "hadiths" => $sql_hadiths,
     "volunteer_opportunities" => $sql_volunteer,
     "volunteer_registrations" => $sql_volunteer_reg,
@@ -357,21 +379,23 @@ foreach ($tables as $table_name => $sql) {
     }
 }
 
-// Ensure the admin panel has a database-backed login account.
-// Default credentials can be changed with COMMUJ_ADMIN_USERNAME / COMMUJ_ADMIN_PASSWORD env vars.
-$admin_password_hash = password_hash(COMMUJ_ADMIN_PASSWORD, PASSWORD_BCRYPT);
-$admin_username = COMMUJ_ADMIN_USERNAME;
-$admin_email = COMMUJ_ADMIN_EMAIL;
-$admin_role = 'admin';
-$admin_status = 'active';
-$stmt_admin = $conn->prepare(
-    "INSERT INTO users (username, email, password, role, status)
-     VALUES (?, ?, ?, ?, ?)
-     ON DUPLICATE KEY UPDATE password = VALUES(password), role = VALUES(role), status = VALUES(status)"
-);
-if ($stmt_admin) {
-    $stmt_admin->bind_param("sssss", $admin_username, $admin_email, $admin_password_hash, $admin_role, $admin_status);
-    $stmt_admin->execute();
+// Admin accounts are created through admin.html. Set DAWAAH_AUTO_SEED_ADMIN=1
+// only when you intentionally want the default admin account auto-created.
+if (getenv('DAWAAH_AUTO_SEED_ADMIN') === '1') {
+    $admin_password_hash = password_hash(DAWAAH_ADMIN_PASSWORD, PASSWORD_BCRYPT);
+    $admin_username = DAWAAH_ADMIN_USERNAME;
+    $admin_email = DAWAAH_ADMIN_EMAIL;
+    $admin_role = 'admin';
+    $admin_status = 'active';
+    $stmt_admin = $conn->prepare(
+        "INSERT INTO users (username, email, password, role, status)
+         VALUES (?, ?, ?, ?, ?)
+         ON DUPLICATE KEY UPDATE id = id"
+    );
+    if ($stmt_admin) {
+        $stmt_admin->bind_param("sssss", $admin_username, $admin_email, $admin_password_hash, $admin_role, $admin_status);
+        $stmt_admin->execute();
+    }
 }
 
 // Function to get database connection

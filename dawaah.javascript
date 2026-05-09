@@ -1,4 +1,4 @@
-// COMMUJ - Complete JavaScript Implementation
+// Dawa'ah - Complete JavaScript Implementation
 
 // Global Variables
 let currentUser = null;
@@ -19,24 +19,74 @@ const paymentAccounts = {
     },
     bankTransfer: {
         label: 'Bank Transfer',
-        html: '<strong>Bank Transfer:</strong><br>Bank Name: COMMUJ Official Bank<br>Account Name: COMMUJ Association<br>Account Number: 1234567890<br>After transfer, keep your transaction reference for confirmation.'
+        html: "<strong>Bank Transfer:</strong><br>Bank Name: Dawa'ah Official Bank<br>Account Name: Dawa'ah Association<br>Account Number: 1234567890<br>After transfer, keep your transaction reference for confirmation."
     },
     numberTransfer: {
         label: 'Normal Transfer Number',
-        html: '<strong>Normal Transfer:</strong><br>Send the money to: 0700000000<br>Receiver Name: COMMUJ Treasurer<br>Use your full name as the transfer narration.'
+        html: "<strong>Normal Transfer:</strong><br>Send the money to: 0700000000<br>Receiver Name: Dawa'ah Treasurer<br>Use your full name as the transfer narration."
     },
     cash: {
         label: 'Cash Payment',
-        html: '<strong>Cash Payment:</strong><br>Pay physically to the COMMUJ Treasurer or Finance Officer and collect/keep your receipt.'
+        html: "<strong>Cash Payment:</strong><br>Pay physically to the Dawa'ah Treasurer and collect/keep your receipt."
     }
 };
 
-const XAMPP_BASE_URL = 'http://localhost/comahs/';
+const schoolCourseCatalog = {
+    'School of Business & Technology': {
+        'Undergraduate Courses': [
+            'Bachelor of Business Management (BBM)',
+            'Bachelor of Commerce (BCom)',
+            'Bachelor of Business Information Technology',
+            'Bachelor of Science in Computer Science',
+            'Bachelor of Science in Information Technology'
+        ],
+        'Masters Courses': ['Master of Business Administration (MBA)'],
+        'Diploma Courses': [
+            'Diploma in ICT',
+            'Diploma in Business Management',
+            'Diploma in Business IT & Business Management',
+            'Diploma in Human Resource Management',
+            'Diploma in Supply Chain Management',
+            'Diploma in Islamic Banking and Finance'
+        ],
+        'Certificate Courses': [
+            'Certificate in ICT',
+            'Certificate in Business Management',
+            'Certificate in Human Resource Management',
+            'Certificate in Supply Chain Management',
+            'Certificate in Business Information Technology'
+        ],
+        'TVET & Short Courses': ['Electrical Engineering', 'ICT', 'CISCO Networking', 'ICDL Courses']
+    },
+    'School of Sharia & Islamic Studies': {
+        'Undergraduate Courses': ['Bachelor of Arts in Islamic Studies', 'Bachelor of Arts in Sharia'],
+        'Masters Courses': ['Master of Arts in Islamic Studies'],
+        'Diploma Courses': ['Diploma in Arabic Language and Islamic Studies', 'Diploma in Islamic Banking and Finance'],
+        'Certificate Courses': ['Certificate in Arabic Language and Islamic Studies']
+    },
+    'School of Law and Shari’a': {
+        'Undergraduate Courses': ['Bachelor of Laws (LL.B) with Sharia & Law'],
+        'Diploma Courses': ['Diploma in Islamic Law and Legal Studies']
+    },
+    'School of Education & Social Sciences': {
+        'Undergraduate Courses': ['Bachelor of Education (B.Ed.)', 'Bachelor of Education (Arts)'],
+        'Diploma Courses': ['Diploma in Early Childhood Education'],
+        'TVET & Short Courses': ['Clothing & Textile', 'Business & Liberal Studies']
+    },
+    'School of Nursing & Midwifery': {
+        'Undergraduate Courses': ['Bachelor of Science in Nursing']
+    }
+};
+const schoolOptions = Object.keys(schoolCourseCatalog);
+const yearOptions = ['1', '2', '3', '4', '5', '6'];
+const semesterOptions = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12'];
+
+const XAMPP_BASE_URL = 'http://localhost/dawaah/';
 const frontendOnly = false;
 const realAppFetch = window.fetch.bind(window);
 
 window.fetch = function(resource, options = {}) {
-    if (location.protocol === 'file:' && typeof resource === 'string' && /^(api|admin_api|commuj|mpesa_api)\.php/.test(resource)) {
+    if (location.protocol === 'file:' && typeof resource === 'string' && /^(api|admin_api|dawaah|mpesa_api)\.php/.test(resource)) {
         return realAppFetch(XAMPP_BASE_URL + resource, options);
     }
     return realAppFetch(resource, options);
@@ -113,17 +163,38 @@ function scrollToSection(sectionId) {
 }
 
 // LEADERSHIP AND GALLERY FUNCTIONS
-function showLeaderDetails(name, position, bio, description, email, phone) {
-    document.getElementById('leaderModalTitle').textContent = name + ' - ' + position;
-    document.getElementById('leaderName').textContent = name;
-    document.getElementById('leaderPosition').textContent = position;
-    document.getElementById('leaderBio').textContent = bio;
-    document.getElementById('leaderDescription').textContent = description;
-    document.getElementById('leaderEmail').textContent = email;
-    document.getElementById('leaderPhone').textContent = phone;
+function showLeaderDetails(leaderData) {
+    const leader = typeof leaderData === 'string' ? JSON.parse(decodeURIComponent(leaderData)) : leaderData;
+    const course = leader.course || '';
+    const yearOfStudy = leader.year_of_study || leader.yearOfStudy || '';
+
+    document.getElementById('leaderModalTitle').textContent = `${leader.name} - ${leader.position}`;
+    document.getElementById('leaderName').textContent = leader.name || '';
+    document.getElementById('leaderPosition').textContent = leader.position || '';
+    document.getElementById('leaderBio').textContent = leader.bio || '';
+    document.getElementById('leaderDescription').textContent = leader.description || '';
+    document.getElementById('leaderEmail').textContent = leader.email || '';
+    document.getElementById('leaderPhone').textContent = leader.phone || '';
+    document.getElementById('leaderCourse').textContent = course || 'N/A';
+    document.getElementById('leaderYearOfStudy').textContent = yearOfStudy || 'N/A';
+    document.getElementById('leaderCourseRow').classList.toggle('d-none', !course);
+    document.getElementById('leaderYearRow').classList.toggle('d-none', !yearOfStudy);
 
     const modal = new bootstrap.Modal(document.getElementById('leaderDetailsModal'));
     modal.show();
+}
+
+function encodeLeaderDetails(leader) {
+    return encodeURIComponent(JSON.stringify({
+        name: leader.name || '',
+        position: leader.position || '',
+        course: leader.course || '',
+        year_of_study: leader.year_of_study || leader.yearOfStudy || '',
+        bio: leader.bio || '',
+        description: leader.description || '',
+        email: leader.email || '',
+        phone: leader.phone || ''
+    }));
 }
 
 function showGalleryImage(title, description, imageUrl) {
@@ -170,13 +241,15 @@ function loadLeadershipContent() {
 
         leadershipContainer.innerHTML = leaders.map(leader => `
             <div class="col-md-6 col-lg-3 mb-4">
-                <div class="leadership-card" onclick="showLeaderDetails('${leader.name}', '${leader.position}', '${leader.bio || ''}', '${leader.description || ''}', '${leader.email || ''}', '${leader.phone || ''}')">
+                <div class="leadership-card" onclick="showLeaderDetails('${encodeLeaderDetails(leader)}')">
                     <div class="leader-photo">
                         ${leader.photo_url ? `<img src="${leader.photo_url}" alt="${leader.name}" style="width: 100%; height: 100px; object-fit: cover; border-radius: 50%;" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">` : ''}
                         <i class="fas fa-user-circle fa-5x" ${leader.photo_url ? 'style="display: none;"' : ''}></i>
                     </div>
                     <h6>${leader.name}</h6>
                     <p class="position">${leader.position}</p>
+                    ${leader.course ? `<p class="bio"><strong>Course:</strong> ${leader.course}</p>` : ''}
+                    ${leader.year_of_study ? `<p class="bio"><strong>Year:</strong> ${leader.year_of_study}</p>` : ''}
                     <p class="bio">${leader.bio || ''}</p>
                 </div>
             </div>
@@ -198,13 +271,15 @@ function loadLeadershipContent() {
 
         leadershipContainer.innerHTML = publicLeaders.map(leader => `
             <div class="col-md-6 col-lg-3 mb-4">
-                <div class="leadership-card" onclick="showLeaderDetails('${leader.name}', '${leader.position}', '${leader.bio}', '${leader.description}', '${leader.email}', '${leader.phone}')">
+                <div class="leadership-card" onclick="showLeaderDetails('${encodeLeaderDetails(leader)}')">
                     <div class="leader-photo">
                         ${leader.photoData ? `<img src="${leader.photoData}" alt="${leader.name}" style="width: 100%; height: 100px; object-fit: cover; border-radius: 50%;" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">` : ''}
                         <i class="fas fa-user-circle fa-5x" ${leader.photoData ? 'style="display: none;"' : ''}></i>
                     </div>
                     <h6>${leader.name}</h6>
                     <p class="position">${leader.position}</p>
+                    ${leader.course ? `<p class="bio"><strong>Course:</strong> ${leader.course}</p>` : ''}
+                    ${leader.year_of_study ? `<p class="bio"><strong>Year:</strong> ${leader.year_of_study}</p>` : ''}
                     <p class="bio">${leader.bio}</p>
                 </div>
             </div>
@@ -298,6 +373,8 @@ function savePublicLeader() {
     const name = document.getElementById('publicLeaderName').value.trim();
     const position = document.getElementById('publicLeaderPosition').value.trim();
     const bio = document.getElementById('publicLeaderBio').value.trim();
+    const course = document.getElementById('publicLeaderCourse').value.trim();
+    const yearOfStudy = document.getElementById('publicLeaderYearOfStudy').value.trim();
     const description = document.getElementById('publicLeaderDescription').value.trim();
     const email = document.getElementById('publicLeaderEmail').value.trim();
     const phone = document.getElementById('publicLeaderPhone').value.trim();
@@ -314,6 +391,8 @@ function savePublicLeader() {
         id: Date.now(),
         name: name,
         position: position,
+        course: course,
+        year_of_study: yearOfStudy,
         bio: bio,
         description: description,
         email: email,
@@ -361,6 +440,8 @@ function loadPublicLeadershipList() {
                     <div class="flex-grow-1">
                         <h6 class="card-title">${leader.name}</h6>
                         <p class="card-subtitle mb-2 text-muted">${leader.position}</p>
+                        ${leader.course ? `<p class="card-text small mb-1"><strong>Course:</strong> ${leader.course}</p>` : ''}
+                        ${leader.year_of_study ? `<p class="card-text small mb-1"><strong>Year:</strong> ${leader.year_of_study}</p>` : ''}
                         <p class="card-text small">${leader.bio}</p>
                     </div>
                     <div>
@@ -436,11 +517,98 @@ function initializeApp() {
 }
 
 function attachEventListeners() {
+    initializeAcademicSelectors();
     document.getElementById('loginForm')?.addEventListener('submit', handleLogin);
     document.getElementById('registrationForm')?.addEventListener('submit', handleRegistration);
     document.getElementById('forgotPasswordForm')?.addEventListener('submit', handleForgotPassword);
     document.getElementById('togglePassword')?.addEventListener('click', togglePasswordVisibility);
     document.getElementById('loginUsername')?.addEventListener('blur', populateLoginRoleFromUsername);
+    document.getElementById('school')?.addEventListener('change', () => renderCourseOptions('course', document.getElementById('school').value));
+    document.getElementById('editSchool')?.addEventListener('change', () => renderCourseOptions('editCourse', document.getElementById('editSchool').value));
+    document.getElementById('yearOfStudy')?.addEventListener('change', () => updateSemesterAvailability('yearOfStudy', 'semester'));
+    document.getElementById('editYearOfStudy')?.addEventListener('change', () => updateSemesterAvailability('editYearOfStudy', 'editSemester'));
+    updateSemesterAvailability('yearOfStudy', 'semester');
+}
+
+function initializeAcademicSelectors() {
+    renderSchoolOptions('school');
+    renderSchoolOptions('editSchool');
+    renderCourseOptions('course', '');
+    renderCourseOptions('editCourse', '');
+    renderNumberOptions('yearOfStudy', yearOptions, 'Select Year', 'Year');
+    renderNumberOptions('editYearOfStudy', yearOptions, 'Select Year', 'Year');
+    renderNumberOptions('semester', semesterOptions, 'Select Semester', 'Semester');
+    renderNumberOptions('editSemester', semesterOptions, 'Select Semester', 'Semester');
+}
+
+function renderSchoolOptions(selectId) {
+    const select = document.getElementById(selectId);
+    if (!select) return;
+    select.innerHTML = '<option value="" disabled selected>Select School</option>' +
+        schoolOptions.map(school => `<option value="${escapeHtml(school)}">${escapeHtml(school)}</option>`).join('');
+}
+
+function renderCourseOptions(selectId, school, selectedCourse = '') {
+    const select = document.getElementById(selectId);
+    if (!select) return;
+    const catalog = schoolCourseCatalog[school];
+    if (!catalog) {
+        select.innerHTML = '<option value="" disabled selected>Select a school first</option>';
+        select.disabled = true;
+        return;
+    }
+
+    select.disabled = false;
+    select.innerHTML = '<option value="">Select Course</option>' + Object.entries(catalog).map(([group, courses]) => `
+        <optgroup label="${escapeHtml(group)}">
+            ${courses.map(course => `<option value="${escapeHtml(course)}">${escapeHtml(course)}</option>`).join('')}
+        </optgroup>
+    `).join('');
+    select.value = selectedCourse;
+}
+
+function renderNumberOptions(selectId, values, placeholder, label) {
+    const select = document.getElementById(selectId);
+    if (!select) return;
+    select.innerHTML = `<option value="">${placeholder}</option>` +
+        values.map(value => `<option value="${value}">${label} ${value}</option>`).join('');
+}
+
+function escapeHtml(value) {
+    return String(value || '')
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
+}
+
+function authPayload(extra = {}) {
+    return {
+        ...extra,
+        actor_user_id: currentUser?.dbUserId || currentUser?.user_id || currentUser?.id || 0,
+        actor_role: currentRole || currentUser?.role || 'student'
+    };
+}
+
+function authQuery() {
+    const params = new URLSearchParams({
+        actor_user_id: currentUser?.dbUserId || currentUser?.user_id || currentUser?.id || 0,
+        actor_role: currentRole || currentUser?.role || 'student'
+    });
+    return params.toString();
+}
+
+function updateSemesterAvailability(yearSelectId, semesterSelectId) {
+    const yearSelect = document.getElementById(yearSelectId);
+    const semesterSelect = document.getElementById(semesterSelectId);
+    if (!yearSelect || !semesterSelect) return;
+
+    const hasYear = Boolean(yearSelect.value);
+    semesterSelect.disabled = !hasYear;
+    if (!hasYear) {
+        semesterSelect.value = '';
+    }
 }
 
 function populateLoginRoleFromUsername() {
@@ -479,6 +647,11 @@ function handleLogin(e) {
         return;
     }
 
+    if (!frontendOnly) {
+        loginWithServerSession(username, password, role);
+        return;
+    }
+
     const user = getRegisteredUser(username);
     if (!user) {
         recordFailedLoginAttempt('No registered account found. Please register first.');
@@ -495,6 +668,11 @@ function handleLogin(e) {
         return;
     }
 
+    if (['inactive', 'pending'].includes(String(user.status || 'Active').toLowerCase())) {
+        recordFailedLoginAttempt('This account is pending approval or inactive. Please contact the admin.');
+        return;
+    }
+
     loginFailedAttempts = 0;
     loginLockedUntil = 0;
     currentUser = user;
@@ -505,6 +683,70 @@ function handleLogin(e) {
 
     document.getElementById('loginForm').reset();
     showDashboard();
+}
+
+function loginWithServerSession(username, password, selectedRole) {
+    fetch('api.php?action=loginUser', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'same-origin',
+        body: JSON.stringify({ username, password })
+    })
+    .then(response => response.json())
+    .then(result => {
+        if (!result.success || !result.data) {
+            throw new Error(result.message || 'Invalid username or password.');
+        }
+
+        const serverUser = result.data;
+        if (serverUser.role !== selectedRole) {
+            fetch('api.php?action=logoutUser', {
+                method: 'POST',
+                credentials: 'same-origin'
+            }).catch(() => {});
+            throw new Error('Role mismatch. Please login with the role you registered as: ' + (serverUser.role || 'student') + '.');
+        }
+
+        return fetch(`api.php?action=getStudentByIdentifier&identifier=${encodeURIComponent(username)}`, {
+            credentials: 'same-origin'
+        })
+        .then(response => response.json())
+        .then(studentResult => {
+            const student = studentResult.success ? studentResult.data : {};
+            const localUser = getRegisteredUser(username) || {};
+            return {
+                ...localUser,
+                ...student,
+                dbUserId: serverUser.id || student.user_id || localUser.dbUserId,
+                dbStudentId: student.id || localUser.dbStudentId,
+                username: serverUser.username || localUser.username || username,
+                email: serverUser.email || student.email || localUser.email,
+                role: serverUser.role,
+                status: serverUser.status,
+                fullName: localUser.fullName || `${student.first_name || ''} ${student.last_name || ''}`.trim() || serverUser.username,
+                studentId: student.student_id || localUser.studentId || serverUser.username,
+                school: student.school || localUser.school,
+                course: student.course || localUser.course,
+                yearOfStudy: student.year_of_study || localUser.yearOfStudy,
+                semester: student.semester || localUser.semester,
+                passport_photo: student.passport_photo || localUser.passport_photo,
+                passportPhotoData: localUser.passportPhotoData || ''
+            };
+        });
+    })
+    .then(user => {
+        loginFailedAttempts = 0;
+        loginLockedUntil = 0;
+        currentUser = user;
+        currentRole = user.role;
+        localStorage.setItem('currentUser', JSON.stringify(user));
+        localStorage.setItem('currentRole', user.role);
+        document.getElementById('loginForm').reset();
+        showDashboard();
+    })
+    .catch(error => {
+        recordFailedLoginAttempt(error.message || 'Login failed.');
+    });
 }
 
 function recordFailedLoginAttempt(message) {
@@ -567,15 +809,19 @@ function handleRegistration(e) {
         return;
     }
 
+    const passportPhotoInput = document.getElementById('passportPhoto');
+    const passportPhotoFile = passportPhotoInput?.files?.[0];
+
     const newUser = {
         username: studentId,
         fullName: fullName,
         studentId: studentId,
         password: password,
         role: role,
-        degreeType: document.getElementById('degreeType').value,
+        school: document.getElementById('school').value,
         course: document.getElementById('course').value,
         yearOfStudy: document.getElementById('yearOfStudy').value,
+        semester: document.getElementById('semester').value,
         gender: document.getElementById('gender').value,
         phone: document.getElementById('phone').value,
         email: email,
@@ -583,9 +829,36 @@ function handleRegistration(e) {
         homeAddress: document.getElementById('homeAddress').value,
         emergencyContact: document.getElementById('emergencyContact').value,
         localGuardian: document.getElementById('localGuardian').value,
-        passportPhoto: document.getElementById('passportPhoto').value ? document.getElementById('passportPhoto').value.split('\\').pop() : ''
+        passportPhoto: passportPhotoFile ? passportPhotoFile.name : '',
+        passportPhotoData: '',
+        passportPhotoFile: passportPhotoFile || null
     };
 
+    if (passportPhotoFile) {
+        readImageAsDataUrl(passportPhotoFile)
+            .then(photoData => {
+                newUser.passportPhotoData = photoData;
+                continueRegistration(newUser, fullName, password);
+            })
+            .catch(() => {
+                alert('Could not read the selected passport photo. Please choose another image.');
+            });
+        return;
+    }
+
+    continueRegistration(newUser, fullName, password);
+}
+
+function readImageAsDataUrl(file) {
+    return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = event => resolve(event.target.result);
+        reader.onerror = reject;
+        reader.readAsDataURL(file);
+    });
+}
+
+function continueRegistration(newUser, fullName, password) {
     if (!frontendOnly) {
         saveRegistrationToDatabase(newUser, fullName, password)
             .then(savedUser => completeLocalRegistration(savedUser))
@@ -605,16 +878,18 @@ function handleRegistration(e) {
 }
 
 function completeLocalRegistration(newUser, options = {}) {
+    const needsApproval = !['student', 'admin'].includes(newUser.role || 'student');
+    const { passportPhotoFile, ...storableUser } = { ...newUser, status: newUser.status || (needsApproval ? 'Pending' : 'Active') };
     const existingIndex = allMembers.findIndex(member =>
-        member.studentId === newUser.studentId ||
-        member.email === newUser.email ||
-        member.username === newUser.username
+        member.studentId === storableUser.studentId ||
+        member.email === storableUser.email ||
+        member.username === storableUser.username
     );
 
     if (existingIndex >= 0) {
-        allMembers[existingIndex] = { ...allMembers[existingIndex], ...newUser };
+        allMembers[existingIndex] = { ...allMembers[existingIndex], ...storableUser };
     } else {
-        allMembers.push(newUser);
+        allMembers.push(storableUser);
     }
 
     localStorage.setItem('allMembers', JSON.stringify(allMembers));
@@ -623,7 +898,9 @@ function completeLocalRegistration(newUser, options = {}) {
         showNotification(options.message, 'warning');
     }
 
-    alert('Registration successful! Please login using the role you registered with.');
+    alert(needsApproval
+        ? 'Registration submitted. Admin must approve this role before login.'
+        : 'Registration successful! You can login now.');
     document.getElementById('registrationForm').reset();
     document.querySelector('[data-bs-target="#loginTab"]').click();
 }
@@ -648,37 +925,49 @@ function saveRegistrationToDatabase(newUser, fullName, password) {
             throw new Error(userResult.message || 'Could not create user in database');
         }
         const userId = userResult.data.user_id;
+        const studentData = new FormData();
+        Object.entries({
+            user_id: userId,
+            first_name: firstName || fullName,
+            last_name: lastName,
+            student_id: newUser.studentId,
+            email: newUser.email,
+            phone: newUser.phone,
+            gender: newUser.gender,
+            nationality: newUser.nationality,
+            school: newUser.school,
+            course: newUser.course,
+            year_of_study: newUser.yearOfStudy,
+            semester: newUser.semester,
+            degree_type: 'degree',
+            passport_photo: newUser.passportPhoto,
+            home_address: newUser.homeAddress,
+            emergency_contact: newUser.emergencyContact,
+            emergency_contact_phone: '',
+            local_guardian: newUser.localGuardian,
+            local_guardian_phone: ''
+        }).forEach(([key, value]) => studentData.append(key, value || ''));
+        if (newUser.passportPhotoFile) {
+            studentData.append('passport_photo_file', newUser.passportPhotoFile);
+        }
+
         return fetch('api.php?action=registerStudent', {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                user_id: userId,
-                first_name: firstName || fullName,
-                last_name: lastName,
-                student_id: newUser.studentId,
-                email: newUser.email,
-                phone: newUser.phone,
-                gender: newUser.gender,
-                nationality: newUser.nationality,
-                course: newUser.course,
-                year_of_study: newUser.yearOfStudy,
-                degree_type: newUser.degreeType,
-                home_address: newUser.homeAddress,
-                emergency_contact: newUser.emergencyContact,
-                emergency_contact_phone: '',
-                local_guardian: newUser.localGuardian,
-                local_guardian_phone: ''
-            })
+            body: studentData
         })
         .then(response => response.json())
         .then(studentResult => {
             if (!studentResult.success) {
                 throw new Error(studentResult.message || 'Could not create student record in database');
             }
+            const uploadedPath = studentResult.data.passport_photo || '';
             return {
                 ...newUser,
                 dbUserId: userId,
-                dbStudentId: studentResult.data.student_id
+                dbStudentId: studentResult.data.student_id,
+                status: ['student', 'admin'].includes(newUser.role || 'student') ? 'Active' : 'Pending',
+                passportPhotoData: uploadedPath ? '' : newUser.passportPhotoData,
+                passport_photo: uploadedPath || newUser.passport_photo || ''
             };
         });
     });
@@ -724,6 +1013,7 @@ function showDashboard() {
     document.getElementById('dashboardPage').classList.add('active');
     document.getElementById('userNameDisplay').textContent = currentUser.name || currentUser.username;
 
+    configureRoleMenus();
     switchView('dashboard');
     setTimeout(() => {
         loadDashboardData();
@@ -733,9 +1023,9 @@ function showDashboard() {
 
 // VIEW SWITCHING
 function switchView(viewName) {
-    const adminViews = ['memberDatabase', 'adminEvents', 'adminWelfare', 'leadership', 'reports', 'adminGallery', 'adminContact'];
-    if (adminViews.includes(viewName)) {
-        alert('Please use admin.html for admin panel features.');
+    const requiredPermission = getViewPermission(viewName);
+    if (requiredPermission && !hasPermission(requiredPermission)) {
+        showNotification('Your role does not have access to that section.', 'warning');
         switchView('dashboard');
         return;
     }
@@ -759,6 +1049,49 @@ function switchView(viewName) {
     }
 
     loadViewData(viewName);
+}
+
+function getViewPermission(viewName) {
+    const viewPermissions = {
+        profile: 'view_profile',
+        membershipStatus: 'view_membership',
+        prayer: 'view_prayer_times',
+        events: 'register_events',
+        announcements: 'view_announcements',
+        resources: 'view_resources',
+        welfare: 'welfare_request',
+        dues: 'view_payments',
+        donations: 'view_donations',
+        volunteer: 'register_volunteer',
+        memberDatabase: 'manage_members',
+        adminEvents: 'manage_events',
+        adminWelfare: 'manage_welfare',
+        leadership: 'manage_leadership',
+        reports: 'view_reports',
+        adminGallery: 'manage_gallery',
+        adminContact: 'manage_contact'
+    };
+
+    return viewPermissions[viewName] || null;
+}
+
+function configureRoleMenus() {
+    const roleAdminMenu = document.getElementById('roleAdminMenu');
+    const roleToolLinks = document.querySelectorAll('.role-tool-link');
+    let visibleRoleTools = 0;
+
+    roleToolLinks.forEach(link => {
+        const permission = link.dataset.permission;
+        const canUse = permission && hasPermission(permission);
+        link.style.display = canUse ? '' : 'none';
+        if (canUse) {
+            visibleRoleTools++;
+        }
+    });
+
+    if (roleAdminMenu) {
+        roleAdminMenu.style.display = visibleRoleTools > 0 ? '' : 'none';
+    }
 }
 
 function loadViewData(viewName) {
@@ -824,14 +1157,28 @@ function loadViewData(viewName) {
 function loadProfileData() {
     const storedProfile = JSON.parse(localStorage.getItem('profileData')) || {};
     const profileData = currentUser || storedProfile || {};
+    const profilePhoto = getMemberPhoto(profileData);
+    const profilePhotoImage = document.getElementById('profilePhotoImage');
+    const profilePhotoIcon = document.getElementById('profilePhotoIcon');
+
+    if (profilePhoto && profilePhotoImage) {
+        profilePhotoImage.src = profilePhoto;
+        profilePhotoImage.classList.remove('d-none');
+        profilePhotoIcon?.classList.add('d-none');
+    } else if (profilePhotoImage) {
+        profilePhotoImage.src = '';
+        profilePhotoImage.classList.add('d-none');
+        profilePhotoIcon?.classList.remove('d-none');
+    }
 
     document.getElementById('profileName').textContent = profileData.fullName || profileData.name || 'Student Name';
     document.getElementById('profileFullName').textContent = profileData.fullName || profileData.name || '-';
     document.getElementById('profileStudentId').textContent = profileData.studentId || profileData.username || '-';
     document.getElementById('profileStudentIdDetail').textContent = profileData.studentId || profileData.username || '-';
-    document.getElementById('profileUniversity').textContent = profileData.degreeType || '-';
+    document.getElementById('profileSchool').textContent = profileData.school || '-';
     document.getElementById('profileDepartment').textContent = profileData.course || '-';
     document.getElementById('profileYear').textContent = profileData.yearOfStudy || '-';
+    document.getElementById('profileSemester').textContent = profileData.semester || '-';
     document.getElementById('profileGender').textContent = profileData.gender || '-';
     document.getElementById('profileEmail').textContent = profileData.email || '-';
     document.getElementById('profilePhone').textContent = profileData.phone || '-';
@@ -841,20 +1188,51 @@ function loadProfileData() {
     document.getElementById('profileLocalGuardian').textContent = profileData.localGuardian || '-';
 }
 
+function getMemberPhoto(member) {
+    return resolveAppAsset(member?.passportPhotoData || member?.photoData || member?.photo_url || member?.passport_photo || '');
+}
+
+function resolveAppAsset(path) {
+    if (!path) return '';
+    if (/^(data:|blob:|https?:)/i.test(path)) return path;
+    if (location.protocol === 'file:') {
+        return XAMPP_BASE_URL + String(path).replace(/^\/+/, '');
+    }
+    return path;
+}
+
+function renderMemberPhoto(member) {
+    const photo = getMemberPhoto(member);
+    if (!photo) {
+        return '<i class="fas fa-user-circle fa-2x text-muted"></i>';
+    }
+    return `<img class="member-photo-thumb" src="${photo}" alt="${member.fullName || member.name || member.username || 'Member photo'}">`;
+}
+
 function editProfile() {
     const profileData = currentUser || {};
     document.getElementById('editFullName').value = profileData.fullName || profileData.name || '';
     document.getElementById('editStudentId').value = profileData.studentId || profileData.username || '';
     document.getElementById('editEmail').value = profileData.email || '';
     document.getElementById('editPhone').value = profileData.phone || '';
-    document.getElementById('editDegreeType').value = profileData.degreeType || 'degree';
-    document.getElementById('editCourse').value = profileData.course || '';
+    document.getElementById('editSchool').value = profileData.school || '';
+    renderCourseOptions('editCourse', profileData.school || '', profileData.course || '');
     document.getElementById('editYearOfStudy').value = profileData.yearOfStudy || '';
+    updateSemesterAvailability('editYearOfStudy', 'editSemester');
+    document.getElementById('editSemester').value = profileData.semester || '';
     document.getElementById('editGender').value = profileData.gender || 'male';
     document.getElementById('editNationality').value = profileData.nationality || '';
     document.getElementById('editEmergencyContact').value = profileData.emergencyContact || '';
     document.getElementById('editLocalGuardian').value = profileData.localGuardian || '';
     document.getElementById('editHomeAddress').value = profileData.homeAddress || '';
+    const editPhotoInput = document.getElementById('editPassportPhoto');
+    if (editPhotoInput) {
+        editPhotoInput.value = '';
+    }
+    const removePhotoInput = document.getElementById('removeProfilePhoto');
+    if (removePhotoInput) {
+        removePhotoInput.checked = false;
+    }
 
     const modal = new bootstrap.Modal(document.getElementById('editProfileModal'));
     modal.show();
@@ -865,9 +1243,15 @@ function saveProfileChanges() {
     const studentId = document.getElementById('editStudentId').value.trim();
     const email = document.getElementById('editEmail').value.trim();
     const phone = document.getElementById('editPhone').value.trim();
+    const school = document.getElementById('editSchool').value;
+    const course = document.getElementById('editCourse').value;
+    const yearOfStudy = document.getElementById('editYearOfStudy').value;
+    const semester = document.getElementById('editSemester').value;
+    const editPhotoFile = document.getElementById('editPassportPhoto')?.files?.[0] || null;
+    const removePhoto = document.getElementById('removeProfilePhoto')?.checked || false;
 
-    if (!fullName || !studentId || !email || !phone) {
-        alert('Please fill in full name, student ID, email, and phone.');
+    if (!fullName || !studentId || !email || !phone || !school || !course || !yearOfStudy || !semester) {
+        alert('Please fill in full name, student ID, email, phone, school, course, year of study, and semester.');
         return;
     }
 
@@ -879,72 +1263,113 @@ function saveProfileChanges() {
         username: currentUser?.username || studentId,
         email: email,
         phone: phone,
-        degreeType: document.getElementById('editDegreeType').value,
-        course: document.getElementById('editCourse').value.trim(),
-        yearOfStudy: document.getElementById('editYearOfStudy').value.trim(),
+        school: school,
+        course: course,
+        yearOfStudy: yearOfStudy,
+        semester: semester,
         gender: document.getElementById('editGender').value,
         nationality: document.getElementById('editNationality').value.trim(),
         emergencyContact: document.getElementById('editEmergencyContact').value.trim(),
         localGuardian: document.getElementById('editLocalGuardian').value.trim(),
-        homeAddress: document.getElementById('editHomeAddress').value.trim()
+        homeAddress: document.getElementById('editHomeAddress').value.trim(),
+        passportPhotoFile: editPhotoFile,
+        removePhoto: removePhoto
     };
 
-    if (!frontendOnly) {
-        saveProfileToDatabase(updatedProfile)
-            .then(() => completeProfileSave(updatedProfile))
-            .catch(error => {
-                console.error('Profile update error:', error);
-                alert(error.message || 'Profile could not be saved to the database.');
-            });
+    const saveUpdatedProfile = () => {
+        if (!frontendOnly) {
+            saveProfileToDatabase(updatedProfile)
+                .then(savedProfile => completeProfileSave({
+                    ...updatedProfile,
+                    ...savedProfile,
+                    passportPhotoData: savedProfile.passport_photo || updatedProfile.removePhoto ? '' : updatedProfile.passportPhotoData,
+                    passport_photo: updatedProfile.removePhoto ? '' : (savedProfile.passport_photo || updatedProfile.passport_photo || '')
+                }))
+                .catch(error => {
+                    console.error('Profile update error:', error);
+                    alert(error.message || 'Profile could not be saved to the database.');
+                });
+            return;
+        }
+
+        completeProfileSave(updatedProfile);
+    };
+
+    if (editPhotoFile) {
+        readImageAsDataUrl(editPhotoFile)
+            .then(photoData => {
+                updatedProfile.passportPhoto = editPhotoFile.name;
+                updatedProfile.passportPhotoData = photoData;
+                updatedProfile.removePhoto = false;
+                saveUpdatedProfile();
+            })
+            .catch(() => alert('Could not read the selected profile photo. Please choose another image.'));
         return;
     }
 
-    completeProfileSave(updatedProfile);
+    if (removePhoto) {
+        updatedProfile.passportPhoto = '';
+        updatedProfile.passportPhotoData = '';
+        updatedProfile.passport_photo = '';
+    }
+
+    saveUpdatedProfile();
 }
 
 function saveProfileToDatabase(profile) {
     const [firstName, ...lastParts] = profile.fullName.split(/\s+/);
     return getCurrentStudentId()
-        .then(studentDbId => fetch('api.php?action=updateStudentProfile', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
+        .then(studentDbId => {
+            const profileData = new FormData();
+            Object.entries({
                 student_db_id: studentDbId,
                 first_name: firstName || profile.fullName,
                 last_name: lastParts.join(' ') || '-',
                 student_id: profile.studentId,
                 email: profile.email,
                 phone: profile.phone,
-                degree_type: profile.degreeType,
+                degree_type: 'degree',
+                school: profile.school,
                 course: profile.course,
                 year_of_study: profile.yearOfStudy,
+                semester: profile.semester,
                 gender: profile.gender,
                 nationality: profile.nationality,
                 emergency_contact: profile.emergencyContact,
                 local_guardian: profile.localGuardian,
-                home_address: profile.homeAddress
-            })
-        }))
+                home_address: profile.homeAddress,
+                remove_photo: profile.removePhoto ? '1' : ''
+            }).forEach(([key, value]) => profileData.append(key, value || ''));
+            if (profile.passportPhotoFile) {
+                profileData.append('passport_photo_file', profile.passportPhotoFile);
+            }
+
+            return fetch('api.php?action=updateStudentProfile', {
+                method: 'POST',
+                body: profileData
+            });
+        })
         .then(response => response.json())
         .then(result => {
             if (!result.success) {
                 throw new Error(result.message || 'Could not update profile');
             }
-            return result;
+            return result.data || {};
         });
 }
 
 function completeProfileSave(updatedProfile) {
-    currentUser = updatedProfile;
+    const { passportPhotoFile, removePhoto, ...storableProfile } = updatedProfile;
+    currentUser = storableProfile;
     localStorage.setItem('currentUser', JSON.stringify(currentUser));
     localStorage.setItem('profileData', JSON.stringify(currentUser));
 
     allMembers = allMembers.map(member => {
-        const sameMember = member.studentId === updatedProfile.studentId ||
-            member.username === updatedProfile.username ||
-            member.email === updatedProfile.email ||
-            member.dbStudentId === updatedProfile.dbStudentId;
-        return sameMember ? { ...member, ...updatedProfile } : member;
+        const sameMember = member.studentId === storableProfile.studentId ||
+            member.username === storableProfile.username ||
+            member.email === storableProfile.email ||
+            member.dbStudentId === storableProfile.dbStudentId;
+        return sameMember ? { ...member, ...storableProfile } : member;
     });
     localStorage.setItem('allMembers', JSON.stringify(allMembers));
 
@@ -1916,7 +2341,7 @@ function processPayment() {
         type: paymentType,
         amount: amount,
         date: new Date().toLocaleDateString(),
-        status: 'Completed',
+        status: 'Pending Approval',
         paymentMethod: paymentAccounts[paymentMethod].label,
         transactionRef: receiptNumber,
         receiptNumber: receiptNumber
@@ -1933,7 +2358,8 @@ function processPayment() {
                 due_date: new Date().toISOString().slice(0, 10),
                 payment_method: payment.paymentMethod,
                 transaction_id: receiptNumber,
-                notes: 'Student clicked Send Payment. Receipt generated immediately.'
+                notes: 'Payment submitted by member and awaiting treasurer confirmation.',
+                status: 'pending'
             })
         }))
         .then(response => response.json())
@@ -1942,20 +2368,6 @@ function processPayment() {
                 throw new Error(result.message || 'Could not save payment to database');
             }
             payment.dbPaymentId = result.data.payment_id;
-            return fetch('api.php?action=completePayment', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    payment_id: payment.dbPaymentId,
-                    transaction_id: receiptNumber
-                })
-            });
-        })
-        .then(response => response.json())
-        .then(result => {
-            if (!result.success) {
-                throw new Error(result.message || 'Could not complete payment in database');
-            }
             savePaymentLocally(payment);
         })
         .catch(error => {
@@ -1985,10 +2397,10 @@ function startMpesaPayment(details) {
         payload.payment_type = details.type;
     } else {
         payload.donation_type = details.type;
-        payload.purpose = 'COMMUJ donation';
+        payload.purpose = "Dawa'ah donation";
         payload.donor_id = currentUser?.dbUserId || 0;
         payload.donor_name = details.anonymous ? 'Anonymous' : (currentUser?.name || currentUser?.fullName || currentUser?.username || 'Donor');
-        payload.donor_email = currentUser?.email || 'anonymous@commuj.local';
+        payload.donor_email = currentUser?.email || 'anonymous@dawaah.local';
     }
 
     const ready = details.source === 'payment'
@@ -2025,7 +2437,7 @@ function startMpesaPayment(details) {
                 bootstrap.Modal.getInstance(document.getElementById('paymentModal')).hide();
                 renderPaymentHistory();
             } else {
-                localRecord.purpose = 'COMMUJ donation';
+                localRecord.purpose = "Dawa'ah donation";
                 localRecord.anonymous = details.anonymous;
                 localRecord.donor = payload.donor_name;
                 localRecord.dbDonationId = result.data.donation_id;
@@ -2111,7 +2523,7 @@ function markLocalMpesaFailed(checkoutRequestId, source) {
 function savePaymentLocally(payment) {
     payments.push(payment);
     localStorage.setItem('payments', JSON.stringify(payments));
-    alert('Payment sent successfully. Receipt is now available.');
+    alert('Payment submitted. The treasurer must confirm it before a receipt is available.');
 
     document.getElementById('paymentForm').reset();
     updatePaymentInstructions('payment');
@@ -2157,9 +2569,11 @@ function ensureCurrentUserStudentRecord() {
             phone: currentUser?.phone,
             gender: currentUser?.gender,
             nationality: currentUser?.nationality,
+            school: currentUser?.school,
             course: currentUser?.course,
             year_of_study: currentUser?.yearOfStudy,
-            degree_type: currentUser?.degreeType,
+            semester: currentUser?.semester,
+            degree_type: 'degree',
             home_address: currentUser?.homeAddress,
             emergency_contact: currentUser?.emergencyContact,
             local_guardian: currentUser?.localGuardian
@@ -2193,9 +2607,57 @@ function renderPaymentHistory() {
             <td>$${payment.amount}</td>
             <td>${payment.paymentMethod || 'Not specified'}</td>
             <td><span class="badge ${payment.status === 'Completed' ? 'bg-success' : 'bg-warning text-dark'}">${payment.status}</span></td>
-            <td>${payment.status === 'Completed' ? `<button class="btn btn-sm btn-outline-primary" onclick="downloadReceipt(${index})">Download</button>` : '<span class="text-muted">Pending approval</span>'}</td>
+            <td>${renderPaymentActions(payment, index)}</td>
         </tr>
     `).join('');
+}
+
+function renderPaymentActions(payment, index) {
+    if (payment.status === 'Completed') {
+        return `<button class="btn btn-sm btn-outline-primary" onclick="downloadReceipt(${index})">Download</button>`;
+    }
+    if (hasPermission('manage_payments')) {
+        return `
+            <button class="btn btn-sm btn-success" onclick="confirmPayment(${index})">Confirm</button>
+            <button class="btn btn-sm btn-outline-secondary" onclick="waivePayment(${index})">Waive</button>
+        `;
+    }
+    return '<span class="text-muted">Pending approval</span>';
+}
+
+function confirmPayment(index) {
+    updateLocalPaymentStatus(index, 'Completed', 'completed');
+}
+
+function waivePayment(index) {
+    updateLocalPaymentStatus(index, 'Waived', 'waived');
+}
+
+function updateLocalPaymentStatus(index, displayStatus, dbStatus) {
+    const payment = payments[index];
+    if (!payment) return;
+    payments[index] = {
+        ...payment,
+        status: displayStatus,
+        receiptNumber: payment.receiptNumber || ('RCP' + Date.now())
+    };
+    localStorage.setItem('payments', JSON.stringify(payments));
+    renderPaymentHistory();
+    renderPaymentStatusSummary();
+
+    if (!frontendOnly && payment.dbPaymentId) {
+        fetch('api.php?action=updatePaymentStatus', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(authPayload({
+                payment_id: payment.dbPaymentId,
+                status: dbStatus,
+                transaction_id: payments[index].receiptNumber,
+                notes: `Marked ${displayStatus.toLowerCase()} by ${currentRole || 'treasurer'}`
+            }))
+        }).catch(error => console.error('Payment status update error:', error));
+    }
+    showNotification(`Payment ${displayStatus.toLowerCase()}.`, 'success');
 }
 
 function downloadReceipt(index) {
@@ -2203,7 +2665,7 @@ function downloadReceipt(index) {
     if (!payment) return;
     const userName = currentUser?.fullName || currentUser?.name || currentUser?.username || 'Member';
     const receipt = [
-        'COMMUJ Payment Receipt',
+        "Dawa'ah Payment Receipt",
         '----------------------',
         `Receipt No: ${payment.receiptNumber}`,
         `Name: ${userName}`,
@@ -2278,12 +2740,12 @@ function submitDonation() {
     const receiptNumber = 'DRT' + Date.now();
     const donation = {
         type: document.getElementById('donationModalTitle').textContent.replace('Make ', '').replace(' Donation', ''),
-        purpose: 'COMMUJ donation',
+        purpose: "Dawa'ah donation",
         amount: amount,
         date: new Date().toLocaleDateString(),
         paymentMethod: paymentAccounts[paymentMethod].label,
         transactionRef: receiptNumber,
-        status: 'Completed',
+        status: 'Pending Approval',
         anonymous: isAnonymous,
         donor: isAnonymous ? 'Anonymous' : (currentUser.name || currentUser.fullName || currentUser.username),
         receiptNumber: receiptNumber
@@ -2296,12 +2758,13 @@ function submitDonation() {
             body: JSON.stringify({
                 donor_id: currentUser?.dbUserId || 0,
                 donor_name: donation.donor,
-                donor_email: currentUser?.email || 'anonymous@commuj.local',
+                donor_email: currentUser?.email || 'anonymous@dawaah.local',
                 amount: amount,
                 donation_type: donation.type,
                 purpose: donation.purpose,
                 payment_method: donation.paymentMethod,
-                transaction_id: receiptNumber
+                transaction_id: receiptNumber,
+                status: 'pending'
             })
         })
         .then(response => response.json())
@@ -2325,7 +2788,7 @@ function submitDonation() {
 function saveDonationLocally(donation) {
     donations.push(donation);
     localStorage.setItem('donations', JSON.stringify(donations));
-    alert('Donation sent successfully. Receipt is now available.');
+    alert('Donation submitted. The treasurer must confirm it before a receipt is available.');
 
     document.getElementById('donationForm').reset();
     updatePaymentInstructions('donation');
@@ -2347,11 +2810,57 @@ function renderDonationHistory() {
             <td>${donation.date || 'Recently'}</td>
             <td>${donation.type || 'Donation'}</td>
             <td>$${donation.amount}</td>
-            <td>${donation.purpose || 'COMMUJ donation'}</td>
+            <td>${donation.purpose || "Dawa'ah donation"}</td>
             <td>${donation.paymentMethod || 'Not specified'}</td>
-            <td>${donation.status === 'Completed' ? `<button class="btn btn-sm btn-outline-primary" onclick="downloadDonationReceipt(${index})">Download</button>` : '<span class="text-muted">Pending approval</span>'}</td>
+            <td>${renderDonationActions(donation, index)}</td>
         </tr>
     `).join('');
+}
+
+function renderDonationActions(donation, index) {
+    if (donation.status === 'Completed') {
+        return `<button class="btn btn-sm btn-outline-primary" onclick="downloadDonationReceipt(${index})">Download</button>`;
+    }
+    if (hasPermission('manage_payments')) {
+        return `
+            <button class="btn btn-sm btn-success" onclick="confirmDonation(${index})">Confirm</button>
+            <button class="btn btn-sm btn-outline-danger" onclick="rejectDonation(${index})">Reject</button>
+        `;
+    }
+    return '<span class="text-muted">Pending approval</span>';
+}
+
+function confirmDonation(index) {
+    updateLocalDonationStatus(index, 'Completed', 'completed');
+}
+
+function rejectDonation(index) {
+    updateLocalDonationStatus(index, 'Rejected', 'failed');
+}
+
+function updateLocalDonationStatus(index, displayStatus, dbStatus) {
+    const donation = donations[index];
+    if (!donation) return;
+    donations[index] = {
+        ...donation,
+        status: displayStatus,
+        receiptNumber: donation.receiptNumber || ('DRT' + Date.now())
+    };
+    localStorage.setItem('donations', JSON.stringify(donations));
+    renderDonationHistory();
+
+    if (!frontendOnly && donation.dbDonationId) {
+        fetch('api.php?action=updateDonationStatus', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(authPayload({
+                donation_id: donation.dbDonationId,
+                status: dbStatus,
+                transaction_id: donations[index].receiptNumber
+            }))
+        }).catch(error => console.error('Donation status update error:', error));
+    }
+    showNotification(`Donation ${displayStatus.toLowerCase()}.`, 'success');
 }
 
 function downloadDonationReceipt(index) {
@@ -2359,12 +2868,12 @@ function downloadDonationReceipt(index) {
     if (!donation) return;
     const userName = donation.donor || currentUser?.fullName || currentUser?.name || currentUser?.username || 'Donor';
     const receipt = [
-        'COMMUJ Donation Receipt',
+        "Dawa'ah Donation Receipt",
         '-----------------------',
         `Receipt No: ${donation.receiptNumber}`,
         `Donor: ${userName}`,
         `Donation Type: ${donation.type || 'Donation'}`,
-        `Purpose: ${donation.purpose || 'COMMUJ donation'}`,
+        `Purpose: ${donation.purpose || "Dawa'ah donation"}`,
         `Payment Method: ${donation.paymentMethod || 'Not specified'}`,
         `Amount: $${donation.amount}`,
         `Date: ${donation.date || new Date().toLocaleDateString()}`
@@ -2379,27 +2888,90 @@ function downloadDonationReceipt(index) {
 
 // ADMIN FUNCTIONS
 function loadMemberDatabase() {
+    if (!frontendOnly) {
+        fetch(`api.php?action=getAllStudents&${authQuery()}`)
+            .then(response => response.json())
+            .then(result => {
+                if (!result.success || !Array.isArray(result.data)) return;
+                const databaseMembers = result.data.map(student => ({
+                    dbStudentId: student.id,
+                    dbUserId: student.user_id,
+                    username: student.username || student.student_id,
+                    fullName: `${student.first_name || ''} ${student.last_name || ''}`.trim(),
+                    studentId: student.student_id,
+                    email: student.email,
+                    phone: student.phone,
+                    role: student.role || 'student',
+                    school: student.school,
+                    course: student.course,
+                    yearOfStudy: student.year_of_study,
+                    semester: student.semester,
+                    status: student.membership_status || (student.user_status === 'active' ? 'Active' : 'Pending'),
+                    passport_photo: student.passport_photo
+                }));
+                const merged = [...allMembers];
+                databaseMembers.forEach(member => {
+                    const index = merged.findIndex(item =>
+                        item.dbStudentId === member.dbStudentId ||
+                        item.studentId === member.studentId ||
+                        item.username === member.username ||
+                        item.email === member.email
+                    );
+                    if (index >= 0) {
+                        merged[index] = { ...merged[index], ...member };
+                    } else {
+                        merged.push(member);
+                    }
+                });
+                allMembers = merged;
+                localStorage.setItem('allMembers', JSON.stringify(allMembers));
+                renderMemberDatabase();
+            })
+            .catch(error => console.error('Member database load error:', error));
+    }
+    renderMemberDatabase();
+}
+
+function renderMemberDatabase() {
     const tbody = document.getElementById('membersList');
     if (!tbody) return;
 
     if (allMembers.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="6" class="text-center text-muted">No registered members yet</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="7" class="text-center text-muted">No registered members yet</td></tr>';
         return;
     }
 
     tbody.innerHTML = allMembers.map(member => `
         <tr>
-            <td>${member.studentId || member.username || 'N/A'}</td>
+            <td>${renderMemberPhoto(member)}</td>
             <td>${member.fullName || member.name || member.username || 'N/A'}</td>
+            <td>${member.studentId || member.username || 'N/A'}</td>
             <td>${member.email || 'N/A'}</td>
-            <td>${member.phone || 'N/A'}</td>
-            <td><span class="badge bg-success">${member.status || 'Active'}</span></td>
+            <td>${member.course || 'N/A'}</td>
+            <td><span class="badge ${getMemberStatusBadgeClass(member.status)}">${formatMemberStatus(member.status)}</span></td>
             <td>
                 <button class="btn btn-sm btn-info" onclick="viewMemberDetails('${member.studentId || member.username}')">View</button>
                 <button class="btn btn-sm btn-warning" onclick="editMember('${member.studentId || member.username}')">Edit</button>
+                <button class="btn btn-sm btn-outline-success" onclick="setMemberStatus('${member.studentId || member.username}', 'Active')">Approve</button>
+                <button class="btn btn-sm btn-outline-secondary" onclick="setMemberStatus('${member.studentId || member.username}', 'Inactive')">Deactivate</button>
+                <button class="btn btn-sm btn-outline-danger" onclick="deleteMember('${member.studentId || member.username}')">Delete</button>
             </td>
         </tr>
     `).join('');
+}
+
+function formatMemberStatus(status) {
+    const value = String(status || 'Pending').toLowerCase();
+    if (value === 'active') return 'Active';
+    if (value === 'inactive') return 'Inactive';
+    return 'Pending';
+}
+
+function getMemberStatusBadgeClass(status) {
+    const value = String(status || 'Pending').toLowerCase();
+    if (value === 'active') return 'bg-success';
+    if (value === 'inactive') return 'bg-secondary';
+    return 'bg-warning text-dark';
 }
 
 function searchMembers() {
@@ -2419,7 +2991,48 @@ function viewMemberDetails(studentId) {
         showNotification('Member record not found.', 'warning');
         return;
     }
-    alert(`Member: ${member.fullName || member.username}\nEmail: ${member.email || 'N/A'}\nRole: ${member.role || 'student'}\nPhone: ${member.phone || 'N/A'}`);
+    const photo = getMemberPhoto(member);
+    const body = document.getElementById('memberDetailsBody');
+    if (!body) return;
+
+    body.innerHTML = `
+        <div class="row g-4 align-items-start">
+            <div class="col-md-4 text-center">
+                <div class="mb-3">
+                    ${photo ? `<img class="profile-photo__image" src="${photo}" alt="${escapeHtml(member.fullName || member.username || 'Member photo')}">` : '<i class="fas fa-user-circle fa-5x text-muted"></i>'}
+                </div>
+                <h5>${escapeHtml(member.fullName || member.name || member.username || 'Member')}</h5>
+                <p class="text-muted mb-0">${escapeHtml(member.studentId || member.username || 'No student ID')}</p>
+            </div>
+            <div class="col-md-8">
+                <div class="row">
+                    ${renderMemberDetailItem('Email', member.email)}
+                    ${renderMemberDetailItem('Phone', member.phone)}
+                    ${renderMemberDetailItem('Role', member.role || 'student')}
+                    ${renderMemberDetailItem('Status', member.status || 'Active')}
+                    ${renderMemberDetailItem('School', member.school)}
+                    ${renderMemberDetailItem('Course', member.course)}
+                    ${renderMemberDetailItem('Year of Study', member.yearOfStudy)}
+                    ${renderMemberDetailItem('Semester', member.semester)}
+                    ${renderMemberDetailItem('Gender', member.gender)}
+                    ${renderMemberDetailItem('Nationality', member.nationality)}
+                    ${renderMemberDetailItem('Emergency Contact', member.emergencyContact)}
+                    ${renderMemberDetailItem('Local Guardian', member.localGuardian)}
+                    ${renderMemberDetailItem('Home Address', member.homeAddress, 'col-md-12')}
+                </div>
+            </div>
+        </div>
+    `;
+    new bootstrap.Modal(document.getElementById('memberDetailsModal')).show();
+}
+
+function renderMemberDetailItem(label, value, columnClass = 'col-md-6') {
+    return `
+        <div class="${columnClass} mb-3">
+            <strong>${escapeHtml(label)}:</strong>
+            <div>${escapeHtml(value || '-')}</div>
+        </div>
+    `;
 }
 
 function editMember(studentId) {
@@ -2432,6 +3045,74 @@ function editMember(studentId) {
     loadProfileData();
     switchView('profile');
     showNotification('Member loaded in the profile view.', 'info');
+}
+
+function toggleMemberStatus(studentId) {
+    const member = allMembers.find(item => item.studentId === studentId || item.username === studentId);
+    const nextStatus = String(member?.status || 'Pending').toLowerCase() === 'active' ? 'Inactive' : 'Active';
+    setMemberStatus(studentId, nextStatus);
+}
+
+function setMemberStatus(studentId, nextStatus) {
+    const member = allMembers.find(item => item.studentId === studentId || item.username === studentId);
+    if (!member) {
+        showNotification('Member record not found.', 'warning');
+        return;
+    }
+
+    allMembers = allMembers.map(item =>
+        item.studentId === studentId || item.username === studentId ? { ...item, status: nextStatus } : item
+    );
+    localStorage.setItem('allMembers', JSON.stringify(allMembers));
+    if (currentUser && (currentUser.studentId === studentId || currentUser.username === studentId)) {
+        currentUser.status = nextStatus;
+        localStorage.setItem('currentUser', JSON.stringify(currentUser));
+    }
+    loadMemberDatabase();
+    syncMemberStatusToDatabase(member, nextStatus);
+    showNotification(`Member ${nextStatus.toLowerCase()}.`, 'success');
+}
+
+function deleteMember(studentId) {
+    const member = allMembers.find(item => item.studentId === studentId || item.username === studentId);
+    if (!member) {
+        showNotification('Member record not found.', 'warning');
+        return;
+    }
+    if (!confirm(`Delete ${member.fullName || member.username || 'this member'}? This removes the local member record.`)) {
+        return;
+    }
+
+    allMembers = allMembers.filter(item => item.studentId !== studentId && item.username !== studentId);
+    localStorage.setItem('allMembers', JSON.stringify(allMembers));
+    if (currentUser && (currentUser.studentId === studentId || currentUser.username === studentId)) {
+        currentUser = null;
+        localStorage.removeItem('currentUser');
+    }
+    loadMemberDatabase();
+    syncMemberDeleteToDatabase(member);
+    showNotification('Member deleted.', 'success');
+}
+
+function syncMemberStatusToDatabase(member, status) {
+    if (frontendOnly || !member.dbStudentId) return;
+    fetch('api.php?action=updateStudentStatus', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(authPayload({
+            student_db_id: member.dbStudentId,
+            status: status.toLowerCase()
+        }))
+    }).catch(error => console.error('Member status sync error:', error));
+}
+
+function syncMemberDeleteToDatabase(member) {
+    if (frontendOnly || !member.dbStudentId) return;
+    fetch('api.php?action=deleteStudent', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(authPayload({ student_db_id: member.dbStudentId }))
+    }).catch(error => console.error('Member delete sync error:', error));
 }
 
 function loadAdminEvents() {
@@ -2608,6 +3289,12 @@ function initializeCharts() {
 // UTILITY FUNCTIONS
 function logout() {
     if (confirm('Are you sure you want to logout?')) {
+        if (!frontendOnly) {
+            fetch('api.php?action=logoutUser', {
+                method: 'POST',
+                credentials: 'same-origin'
+            }).catch(() => {});
+        }
         localStorage.removeItem('currentUser');
         localStorage.removeItem('currentRole');
 
@@ -2679,11 +3366,55 @@ function showNotification(message, type = 'info') {
 
 // Role-Based Access Control
 function hasPermission(permission) {
+    const memberPermissions = [
+        'view_profile',
+        'view_membership',
+        'register_events',
+        'view_prayer_times',
+        'view_announcements',
+        'view_resources',
+        'welfare_request',
+        'view_payments',
+        'view_donations',
+        'register_volunteer'
+    ];
+
+    const leadershipPermissions = [
+        ...memberPermissions,
+        'manage_members',
+        'manage_events',
+        'manage_welfare',
+        'manage_leadership',
+        'manage_gallery',
+        'manage_contact',
+        'manage_prayer_times',
+        'view_reports',
+        'generate_reports',
+        'create_announcements'
+    ];
+
     const rolePermissions = {
-        'student': ['view_profile', 'register_events', 'view_prayer_times', 'welfare_request', 'view_payments'],
-        'executive': ['view_profile', 'manage_members', 'manage_events', 'view_reports', 'manage_welfare', 'manage_leadership'],
-        'imam': ['view_profile', 'manage_prayer_times', 'manage_lectures', 'view_announcements'],
-        'finance': ['view_profile', 'manage_payments', 'generate_reports', 'view_donations']
+        'student': memberPermissions,
+        'executive': leadershipPermissions,
+        'chairman': leadershipPermissions,
+        'chairlady': leadershipPermissions,
+        'secretary': leadershipPermissions,
+        'admin': leadershipPermissions,
+        'treasurer': [
+            ...memberPermissions,
+            'manage_payments',
+            'view_reports',
+            'generate_reports'
+        ],
+        'imam': [
+            'view_profile',
+            'view_prayer_times',
+            'view_announcements',
+            'view_resources',
+            'manage_prayer_times',
+            'manage_lectures',
+            'create_announcements'
+        ]
     };
 
     return rolePermissions[currentRole]?.includes(permission) || false;
@@ -2834,6 +3565,10 @@ function loadDashboardData() {
     const dateStr = new Date().toLocaleDateString('en-US', options);
     const dashboardDateEl = document.getElementById('dashboardDate');
     if (dashboardDateEl) dashboardDateEl.textContent = dateStr;
+    const roleMessage = document.querySelector('#dashboardView .welcome-subtext');
+    if (roleMessage) {
+        roleMessage.textContent = getRoleDashboardMessage();
+    }
 
     // Profile Summary
     document.getElementById('dashName').textContent = currentUser.name || currentUser.username;
@@ -2842,7 +3577,7 @@ function loadDashboardData() {
     document.getElementById('dashYear').textContent = currentUser.year || 'Not set';
 
     // Membership Status
-    document.getElementById('membershipStatusValue').textContent = 'Active';
+    document.getElementById('membershipStatusValue').textContent = formatMemberStatus(currentUser.status || 'Active');
 
     // Upcoming Events Count
     const upcomingCount = getAvailableEvents().length;
@@ -2884,6 +3619,21 @@ function loadDashboardData() {
     if (meetingsList) {
         meetingsList.innerHTML = '<p class="text-center text-muted mb-0">No meetings have been added yet.</p>';
     }
+}
+
+function getRoleDashboardMessage() {
+    const role = currentRole || currentUser?.role || 'student';
+    const messages = {
+        chairman: 'Leadership workspace for members, events, welfare, reports, and association oversight.',
+        chairlady: 'Leadership workspace for members, events, welfare, reports, and association oversight.',
+        secretary: 'Secretary workspace for member records, events, announcements, and reports.',
+        executive: 'Executive workspace for member management, programmes, welfare, reports, and communication.',
+        admin: 'Admin workspace for full system management, reports, content, and member records.',
+        treasurer: 'Treasurer workspace for dues, donations, payment confirmation, and financial reports.',
+        imam: 'Imam/Leader workspace for prayer times, announcements, Islamic resources, and guidance.',
+        student: 'Member workspace for profile, events, welfare, dues, donations, and resources.'
+    };
+    return messages[role] || messages.student;
 }
 
 function loadDashboardPrayerTimes() {
@@ -3024,7 +3774,7 @@ function initializeHadiths() {
 function loadAllHadiths() {
     const hadithRequest = frontendOnly
         ? Promise.resolve(getStaticApiData('getAllHadiths'))
-        : fetch('commuj.php?action=getAll').then(response => response.json());
+        : fetch('dawaah.php?action=getAll').then(response => response.json());
 
     return hadithRequest
         .then(data => {
@@ -3048,7 +3798,7 @@ function loadAllHadiths() {
 function loadDailyHadith() {
     const dailyRequest = frontendOnly
         ? Promise.resolve(getStaticApiData('getDailyHadith'))
-        : fetch('commuj.php?action=getDaily').then(response => response.json());
+        : fetch('dawaah.php?action=getDaily').then(response => response.json());
 
     return dailyRequest
         .then(data => {

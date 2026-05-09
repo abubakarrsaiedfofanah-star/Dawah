@@ -1,5 +1,5 @@
 <?php
-// COMMUJ Database Operations Helper
+// Dawa'ah Database Operations Helper
 
 require_once 'database.php';
 
@@ -9,13 +9,32 @@ require_once 'database.php';
 
 function registerUser($username, $email, $password, $role = 'student') {
     $conn = getDBConnection();
+    ensureUserRoleColumn();
+    $role = trim($role) !== '' ? trim($role) : 'student';
+    if ($role === 'admin') {
+        $admin_count = $conn->query("SELECT COUNT(*) AS total FROM users WHERE role = 'admin'");
+        $total_admins = $admin_count ? intval($admin_count->fetch_assoc()['total']) : 0;
+        if ($total_admins > 0) {
+            return array('success' => false, 'error' => 'Only the first main admin can register. Other admins must be added inside the admin panel.');
+        }
+    }
+    if (!in_array($role, array('student', 'admin'), true)) {
+        $stmt_existing_role = $conn->prepare("SELECT id FROM users WHERE role = ? LIMIT 1");
+        $stmt_existing_role->bind_param("s", $role);
+        $stmt_existing_role->execute();
+        if ($stmt_existing_role->get_result()->num_rows > 0) {
+            return array('success' => false, 'error' => ucfirst($role) . ' role is already registered. Admin must delete the existing account before another can register.');
+        }
+    }
+
     $hashed_password = password_hash($password, PASSWORD_BCRYPT);
+    $status = in_array($role, array('student', 'admin'), true) ? 'active' : 'inactive';
     
     $sql = "INSERT INTO users (username, email, password, role, status) 
-            VALUES (?, ?, ?, ?, 'active')";
+            VALUES (?, ?, ?, ?, ?)";
     
     $stmt = $conn->prepare($sql);
-    $stmt->bind_param("ssss", $username, $email, $hashed_password, $role);
+    $stmt->bind_param("sssss", $username, $email, $hashed_password, $role, $status);
     
     if ($stmt->execute()) {
         return array('success' => true, 'user_id' => $conn->insert_id);
@@ -26,6 +45,7 @@ function registerUser($username, $email, $password, $role = 'student') {
 
 function loginUser($username, $password) {
     $conn = getDBConnection();
+    ensureUserRoleColumn();
     $sql = "SELECT id, username, email, role, status FROM users WHERE username = ? OR email = ?";
     
     $stmt = $conn->prepare($sql);
@@ -42,6 +62,10 @@ function loginUser($username, $password) {
         $pass_result = $stmt_pass->get_result()->fetch_assoc();
         
         if (password_verify($password, $pass_result['password'])) {
+            if ($user['status'] !== 'active') {
+                return array('success' => false, 'error' => 'Your account is pending approval or inactive. Please contact the admin.');
+            }
+
             // Update last login
             $update_login = "UPDATE users SET last_login = NOW() WHERE id = ?";
             $stmt_login = $conn->prepare($update_login);
@@ -57,6 +81,7 @@ function loginUser($username, $password) {
 
 function getUserById($user_id) {
     $conn = getDBConnection();
+    ensureUserRoleColumn();
     $sql = "SELECT * FROM users WHERE id = ?";
     $stmt = $conn->prepare($sql);
     $stmt->bind_param("i", $user_id);
@@ -64,23 +89,110 @@ function getUserById($user_id) {
     return $stmt->get_result()->fetch_assoc();
 }
 
+function ensureUserRoleColumn() {
+    $conn = getDBConnection();
+    if (!tableExists('users')) {
+        return;
+    }
+    $conn->query("ALTER TABLE users MODIFY role ENUM('student', 'executive', 'chairman', 'chairlady', 'secretary', 'treasurer', 'imam', 'admin') DEFAULT 'student'");
+}
+
 // ============================================
 // STUDENT OPERATIONS
 // ============================================
 
+function getAcademicCatalog() {
+    return array(
+        'School of Business & Technology' => array(
+            'Bachelor of Business Management (BBM)',
+            'Bachelor of Commerce (BCom)',
+            'Bachelor of Business Information Technology',
+            'Bachelor of Science in Computer Science',
+            'Bachelor of Science in Information Technology',
+            'Master of Business Administration (MBA)',
+            'Diploma in ICT',
+            'Diploma in Business Management',
+            'Diploma in Business IT & Business Management',
+            'Diploma in Human Resource Management',
+            'Diploma in Supply Chain Management',
+            'Diploma in Islamic Banking and Finance',
+            'Certificate in ICT',
+            'Certificate in Business Management',
+            'Certificate in Human Resource Management',
+            'Certificate in Supply Chain Management',
+            'Certificate in Business Information Technology',
+            'Electrical Engineering',
+            'ICT',
+            'CISCO Networking',
+            'ICDL Courses'
+        ),
+        'School of Sharia & Islamic Studies' => array(
+            'Bachelor of Arts in Islamic Studies',
+            'Bachelor of Arts in Sharia',
+            'Master of Arts in Islamic Studies',
+            'Diploma in Arabic Language and Islamic Studies',
+            'Diploma in Islamic Banking and Finance',
+            'Certificate in Arabic Language and Islamic Studies'
+        ),
+        'School of Law and Shari’a' => array(
+            'Bachelor of Laws (LL.B) with Sharia & Law',
+            'Diploma in Islamic Law and Legal Studies'
+        ),
+        'School of Education & Social Sciences' => array(
+            'Bachelor of Education (B.Ed.)',
+            'Bachelor of Education (Arts)',
+            'Diploma in Early Childhood Education',
+            'Clothing & Textile',
+            'Business & Liberal Studies'
+        ),
+        'School of Nursing & Midwifery' => array(
+            'Bachelor of Science in Nursing'
+        )
+    );
+}
+
+function validateAcademicSelection($school, $course, $year_of_study = '', $semester = '') {
+    $catalog = getAcademicCatalog();
+    if ($school === '' || !isset($catalog[$school])) {
+        return array('success' => false, 'error' => 'Please select a valid school');
+    }
+    if ($course === '' || !in_array($course, $catalog[$school], true)) {
+        return array('success' => false, 'error' => 'Please select a valid course for the selected school');
+    }
+    if ($year_of_study !== '' && !in_array((string)$year_of_study, array('1', '2', '3', '4', '5', '6'), true)) {
+        return array('success' => false, 'error' => 'Please select a valid year of study');
+    }
+    if ($semester !== '' && !in_array((string)$semester, array('1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12'), true)) {
+        return array('success' => false, 'error' => 'Please select a valid semester');
+    }
+    return array('success' => true);
+}
+
 function registerStudent($user_id, $data) {
     $conn = getDBConnection();
+    ensureStudentColumns();
     $today = date('Y-m-d');
+    $school = $data['school'] ?? '';
+    $semester = $data['semester'] ?? '';
+    $degree_type = $data['degree_type'] ?? $data['degreeType'] ?? 'degree';
+    $passport_photo = $data['passport_photo'] ?? $data['passportPhoto'] ?? '';
+    if (!in_array($degree_type, array('diploma', 'degree'), true)) {
+        $degree_type = 'degree';
+    }
+    $academic_validation = validateAcademicSelection($school, $data['course'] ?? '', $data['year_of_study'] ?? '', $semester);
+    if (!$academic_validation['success']) {
+        return $academic_validation;
+    }
     
     $sql = "INSERT INTO students 
             (user_id, first_name, last_name, student_id, email, phone, gender, 
-             nationality, course, year_of_study, degree_type, home_address, 
-             emergency_contact, emergency_contact_phone, local_guardian, local_guardian_phone, joined_date)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+             nationality, school, course, year_of_study, semester, degree_type, home_address, 
+             emergency_contact, emergency_contact_phone, local_guardian, local_guardian_phone, passport_photo, joined_date)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
     
     $stmt = $conn->prepare($sql);
     $stmt->bind_param(
-        "issssssssssssssss",
+        "isssssssssssssssssss",
         $user_id,
         $data['first_name'],
         $data['last_name'],
@@ -89,14 +201,17 @@ function registerStudent($user_id, $data) {
         $data['phone'],
         $data['gender'],
         $data['nationality'],
+        $school,
         $data['course'],
         $data['year_of_study'],
-        $data['degree_type'],
+        $semester,
+        $degree_type,
         $data['home_address'],
         $data['emergency_contact'],
         $data['emergency_contact_phone'],
         $data['local_guardian'],
         $data['local_guardian_phone'],
+        $passport_photo,
         $today
     );
     
@@ -109,6 +224,7 @@ function registerStudent($user_id, $data) {
 
 function getStudentByUserId($user_id) {
     $conn = getDBConnection();
+    ensureStudentColumns();
     $sql = "SELECT * FROM students WHERE user_id = ?";
     $stmt = $conn->prepare($sql);
     $stmt->bind_param("i", $user_id);
@@ -118,6 +234,7 @@ function getStudentByUserId($user_id) {
 
 function getStudentByIdentifier($identifier) {
     $conn = getDBConnection();
+    ensureStudentColumns();
     $sql = "SELECT s.*, u.id AS user_id, u.username, u.role
             FROM students s
             JOIN users u ON s.user_id = u.id
@@ -132,7 +249,7 @@ function getStudentByIdentifier($identifier) {
 function ensureStudentRecord($data) {
     $conn = getDBConnection();
     $identifier = isset($data['student_id']) && $data['student_id'] !== '' ? $data['student_id'] : ($data['username'] ?? '');
-    $email = isset($data['email']) && $data['email'] !== '' ? $data['email'] : ($identifier . '@commuj.local');
+    $email = isset($data['email']) && $data['email'] !== '' ? $data['email'] : ($identifier . '@dawaah.local');
     $existing = getStudentByIdentifier($identifier);
     if (!$existing) {
         $existing = getStudentByIdentifier($email);
@@ -143,7 +260,7 @@ function ensureStudentRecord($data) {
 
     $username = $identifier ?: ('member' . time());
     $role = isset($data['role']) && $data['role'] !== '' ? $data['role'] : 'student';
-    $password = password_hash(isset($data['password']) && $data['password'] !== '' ? $data['password'] : 'commuj123', PASSWORD_BCRYPT);
+    $password = password_hash(isset($data['password']) && $data['password'] !== '' ? $data['password'] : 'Dawaah123', PASSWORD_BCRYPT);
 
     $user_id = 0;
     $stmt_user = $conn->prepare("INSERT INTO users (username, email, password, role, status) VALUES (?, ?, ?, ?, 'active')");
@@ -180,14 +297,17 @@ function ensureStudentRecord($data) {
         'phone' => $data['phone'] ?? '',
         'gender' => in_array($gender, array('male', 'female', 'other'), true) ? $gender : 'male',
         'nationality' => $data['nationality'] ?? '',
+        'school' => $data['school'] ?? '',
         'course' => $data['course'] ?? '',
         'year_of_study' => $data['year_of_study'] ?? $data['yearOfStudy'] ?? '',
+        'semester' => $data['semester'] ?? '',
         'degree_type' => in_array($degree_type, array('diploma', 'degree'), true) ? $degree_type : 'degree',
         'home_address' => $data['home_address'] ?? $data['homeAddress'] ?? '',
         'emergency_contact' => $data['emergency_contact'] ?? $data['emergencyContact'] ?? '',
         'emergency_contact_phone' => $data['emergency_contact_phone'] ?? '',
         'local_guardian' => $data['local_guardian'] ?? $data['localGuardian'] ?? '',
-        'local_guardian_phone' => $data['local_guardian_phone'] ?? ''
+        'local_guardian_phone' => $data['local_guardian_phone'] ?? '',
+        'passport_photo' => $data['passport_photo'] ?? $data['passportPhoto'] ?? ''
     );
 
     $result = registerStudent($user_id, $student);
@@ -199,6 +319,7 @@ function ensureStudentRecord($data) {
 
 function updateStudentProfile($student_db_id, $data) {
     $conn = getDBConnection();
+    ensureStudentColumns();
 
     $first_name = trim($data['first_name'] ?? '');
     $last_name = trim($data['last_name'] ?? '-');
@@ -207,9 +328,12 @@ function updateStudentProfile($student_db_id, $data) {
     $phone = trim($data['phone'] ?? '');
     $gender = $data['gender'] ?? 'male';
     $nationality = trim($data['nationality'] ?? '');
+    $school = trim($data['school'] ?? '');
     $course = trim($data['course'] ?? '');
     $year_of_study = trim($data['year_of_study'] ?? '');
+    $semester = trim($data['semester'] ?? '');
     $degree_type = $data['degree_type'] ?? 'degree';
+    $passport_photo = trim($data['passport_photo'] ?? '');
     $home_address = trim($data['home_address'] ?? '');
     $emergency_contact = trim($data['emergency_contact'] ?? '');
     $local_guardian = trim($data['local_guardian'] ?? '');
@@ -224,31 +348,66 @@ function updateStudentProfile($student_db_id, $data) {
     if (!in_array($degree_type, array('diploma', 'degree'), true)) {
         $degree_type = 'degree';
     }
+    $academic_validation = validateAcademicSelection($school, $course, $year_of_study, $semester);
+    if (!$academic_validation['success']) {
+        return $academic_validation;
+    }
 
+    $remove_photo = isset($data['remove_photo']) && in_array((string)$data['remove_photo'], array('1', 'true', 'yes'), true);
+    $has_photo_update = $passport_photo !== '' || $remove_photo;
+    $photo_sql = $has_photo_update ? ", passport_photo = ?" : "";
+    if ($remove_photo) {
+        $passport_photo = '';
+    }
     $sql = "UPDATE students
             SET first_name = ?, last_name = ?, student_id = ?, email = ?, phone = ?,
-                gender = ?, nationality = ?, course = ?, year_of_study = ?, degree_type = ?,
-                home_address = ?, emergency_contact = ?, local_guardian = ?
+                gender = ?, nationality = ?, school = ?, course = ?, year_of_study = ?, semester = ?, degree_type = ?,
+                home_address = ?, emergency_contact = ?, local_guardian = ?$photo_sql
             WHERE id = ?";
 
     $stmt = $conn->prepare($sql);
-    $stmt->bind_param(
-        "sssssssssssssi",
-        $first_name,
-        $last_name,
-        $student_id,
-        $email,
-        $phone,
-        $gender,
-        $nationality,
-        $course,
-        $year_of_study,
-        $degree_type,
-        $home_address,
-        $emergency_contact,
-        $local_guardian,
-        $student_db_id
-    );
+    if ($has_photo_update) {
+        $stmt->bind_param(
+            "ssssssssssssssssi",
+            $first_name,
+            $last_name,
+            $student_id,
+            $email,
+            $phone,
+            $gender,
+            $nationality,
+            $school,
+            $course,
+            $year_of_study,
+            $semester,
+            $degree_type,
+            $home_address,
+            $emergency_contact,
+            $local_guardian,
+            $passport_photo,
+            $student_db_id
+        );
+    } else {
+        $stmt->bind_param(
+            "sssssssssssssssi",
+            $first_name,
+            $last_name,
+            $student_id,
+            $email,
+            $phone,
+            $gender,
+            $nationality,
+            $school,
+            $course,
+            $year_of_study,
+            $semester,
+            $degree_type,
+            $home_address,
+            $emergency_contact,
+            $local_guardian,
+            $student_db_id
+        );
+    }
 
     if (!$stmt->execute()) {
         return array('success' => false, 'error' => $stmt->error);
@@ -266,7 +425,64 @@ function updateStudentProfile($student_db_id, $data) {
 }
 
 function getAllStudents() {
-    return fetchAll("SELECT * FROM students ORDER BY first_name ASC");
+    return fetchAll("SELECT s.*, u.id AS user_id, u.username, u.role, u.status AS user_status
+                     FROM students s
+                     LEFT JOIN users u ON s.user_id = u.id
+                     ORDER BY s.first_name ASC");
+}
+
+function updateStudentStatus($student_db_id, $status) {
+    $conn = getDBConnection();
+    $student_db_id = intval($student_db_id);
+    $status = strtolower(trim($status));
+    if (!in_array($status, array('active', 'pending', 'inactive'), true)) {
+        return array('success' => false, 'error' => 'Invalid student status');
+    }
+
+    $stmt = $conn->prepare("UPDATE students SET membership_status = ? WHERE id = ?");
+    $stmt->bind_param("si", $status, $student_db_id);
+    if (!$stmt->execute()) {
+        return array('success' => false, 'error' => $stmt->error);
+    }
+
+    $stmt_find = $conn->prepare("SELECT user_id FROM students WHERE id = ?");
+    $stmt_find->bind_param("i", $student_db_id);
+    $stmt_find->execute();
+    $student = $stmt_find->get_result()->fetch_assoc();
+    if ($student && isset($student['user_id'])) {
+        $user_status = $status === 'active' ? 'active' : 'inactive';
+        $stmt_user = $conn->prepare("UPDATE users SET status = ? WHERE id = ?");
+        $stmt_user->bind_param("si", $user_status, $student['user_id']);
+        $stmt_user->execute();
+    }
+
+    return array('success' => true);
+}
+
+function deleteStudentRecord($student_db_id) {
+    $conn = getDBConnection();
+    $student_db_id = intval($student_db_id);
+    $stmt_find = $conn->prepare("SELECT user_id, passport_photo FROM students WHERE id = ?");
+    $stmt_find->bind_param("i", $student_db_id);
+    $stmt_find->execute();
+    $student = $stmt_find->get_result()->fetch_assoc();
+    if (!$student) {
+        return array('success' => false, 'error' => 'Student not found');
+    }
+
+    $stmt = $conn->prepare("DELETE FROM students WHERE id = ?");
+    $stmt->bind_param("i", $student_db_id);
+    if (!$stmt->execute()) {
+        return array('success' => false, 'error' => $stmt->error);
+    }
+
+    if (!empty($student['user_id'])) {
+        $stmt_user = $conn->prepare("DELETE FROM users WHERE id = ?");
+        $stmt_user->bind_param("i", $student['user_id']);
+        $stmt_user->execute();
+    }
+
+    return array('success' => true);
 }
 
 // ============================================
@@ -326,8 +542,8 @@ function seedDefaultEventsIfEmpty() {
 
     $events = array(
         array(
-            'title' => 'COMMUJ Orientation Program',
-            'description' => 'Welcome session for new and returning members with introduction to COMMUJ activities.',
+            'title' => "Dawa'ah Orientation Program",
+            'description' => "Welcome session for new and returning members with introduction to Dawa'ah activities.",
             'event_date' => date('Y-m-d H:i:s', strtotime('+7 days 10:00')),
             'location' => 'College Mosque Hall',
             'category' => 'orientation',
@@ -643,7 +859,7 @@ function createAnnouncement($title, $content, $author_id, $priority = 'medium', 
 
     if ($author_id <= 0) {
         $password = password_hash(bin2hex(random_bytes(16)), PASSWORD_BCRYPT);
-        $stmt_user = $conn->prepare("INSERT INTO users (username, email, password, role, status) VALUES ('system_admin', 'admin@commuj.local', ?, 'admin', 'active')");
+        $stmt_user = $conn->prepare("INSERT INTO users (username, email, password, role, status) VALUES ('system_admin', 'admin@dawaah.local', ?, 'admin', 'active')");
         $stmt_user->bind_param("s", $password);
         if ($stmt_user->execute()) {
             $author_id = $conn->insert_id;
@@ -735,6 +951,8 @@ function addPublicLeader($leader_data) {
         id INT PRIMARY KEY AUTO_INCREMENT,
         name VARCHAR(100) NOT NULL,
         position VARCHAR(100) NOT NULL,
+        course VARCHAR(150),
+        year_of_study VARCHAR(50),
         bio TEXT,
         description TEXT,
         email VARCHAR(100),
@@ -747,21 +965,33 @@ function addPublicLeader($leader_data) {
         FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE SET NULL
     )";
     $conn->query($create_table);
+    ensureLeadershipProfileColumns();
     
     $sql = "INSERT INTO leadership_profiles 
-            (name, position, bio, description, email, phone, photo_url, user_id, status)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'active')";
+            (name, position, course, year_of_study, bio, description, email, phone, photo_url, user_id, status)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'active')";
     
     $stmt = $conn->prepare($sql);
+    $name = $leader_data['name'];
+    $position = $leader_data['position'];
+    $course = $leader_data['course'] ?? '';
+    $year_of_study = $leader_data['year_of_study'] ?? '';
+    $bio = $leader_data['bio'];
+    $description = $leader_data['description'];
+    $email = $leader_data['email'];
+    $phone = $leader_data['phone'];
+    $photo_url = $leader_data['photo_url'];
     $stmt->bind_param(
-        "sssssssi",
-        $leader_data['name'],
-        $leader_data['position'],
-        $leader_data['bio'],
-        $leader_data['description'],
-        $leader_data['email'],
-        $leader_data['phone'],
-        $leader_data['photo_url'],
+        "sssssssssi",
+        $name,
+        $position,
+        $course,
+        $year_of_study,
+        $bio,
+        $description,
+        $email,
+        $phone,
+        $photo_url,
         $user_id
     );
     
@@ -772,8 +1002,31 @@ function addPublicLeader($leader_data) {
     }
 }
 
+function updatePaymentStatus($payment_id, $status, $transaction_id = null, $notes = null) {
+    $conn = getDBConnection();
+    $status = strtolower(trim($status));
+    if (!in_array($status, array('pending', 'completed', 'late', 'waived'), true)) {
+        return array('success' => false, 'error' => 'Invalid payment status');
+    }
+
+    $sql = "UPDATE payments
+            SET status = ?,
+                paid_date = CASE WHEN ? = 'completed' THEN NOW() ELSE paid_date END,
+                transaction_id = COALESCE(?, transaction_id),
+                notes = COALESCE(?, notes)
+            WHERE id = ?";
+    $stmt = $conn->prepare($sql);
+    $stmt->bind_param("ssssi", $status, $status, $transaction_id, $notes, $payment_id);
+
+    if ($stmt->execute()) {
+        return array('success' => true);
+    }
+    return array('success' => false, 'error' => $stmt->error);
+}
+
 function getPublicLeaders() {
     $conn = getDBConnection();
+    ensureLeadershipProfileColumns();
     
     $sql = "SELECT * FROM leadership_profiles 
             WHERE status = 'active' 
@@ -907,6 +1160,26 @@ function completeDonation($donation_id, $transaction_id = null) {
     return array('success' => false, 'error' => $stmt->error);
 }
 
+function updateDonationStatus($donation_id, $status, $transaction_id = null) {
+    $conn = getDBConnection();
+    $status = strtolower(trim($status));
+    if (!in_array($status, array('pending', 'completed', 'failed'), true)) {
+        return array('success' => false, 'error' => 'Invalid donation status');
+    }
+    $receipt_issued = $status === 'completed' ? 1 : 0;
+
+    $sql = "UPDATE donations
+            SET status = ?, transaction_id = COALESCE(?, transaction_id), receipt_issued = ?
+            WHERE id = ?";
+    $stmt = $conn->prepare($sql);
+    $stmt->bind_param("ssii", $status, $transaction_id, $receipt_issued, $donation_id);
+
+    if ($stmt->execute()) {
+        return array('success' => true);
+    }
+    return array('success' => false, 'error' => $stmt->error);
+}
+
 function getAllWelfareRequests() {
     $conn = getDBConnection();
     $sql = "SELECT wr.*, wr.student_id AS student_db_id,
@@ -920,6 +1193,53 @@ function getAllWelfareRequests() {
         return $result->fetch_all(MYSQLI_ASSOC);
     }
     return array();
+}
+
+function ensureLeadershipProfileColumns() {
+    $conn = getDBConnection();
+    if (!tableExists('leadership_profiles')) {
+        return;
+    }
+
+    $columns = array();
+    $result = $conn->query("SHOW COLUMNS FROM leadership_profiles");
+    if ($result) {
+        while ($row = $result->fetch_assoc()) {
+            $columns[$row['Field']] = true;
+        }
+    }
+
+    if (!isset($columns['course'])) {
+        $conn->query("ALTER TABLE leadership_profiles ADD COLUMN course VARCHAR(150) NULL AFTER position");
+    }
+    if (!isset($columns['year_of_study'])) {
+        $conn->query("ALTER TABLE leadership_profiles ADD COLUMN year_of_study VARCHAR(50) NULL AFTER course");
+    }
+}
+
+function ensureStudentColumns() {
+    $conn = getDBConnection();
+    if (!tableExists('students')) {
+        return;
+    }
+
+    $columns = array();
+    $result = $conn->query("SHOW COLUMNS FROM students");
+    if ($result) {
+        while ($row = $result->fetch_assoc()) {
+            $columns[$row['Field']] = true;
+        }
+    }
+
+    if (!isset($columns['school'])) {
+        $conn->query("ALTER TABLE students ADD COLUMN school VARCHAR(150) NULL AFTER nationality");
+    }
+    if (!isset($columns['semester'])) {
+        $conn->query("ALTER TABLE students ADD COLUMN semester VARCHAR(20) NULL AFTER year_of_study");
+    }
+    if (!isset($columns['passport_photo'])) {
+        $conn->query("ALTER TABLE students ADD COLUMN passport_photo VARCHAR(255) NULL AFTER local_guardian_phone");
+    }
 }
 
 function updateWelfareStatus($request_id, $status, $notes = '', $approved_by = 0) {
@@ -1037,7 +1357,7 @@ function seedDefaultResourcesIfEmpty() {
         ),
         array(
             'title' => 'Student Welfare Support Information',
-            'description' => 'Information for members who need welfare support, counseling, or emergency assistance from COMMUJ.',
+            'description' => "Information for members who need welfare support, counseling, or emergency assistance from Dawa'ah.",
             'resource_type' => 'link',
             'category' => 'Welfare',
             'url' => 'uploads/resources/student-welfare-support.html'
@@ -1135,7 +1455,7 @@ function getAdminDashboardDetail($type) {
 
     $queries = array(
         'members' => array('table' => 'users', 'sql' => "SELECT id, username, email, role, status, created_at FROM users ORDER BY created_at DESC LIMIT 100"),
-        'students' => array('table' => 'students', 'sql' => "SELECT id, student_id, first_name, last_name, email, phone, course, year_of_study, membership_status, created_at FROM students ORDER BY created_at DESC LIMIT 100"),
+        'students' => array('table' => 'students', 'sql' => "SELECT id, student_id, first_name, last_name, email, phone, course, year_of_study, semester, passport_photo, membership_status, created_at FROM students ORDER BY created_at DESC LIMIT 100"),
         'donations' => array('table' => 'donations', 'sql' => "SELECT id, donor_name, donor_email, amount, donation_type, purpose, payment_method, transaction_id, status, receipt_issued, created_at FROM donations ORDER BY created_at DESC LIMIT 100"),
         'payments' => array('table' => 'payments', 'sql' => "SELECT p.id, s.student_id, s.first_name, s.last_name, s.email, p.payment_type, p.amount, p.status, p.payment_method, p.transaction_id, p.notes, p.created_at FROM payments p LEFT JOIN students s ON p.student_id = s.id ORDER BY p.created_at DESC LIMIT 100"),
         'welfare' => array('table' => 'welfare_requests', 'sql' => "SELECT wr.id, s.student_id, s.first_name, s.last_name, wr.category, wr.amount_needed, wr.status, wr.created_at FROM welfare_requests wr LEFT JOIN students s ON wr.student_id = s.id ORDER BY wr.created_at DESC LIMIT 100"),
@@ -1172,7 +1492,7 @@ function ensureSystemAdminUser() {
     }
 
     $password = password_hash(bin2hex(random_bytes(16)), PASSWORD_BCRYPT);
-    $stmt = $conn->prepare("INSERT INTO users (username, email, password, role, status) VALUES ('system_admin', 'admin@commuj.local', ?, 'admin', 'active')");
+    $stmt = $conn->prepare("INSERT INTO users (username, email, password, role, status) VALUES ('system_admin', 'admin@dawaah.local', ?, 'admin', 'active')");
     $stmt->bind_param("s", $password);
     if ($stmt->execute()) {
         return $conn->insert_id;
@@ -1188,7 +1508,7 @@ function seedAdminSampleData() {
     $sample_student_id = ensureSampleStudent();
 
     createAnnouncement(
-        'Welcome to COMMUJ',
+        "Welcome to Dawa'ah",
         'This is a sample announcement saved in the XAMPP MySQL database. New admin announcements will appear here and on the user dashboard.',
         $admin_id,
         'medium',
@@ -1218,7 +1538,7 @@ function seedAdminSampleData() {
     recordDonation(
         $admin_id,
         'Sample Donor',
-        'sample.donor@commuj.local',
+        'sample.donor@dawaah.local',
         25.00,
         'Sadaqah',
         'Sample donation record for dashboard testing',
@@ -1234,7 +1554,7 @@ function seedAdminSampleData() {
     }
 
     createEvent(array(
-        'title' => 'Sample COMMUJ Orientation',
+        'title' => "Sample Dawa'ah Orientation",
         'description' => 'A sample upcoming event used to confirm that event registration is working.',
         'event_date' => date('Y-m-d H:i:s', strtotime('+7 days 14:00')),
         'location' => 'College Mosque Hall',
@@ -1255,7 +1575,7 @@ function ensureSampleStudent() {
     }
 
     $password = password_hash('sample123', PASSWORD_BCRYPT);
-    $stmt_user = $conn->prepare("INSERT INTO users (username, email, password, role, status) VALUES ('SAMPLE001', 'sample.student@commuj.local', ?, 'student', 'active')");
+    $stmt_user = $conn->prepare("INSERT INTO users (username, email, password, role, status) VALUES ('SAMPLE001', 'sample.student@dawaah.local', ?, 'student', 'active')");
     $stmt_user->bind_param("s", $password);
     if (!$stmt_user->execute()) {
         $user = $conn->query("SELECT id FROM users WHERE username = 'SAMPLE001' LIMIT 1");
@@ -1271,18 +1591,21 @@ function ensureSampleStudent() {
         'first_name' => 'Sample',
         'last_name' => 'Student',
         'student_id' => 'SAMPLE001',
-        'email' => 'sample.student@commuj.local',
+        'email' => 'sample.student@dawaah.local',
         'phone' => '0000000000',
         'gender' => 'male',
         'nationality' => 'Sample',
-        'course' => 'Medicine',
+        'school' => 'School of Nursing & Midwifery',
+        'course' => 'Bachelor of Science in Nursing',
         'year_of_study' => '1',
+        'semester' => '1',
         'degree_type' => 'degree',
         'home_address' => 'Sample address',
         'emergency_contact' => 'Sample contact',
         'emergency_contact_phone' => '0000000000',
         'local_guardian' => 'Sample guardian',
-        'local_guardian_phone' => '0000000000'
+        'local_guardian_phone' => '0000000000',
+        'passport_photo' => ''
     );
     $result = registerStudent($user_id, $student);
     return $result['success'] ? intval($result['student_id']) : 0;

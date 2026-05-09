@@ -1,5 +1,5 @@
 <?php
-// COMMUJ Sample Data Setup Script
+// Dawa'ah Sample Data Setup Script
 
 require_once 'database.php';
 require_once 'db_operations.php';
@@ -9,11 +9,11 @@ require_once 'db_operations.php';
 function setupSampleData() {
     echo "Starting sample data setup...\n\n";
 
-    $defaultPassword = getenv('COMMUJ_SETUP_PASSWORD') ?: bin2hex(random_bytes(8));
-    $adminPassword = getenv('COMMUJ_SETUP_ADMIN_PASSWORD') ?: $defaultPassword;
-    $studentPassword = getenv('COMMUJ_SETUP_STUDENT_PASSWORD') ?: $defaultPassword;
-    $financePassword = getenv('COMMUJ_SETUP_FINANCE_PASSWORD') ?: $defaultPassword;
-    $imamPassword = getenv('COMMUJ_SETUP_IMAM_PASSWORD') ?: $defaultPassword;
+    $defaultPassword = getenv('DAWAAH_SETUP_PASSWORD') ?: bin2hex(random_bytes(8));
+    $adminPassword = getenv('DAWAAH_SETUP_ADMIN_PASSWORD') ?: $defaultPassword;
+    $studentPassword = getenv('DAWAAH_SETUP_STUDENT_PASSWORD') ?: $defaultPassword;
+    $treasurerPassword = getenv('DAWAAH_SETUP_TREASURER_PASSWORD') ?: (getenv('DAWAAH_SETUP_FINANCE_PASSWORD') ?: $defaultPassword);
+    $imamPassword = getenv('DAWAAH_SETUP_IMAM_PASSWORD') ?: $defaultPassword;
     
     // ============================================
     // CREATE SAMPLE USERS
@@ -21,12 +21,12 @@ function setupSampleData() {
     echo "Creating sample users...\n";
     
     $users = [
-        ['username' => 'admin1', 'email' => 'admin@commuj.edu', 'password' => $adminPassword, 'role' => 'admin'],
-        ['username' => 'student1', 'email' => 'student1@commuj.edu', 'password' => $studentPassword, 'role' => 'student'],
-        ['username' => 'student2', 'email' => 'student2@commuj.edu', 'password' => $studentPassword, 'role' => 'student'],
-        ['username' => 'student3', 'email' => 'student3@commuj.edu', 'password' => $studentPassword, 'role' => 'student'],
-        ['username' => 'finance', 'email' => 'finance@commuj.edu', 'password' => $financePassword, 'role' => 'finance'],
-        ['username' => 'imam', 'email' => 'imam@commuj.edu', 'password' => $imamPassword, 'role' => 'imam'],
+        ['username' => 'admin1', 'email' => 'admin@dawaah.edu', 'password' => $adminPassword, 'role' => 'student'],
+        ['username' => 'student1', 'email' => 'student1@dawaah.edu', 'password' => $studentPassword, 'role' => 'student'],
+        ['username' => 'student2', 'email' => 'student2@dawaah.edu', 'password' => $studentPassword, 'role' => 'student'],
+        ['username' => 'student3', 'email' => 'student3@dawaah.edu', 'password' => $studentPassword, 'role' => 'student'],
+        ['username' => 'treasurer', 'email' => 'treasurer@dawaah.edu', 'password' => $treasurerPassword, 'role' => 'treasurer'],
+        ['username' => 'imam', 'email' => 'imam@dawaah.edu', 'password' => $imamPassword, 'role' => 'imam'],
     ];
     
     $user_ids = [];
@@ -51,12 +51,14 @@ function setupSampleData() {
             'first_name' => 'Ahmed',
             'last_name' => 'Hassan',
             'student_id' => 'STU001',
-            'email' => 'student1@commuj.edu',
+            'email' => 'student1@dawaah.edu',
             'phone' => '0123456789',
             'gender' => 'male',
             'nationality' => 'Sudanese',
-            'course' => 'medicine',
+            'school' => 'School of Nursing & Midwifery',
+            'course' => 'Bachelor of Science in Nursing',
             'year_of_study' => '2',
+            'semester' => '3',
             'degree_type' => 'degree',
             'home_address' => '123 Main Street',
             'emergency_contact' => 'Muhammad Hassan',
@@ -69,12 +71,14 @@ function setupSampleData() {
             'first_name' => 'Fatima',
             'last_name' => 'Mohamed',
             'student_id' => 'STU002',
-            'email' => 'student2@commuj.edu',
+            'email' => 'student2@dawaah.edu',
             'phone' => '0198765432',
             'gender' => 'female',
             'nationality' => 'Egyptian',
-            'course' => 'nursing',
+            'school' => 'School of Nursing & Midwifery',
+            'course' => 'Bachelor of Science in Nursing',
             'year_of_study' => '1',
+            'semester' => '1',
             'degree_type' => 'diploma',
             'home_address' => '456 School Ave',
             'emergency_contact' => 'Aisha Mohamed',
@@ -87,12 +91,14 @@ function setupSampleData() {
             'first_name' => 'Omar',
             'last_name' => 'Khan',
             'student_id' => 'STU003',
-            'email' => 'student3@commuj.edu',
+            'email' => 'student3@dawaah.edu',
             'phone' => '0155555555',
             'gender' => 'male',
             'nationality' => 'Pakistani',
-            'course' => 'pharmacy',
+            'school' => 'School of Business & Technology',
+            'course' => 'Bachelor of Business Information Technology',
             'year_of_study' => '3',
+            'semester' => '5',
             'degree_type' => 'degree',
             'home_address' => '789 Hospital Road',
             'emergency_contact' => 'Khalid Khan',
@@ -191,8 +197,8 @@ function setupSampleData() {
     
     $announcements = [
         [
-            'title' => 'Welcome to COMMUJ!',
-            'content' => 'Welcome to College of Medicine Muslim Jamaat. We are excited to have you as part of our community.',
+            'title' => "Welcome to Dawa'ah!",
+            'content' => 'Welcome to UMMA University Muslim Jamaat. We are excited to have you as part of our community.',
             'author_id' => $user_ids['admin1'],
             'priority' => 'high',
             'expires_at' => date('Y-m-d', strtotime('+30 days'))
@@ -206,8 +212,8 @@ function setupSampleData() {
         ],
         [
             'title' => 'Membership Dues Due',
-            'content' => 'Membership dues for this semester are now due. Please visit the finance office to make payment.',
-            'author_id' => $user_ids['finance'],
+            'content' => 'Membership dues for this semester are now due. Please visit the treasurer office to make payment.',
+            'author_id' => $user_ids['treasurer'],
             'priority' => 'medium',
             'expires_at' => date('Y-m-d', strtotime('+7 days'))
         ]
@@ -281,9 +287,9 @@ function setupSampleData() {
     echo "✓ Sample data setup complete!\n";
     echo "================================\n";
     echo "\nTest Credentials:\n";
-    echo "Admin - Username: admin1, Password: {$adminPassword}\n";
+    echo "Sample user - Username: admin1, Password: {$adminPassword}\n";
     echo "Student - Username: student1, Password: {$studentPassword}\n";
-    echo "Finance - Username: finance, Password: {$financePassword}\n";
+    echo "Treasurer - Username: treasurer, Password: {$treasurerPassword}\n";
     echo "Imam - Username: imam, Password: {$imamPassword}\n";
 }
 
