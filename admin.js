@@ -1,6 +1,6 @@
 // Dawa'ah Admin Panel JavaScript
 
-const XAMPP_BASE_URL = 'http://localhost/comahs/';
+const XAMPP_BASE_URL = 'http://localhost/dawaah/';
 const API_URL = location.protocol === 'file:' ? XAMPP_BASE_URL + 'admin_api.php' : 'admin_api.php';
 let currentAdmin = null;
 let editingReligiousActivity = null;
@@ -22,6 +22,66 @@ const ADMIN_SESSION_TIMEOUT_MS = 30 * 60 * 1000;
 const ADMIN_LOGIN_LOCKOUT_MS = 5 * 60 * 1000;
 const ADMIN_MAX_FAILED_LOGINS = 5;
 let adminSessionTimeoutId = null;
+
+function updateAdminPhotoUi() {
+    const photo = currentAdmin?.profile_photo ? resolveAdminUrl(currentAdmin.profile_photo) : '';
+    const headerPhoto = document.getElementById('adminHeaderPhoto');
+    const headerIcon = document.getElementById('adminHeaderIcon');
+    const preview = document.getElementById('adminPhotoPreview');
+    const previewIcon = document.getElementById('adminPhotoPreviewIcon');
+
+    [headerPhoto, preview].forEach(img => {
+        if (!img) return;
+        img.src = photo;
+        img.classList.toggle('d-none', !photo);
+    });
+    headerIcon?.classList.toggle('d-none', Boolean(photo));
+    previewIcon?.classList.toggle('d-none', Boolean(photo));
+}
+
+function saveAdminPhoto() {
+    const input = document.getElementById('adminPhotoInput');
+    const file = input?.files?.[0];
+    if (!file) {
+        showNotification('Choose a photo first.', 'warning');
+        return;
+    }
+    if (!file.type.startsWith('image/')) {
+        showNotification('Please choose a valid image file.', 'danger');
+        return;
+    }
+
+    const formData = new FormData();
+    formData.append('admin_photo', file);
+    fetch(`${API_URL}?action=updateAdminPhoto`, {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => response.json())
+    .then(result => {
+        if (!result.success) throw new Error(result.message || 'Could not save admin photo');
+        setAdminUser(result.data);
+        if (input) input.value = '';
+        showNotification('Admin photo saved.', 'success');
+    })
+    .catch(error => showNotification(error.message || 'Could not save admin photo', 'danger'));
+}
+
+function removeAdminPhoto() {
+    const formData = new FormData();
+    formData.append('remove_photo', '1');
+    fetch(`${API_URL}?action=updateAdminPhoto`, {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => response.json())
+    .then(result => {
+        if (!result.success) throw new Error(result.message || 'Could not remove admin photo');
+        setAdminUser(result.data);
+        showNotification('Admin photo removed.', 'info');
+    })
+    .catch(error => showNotification(error.message || 'Could not remove admin photo', 'danger'));
+}
 
 function resolveAdminUrl(url) {
     if (!url) return '';
@@ -1087,10 +1147,12 @@ function setAdminUser(user) {
         username: resolvedUser.username,
         fullName: resolvedUser.fullName || resolvedUser.full_name || resolvedUser.username,
         role: resolvedUser.role,
+        profile_photo: resolvedUser.profile_photo || '',
         isMainAdmin: inferredMainAdmin
     };
     sessionStorage.setItem('currentAdminUser', JSON.stringify(currentAdmin));
     document.getElementById('adminName').textContent = currentAdmin.fullName || currentAdmin.username;
+    updateAdminPhotoUi();
     updateAdminAccessUi();
 }
 

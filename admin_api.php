@@ -84,6 +84,23 @@ function uploadAdminImage($field_name, $folder_name) {
     return ['success' => true, 'path' => 'uploads/' . $folder_name . '/' . $filename];
 }
 
+function ensureUserProfilePhotoColumn() {
+    $conn = getDBConnection();
+    $result = $conn->query("SHOW COLUMNS FROM users LIKE 'profile_photo'");
+    if (!$result || $result->num_rows === 0) {
+        $conn->query("ALTER TABLE users ADD COLUMN profile_photo VARCHAR(255) NULL AFTER status");
+    }
+}
+
+function getAdminUserForSession($admin_id) {
+    ensureUserProfilePhotoColumn();
+    $conn = getDBConnection();
+    $stmt = $conn->prepare("SELECT id, username, email, role, status, profile_photo FROM users WHERE id = ? AND role = 'admin' LIMIT 1");
+    $stmt->bind_param("i", $admin_id);
+    $stmt->execute();
+    return $stmt->get_result()->fetch_assoc();
+}
+
 function getMainAdminId() {
     $conn = getDBConnection();
     $result = $conn->query("SELECT id FROM users WHERE role = 'admin' AND username <> 'system_admin' ORDER BY id ASC LIMIT 1");
@@ -124,6 +141,7 @@ function adminUserPayload($user) {
         'email' => $user['email'],
         'role' => $user['role'],
         'fullName' => isset($user['full_name']) ? $user['full_name'] : $user['username'],
+        'profile_photo' => isset($user['profile_photo']) ? $user['profile_photo'] : '',
         'isMainAdmin' => isMainAdminId($admin_id)
     ];
 }
@@ -241,9 +259,10 @@ function countManagedAdmins() {
 }
 
 function listManagedAdmins() {
+    ensureUserProfilePhotoColumn();
     $conn = getDBConnection();
     $admins = [];
-    $result = $conn->query("SELECT id, username, email, role, status, created_at, last_login FROM users WHERE role = 'admin' AND username <> 'system_admin' ORDER BY id ASC");
+    $result = $conn->query("SELECT id, username, email, role, status, profile_photo, created_at, last_login FROM users WHERE role = 'admin' AND username <> 'system_admin' ORDER BY id ASC");
     if ($result) {
         while ($row = $result->fetch_assoc()) {
             $admins[] = [
@@ -252,6 +271,7 @@ function listManagedAdmins() {
                 'email' => $row['email'],
                 'role' => $row['role'],
                 'status' => $row['status'],
+                'profile_photo' => $row['profile_photo'],
                 'created_at' => $row['created_at'],
                 'last_login' => $row['last_login']
             ];
@@ -278,7 +298,8 @@ if ($action === 'loginAdmin' && $method === 'POST') {
         respond(false, 'This account is not allowed to access the admin panel');
     }
 
-    $_SESSION['admin_user'] = adminUserPayload($user);
+    $fresh_user = getAdminUserForSession(intval($user['id']));
+    $_SESSION['admin_user'] = adminUserPayload($fresh_user ?: $user);
     logAdminActivity($_SESSION['admin_user']['id'], 'loginAdmin', ['message' => 'Admin logged in']);
     respond(true, 'Admin login successful', $_SESSION['admin_user']);
 }
@@ -514,6 +535,36 @@ if ($action === 'createAdminAccount' && $method === 'POST') {
         'role' => $role,
         'status' => $status
     ]);
+}
+
+if ($action === 'updateAdminPhoto' && $method === 'POST') {
+    requireAdminSession();
+    ensureUserProfilePhotoColumn();
+    $admin_id = intval($_SESSION['admin_user']['id']);
+    $remove_photo = isset($data['remove_photo']) && in_array((string)$data['remove_photo'], ['1', 'true', 'yes'], true);
+    $photo_path = '';
+
+    if (!$remove_photo) {
+        $photo_upload = uploadAdminImage('admin_photo', 'admin_photos');
+        if (!$photo_upload['success']) {
+            respond(false, $photo_upload['error']);
+        }
+        $photo_path = $photo_upload['path'];
+        if ($photo_path === '') {
+            respond(false, 'Choose a photo first');
+        }
+    }
+
+    $conn = getDBConnection();
+    $stmt = $conn->prepare("UPDATE users SET profile_photo = ? WHERE id = ? AND role = 'admin'");
+    $stmt->bind_param("si", $photo_path, $admin_id);
+    if (!$stmt->execute()) {
+        respond(false, 'Could not update admin photo');
+    }
+
+    $fresh_user = getAdminUserForSession($admin_id);
+    $_SESSION['admin_user'] = adminUserPayload($fresh_user);
+    respond(true, $remove_photo ? 'Admin photo removed' : 'Admin photo updated', $_SESSION['admin_user']);
 }
 
 if ($action === 'deleteAdminAccount' && $method === 'DELETE') {
