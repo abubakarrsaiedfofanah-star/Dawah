@@ -2395,14 +2395,15 @@ function addLeader() {
     const description = document.getElementById('leaderDescription').value.trim();
     const email = document.getElementById('leaderEmail').value.trim();
     const phone = document.getElementById('leaderPhone').value.trim();
-    const photoUrl = document.getElementById('leaderPhotoUrl').value.trim();
+    const photoFile = document.getElementById('leaderPassportPhoto')?.files?.[0] || null;
     
     if (!name || !position) {
         showNotification('Name and position are required', 'warning');
         return;
     }
     
-    const data = {
+    const data = new FormData();
+    Object.entries({
         name: name,
         position: position,
         course: course,
@@ -2411,16 +2412,15 @@ function addLeader() {
         description: description,
         email: email,
         phone: phone,
-        photo_url: photoUrl,
         user_id: currentAdmin.id || 0
-    };
+    }).forEach(([key, value]) => data.append(key, value || ''));
+    if (photoFile) {
+        data.append('leader_passport_photo', photoFile);
+    }
     
     fetch(`${API_URL}?action=addLeader`, {
         method: 'POST',
-        headers: {
-            'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(data)
+        body: data
     })
     .then(response => response.json())
     .then(result => {
@@ -2434,7 +2434,7 @@ function addLeader() {
             document.getElementById('leaderDescription').value = '';
             document.getElementById('leaderEmail').value = '';
             document.getElementById('leaderPhone').value = '';
-            document.getElementById('leaderPhotoUrl').value = '';
+            document.getElementById('leaderPassportPhoto').value = '';
             loadLeadership();
             loadLeadershipCount();
         } else {

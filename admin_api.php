@@ -43,6 +43,47 @@ function respond($success, $message = '', $data = null) {
     exit;
 }
 
+function uploadAdminImage($field_name, $folder_name) {
+    if (!isset($_FILES[$field_name]) || $_FILES[$field_name]['error'] === UPLOAD_ERR_NO_FILE) {
+        return ['success' => true, 'path' => ''];
+    }
+    if ($_FILES[$field_name]['error'] !== UPLOAD_ERR_OK) {
+        return ['success' => false, 'error' => 'Photo upload failed'];
+    }
+    if ($_FILES[$field_name]['size'] > 2 * 1024 * 1024) {
+        return ['success' => false, 'error' => 'Photo must be 2MB or smaller'];
+    }
+
+    $tmp_name = $_FILES[$field_name]['tmp_name'];
+    $image_info = getimagesize($tmp_name);
+    if ($image_info === false) {
+        return ['success' => false, 'error' => 'Please upload a valid image file'];
+    }
+
+    $allowed = [
+        IMAGETYPE_JPEG => 'jpg',
+        IMAGETYPE_PNG => 'png',
+        IMAGETYPE_WEBP => 'webp',
+        IMAGETYPE_GIF => 'gif'
+    ];
+    if (!isset($allowed[$image_info[2]])) {
+        return ['success' => false, 'error' => 'Photo must be JPG, PNG, WebP, or GIF'];
+    }
+
+    $upload_dir = __DIR__ . DIRECTORY_SEPARATOR . 'uploads' . DIRECTORY_SEPARATOR . $folder_name;
+    if (!is_dir($upload_dir) && !mkdir($upload_dir, 0755, true)) {
+        return ['success' => false, 'error' => 'Could not create upload folder'];
+    }
+
+    $filename = $folder_name . '_' . date('YmdHis') . '_' . bin2hex(random_bytes(6)) . '.' . $allowed[$image_info[2]];
+    $destination = $upload_dir . DIRECTORY_SEPARATOR . $filename;
+    if (!move_uploaded_file($tmp_name, $destination)) {
+        return ['success' => false, 'error' => 'Could not save uploaded photo'];
+    }
+
+    return ['success' => true, 'path' => 'uploads/' . $folder_name . '/' . $filename];
+}
+
 function getMainAdminId() {
     $conn = getDBConnection();
     $result = $conn->query("SELECT id FROM users WHERE role = 'admin' AND username <> 'system_admin' ORDER BY id ASC LIMIT 1");
@@ -940,6 +981,10 @@ if ($action === 'deleteEvent' && $method === 'DELETE') {
 // ============================================
 
 if ($action === 'addLeader' && $method === 'POST') {
+    $photo_upload = uploadAdminImage('leader_passport_photo', 'leader_photos');
+    if (!$photo_upload['success']) {
+        respond(false, $photo_upload['error']);
+    }
     $name = isset($data['name']) ? $data['name'] : '';
     $position = isset($data['position']) ? $data['position'] : '';
     $bio = isset($data['bio']) ? $data['bio'] : '';
@@ -964,7 +1009,7 @@ if ($action === 'addLeader' && $method === 'POST') {
         'email' => $email,
         'phone' => $phone,
         'user_id' => $user_id,
-        'photo_url' => isset($data['photo_url']) ? $data['photo_url'] : null
+        'photo_url' => $photo_upload['path'] !== '' ? $photo_upload['path'] : (isset($data['photo_url']) ? $data['photo_url'] : null)
     ];
     
     $result = addPublicLeader($leader_data);
