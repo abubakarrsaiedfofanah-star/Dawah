@@ -12,6 +12,7 @@ const useStaticAdminApi = location.hostname.endsWith('github.io') || location.pr
 const LOCAL_ADMIN_ACCOUNTS_KEY = 'DawaahAdminAccounts';
 const LOCAL_ADMIN_CLEANUP_KEY = 'DawaahAdminAccountsMainOnlyCleanup20260509';
 const LOCAL_ADMIN_FULL_RESET_KEY = 'DawaahAdminFullReset20260509';
+const LOCAL_ADMIN_ACCOUNT_CLEAR_KEY = 'DawaahAdminAccountClear20260510';
 const ADMIN_LOGIN_FAILURE_KEY = 'DawaahAdminLoginFailures';
 const DEFAULT_ADMIN_USERNAME = 'admin';
 const DEFAULT_ADMIN_EMAIL = 'dawaah.admin@dawaah.local';
@@ -23,6 +24,22 @@ const ADMIN_SESSION_TIMEOUT_MS = 30 * 60 * 1000;
 const ADMIN_LOGIN_LOCKOUT_MS = 5 * 60 * 1000;
 const ADMIN_MAX_FAILED_LOGINS = 5;
 let adminSessionTimeoutId = null;
+
+function clearStoredAdminAccountsOnce() {
+    if (localStorage.getItem(LOCAL_ADMIN_ACCOUNT_CLEAR_KEY) === '1') return;
+    [
+        LOCAL_ADMIN_ACCOUNTS_KEY,
+        LOCAL_ADMIN_CLEANUP_KEY,
+        LOCAL_ADMIN_FULL_RESET_KEY,
+        ADMIN_LOGIN_FAILURE_KEY,
+        'currentAdmin',
+        'adminUser',
+        'DawaahAdminSession'
+    ].forEach(key => localStorage.removeItem(key));
+    localStorage.setItem(LOCAL_ADMIN_ACCOUNT_CLEAR_KEY, '1');
+}
+
+clearStoredAdminAccountsOnce();
 
 function parseJsonResponse(response) {
     if (response && typeof response.text === 'function') {

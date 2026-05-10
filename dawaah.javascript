@@ -85,6 +85,26 @@ const XAMPP_BASE_URL = 'http://localhost/dawaah/';
 const useXamppApi = location.protocol === 'file:' || Boolean(location.port && !['80', '443'].includes(location.port));
 const frontendOnly = location.hostname.endsWith('github.io');
 const realAppFetch = window.fetch.bind(window);
+const ACCOUNT_CLEAR_VERSION = '20260510-clear-accounts-v1';
+
+function clearStoredAccountsOnce() {
+    if (localStorage.getItem('DawaahAccountClearVersion') === ACCOUNT_CLEAR_VERSION) return;
+    [
+        'currentUser',
+        'currentRole',
+        'allMembers',
+        'profileData',
+        'registeredEvents',
+        'welfareRequests',
+        'donations',
+        'payments',
+        'leadershipRoles',
+        'volunteerRecords'
+    ].forEach(key => localStorage.removeItem(key));
+    localStorage.setItem('DawaahAccountClearVersion', ACCOUNT_CLEAR_VERSION);
+}
+
+clearStoredAccountsOnce();
 
 window.fetch = function(resource, options = {}) {
     if (useXamppApi && typeof resource === 'string' && /^(api|admin_api|dawaah|mpesa_api)\.php/.test(resource)) {
