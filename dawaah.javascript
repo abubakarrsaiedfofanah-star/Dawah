@@ -83,7 +83,7 @@ const semesterOptions = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11'
 
 const XAMPP_BASE_URL = 'http://localhost/dawaah/';
 const useXamppApi = location.protocol === 'file:' || Boolean(location.port && !['80', '443'].includes(location.port));
-const frontendOnly = false;
+const frontendOnly = location.hostname.endsWith('github.io');
 const realAppFetch = window.fetch.bind(window);
 
 window.fetch = function(resource, options = {}) {
@@ -1739,7 +1739,7 @@ function saveEventRegistrationLocally(registration) {
     registeredEvents.push(registration);
     localStorage.setItem('registeredEvents', JSON.stringify(registeredEvents));
 
-    showNotification('Event registration successful! ' + eventName, 'success');
+    showNotification('Event registration successful! ' + registration.eventName, 'success');
 
     document.getElementById('eventForm').reset();
     bootstrap.Modal.getInstance(document.getElementById('eventModal')).hide();
@@ -2404,6 +2404,11 @@ function startMpesaPayment(details) {
     const phone = normalizeMpesaPhone(details.phone);
     if (!phone || phone.length !== 12 || !phone.startsWith('254')) {
         alert('Please enter a valid M-Pesa phone number, for example 254712345678.');
+        return;
+    }
+
+    if (frontendOnly) {
+        alert('M-Pesa STK Push needs the PHP backend, so it is not available on the GitHub Pages demo. Please use Bank Transfer, Normal Transfer, or Cash on the live demo.');
         return;
     }
 
