@@ -584,7 +584,8 @@ function handleStaticAdminApi(action, method, payload, params) {
             const item = addStoreItem('galleryItems', {
                 ...payload,
                 imageData: payload.image_url,
-                imageUrl: payload.image_url
+                imageUrl: payload.image_url,
+                media_type: payload.media_type || getGalleryMediaType(payload.image_url)
             });
             return { success: true, message: 'Saved locally', data: { gallery_id: item.id, id: item.id } };
         }
@@ -670,7 +671,8 @@ function handleStaticAdminApi(action, method, payload, params) {
                 description: 'This sample gallery item is saved locally. Use XAMPP/PHP for database saving.',
                 image_url: 'https://via.placeholder.com/800x500.png?text=Dawaah+Gallery',
                 imageData: 'https://via.placeholder.com/800x500.png?text=Dawaah+Gallery',
-                imageUrl: 'https://via.placeholder.com/800x500.png?text=Dawaah+Gallery'
+                imageUrl: 'https://via.placeholder.com/800x500.png?text=Dawaah+Gallery',
+                media_type: 'image'
             });
             return { success: true, message: 'Saved sample records locally' };
 
@@ -2568,32 +2570,51 @@ function addGalleryItem() {
     }
 
     if (imageInput && imageInput.files && imageInput.files.length > 0) {
+        if (!useStaticAdminApi) {
+            saveGalleryItemData(title, description, '', getGalleryMediaType('', imageInput.files[0]), imageInput.files[0]);
+            return;
+        }
         const reader = new FileReader();
         reader.onload = function(e) {
-            saveGalleryItemData(title, description, e.target.result);
+            saveGalleryItemData(title, description, e.target.result, getGalleryMediaType(e.target.result, imageInput.files[0]));
         };
         reader.readAsDataURL(imageInput.files[0]);
         return;
     }
 
-    saveGalleryItemData(title, description, imageUrl);
+    saveGalleryItemData(title, description, imageUrl, getGalleryMediaType(imageUrl));
 }
 
-function saveGalleryItemData(title, description, imageUrl) {
-    
-    const data = {
+function getGalleryMediaType(url, file = null) {
+    const type = (file?.type || '').toLowerCase();
+    if (type.startsWith('video/')) return 'video';
+    if (type.startsWith('image/')) return 'image';
+    return /\.(mp4|webm|ogg)(\?|#|$)/i.test(url || '') ? 'video' : 'image';
+}
+
+function saveGalleryItemData(title, description, imageUrl, mediaType = 'image', mediaFile = null) {
+    const body = mediaFile ? new FormData() : JSON.stringify({
         title: title,
         description: description,
         image_url: imageUrl,
+        media_type: mediaType,
         uploaded_by: currentAdmin.id || 0
-    };
+    });
+    const headers = mediaFile ? {} : { 'Content-Type': 'application/json' };
+
+    if (mediaFile) {
+        body.append('title', title);
+        body.append('description', description);
+        body.append('image_url', imageUrl);
+        body.append('media_type', mediaType);
+        body.append('uploaded_by', currentAdmin.id || 0);
+        body.append('gallery_media', mediaFile);
+    }
     
     fetch(`${API_URL}?action=addGalleryItem`, {
         method: 'POST',
-        headers: {
-            'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(data)
+        headers: headers,
+        body: body
     })
     .then(response => parseJsonResponse(response))
     .then(result => {
@@ -2604,10 +2625,17 @@ function saveGalleryItemData(title, description, imageUrl) {
             document.getElementById('galleryImageUrl').value = '';
             const imageInput = document.getElementById('galleryImageUpload');
             const preview = document.getElementById('galleryImagePreview');
+            const videoPreview = document.getElementById('galleryVideoPreview');
             if (imageInput) imageInput.value = '';
             if (preview) {
                 preview.src = '';
                 preview.classList.add('d-none');
+            }
+            if (videoPreview) {
+                videoPreview.pause();
+                videoPreview.removeAttribute('src');
+                videoPreview.load();
+                videoPreview.classList.add('d-none');
             }
             loadGallery();
             loadGalleryCount();
@@ -2624,18 +2652,36 @@ function saveGalleryItemData(title, description, imageUrl) {
 function previewAdminGalleryImage() {
     const imageInput = document.getElementById('galleryImageUpload');
     const preview = document.getElementById('galleryImagePreview');
-    if (!imageInput || !preview) return;
+    const videoPreview = document.getElementById('galleryVideoPreview');
+    if (!imageInput || !preview || !videoPreview) return;
 
     if (imageInput.files && imageInput.files[0]) {
+        const file = imageInput.files[0];
         const reader = new FileReader();
         reader.onload = function(e) {
-            preview.src = e.target.result;
-            preview.classList.remove('d-none');
+            const mediaType = getGalleryMediaType(e.target.result, file);
+            if (mediaType === 'video') {
+                preview.src = '';
+                preview.classList.add('d-none');
+                videoPreview.src = e.target.result;
+                videoPreview.classList.remove('d-none');
+            } else {
+                videoPreview.pause();
+                videoPreview.removeAttribute('src');
+                videoPreview.load();
+                videoPreview.classList.add('d-none');
+                preview.src = e.target.result;
+                preview.classList.remove('d-none');
+            }
         };
-        reader.readAsDataURL(imageInput.files[0]);
+        reader.readAsDataURL(file);
     } else {
         preview.src = '';
         preview.classList.add('d-none');
+        videoPreview.pause();
+        videoPreview.removeAttribute('src');
+        videoPreview.load();
+        videoPreview.classList.add('d-none');
     }
 }
 
@@ -2649,15 +2695,20 @@ function loadGallery() {
             return;
         }
         
-        container.innerHTML = result.data.map(item => `
+        container.innerHTML = result.data.map(item => {
+            const mediaType = item.media_type || getGalleryMediaType(item.image_url || item.imageData || item.imageUrl || '');
+            const mediaUrl = resolveAdminUrl(item.image_url || item.imageData || item.imageUrl || '');
+            return `
             <div class="item-card">
                 <div style="width: 60px; height: 60px; margin-right: 15px; overflow: hidden; border-radius: 5px; flex-shrink: 0;">
-                    <img src="${item.image_url}" alt="${item.title}" style="width: 100%; height: 100%; object-fit: cover;">
+                    ${mediaType === 'video'
+                        ? `<video src="${mediaUrl}" style="width: 100%; height: 100%; object-fit: cover;" muted></video>`
+                        : `<img src="${mediaUrl}" alt="${item.title}" style="width: 100%; height: 100%; object-fit: cover;">`}
                 </div>
                 <div class="item-info flex-grow-1">
                     <h5>${item.title}</h5>
                     <p>${item.description || 'No description'}</p>
-                    <small class="text-muted">${new Date(item.created_at).toLocaleDateString()}</small>
+                    <small class="text-muted">${mediaType === 'video' ? 'Video' : 'Image'} - ${new Date(item.created_at).toLocaleDateString()}</small>
                 </div>
                 <div class="item-actions">
                     <button class="btn btn-sm btn-outline-danger" onclick="deleteGalleryItem(${item.id})">
@@ -2665,7 +2716,8 @@ function loadGallery() {
                     </button>
                 </div>
             </div>
-        `).join('');
+        `;
+        }).join('');
     })
     .catch(error => {
         console.error('Error:', error);

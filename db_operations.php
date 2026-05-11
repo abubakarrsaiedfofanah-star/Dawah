@@ -1060,6 +1060,7 @@ function deletePublicLeader($leader_id) {
 function addGalleryItem($gallery_data) {
     $conn = getDBConnection();
     $uploaded_by = isset($gallery_data['uploaded_by']) && intval($gallery_data['uploaded_by']) > 0 ? intval($gallery_data['uploaded_by']) : null;
+    $media_type = isset($gallery_data['media_type']) && $gallery_data['media_type'] === 'video' ? 'video' : 'image';
     if ($uploaded_by !== null && !getUserById($uploaded_by)) {
         $uploaded_by = null;
     }
@@ -1070,6 +1071,7 @@ function addGalleryItem($gallery_data) {
         title VARCHAR(255) NOT NULL,
         description TEXT,
         image_url VARCHAR(500) NOT NULL,
+        media_type ENUM('image', 'video') DEFAULT 'image',
         thumbnail_url VARCHAR(500),
         uploaded_by INT,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
@@ -1078,17 +1080,19 @@ function addGalleryItem($gallery_data) {
         FOREIGN KEY (uploaded_by) REFERENCES users(id) ON DELETE SET NULL
     )";
     $conn->query($create_table);
+    ensureGalleryMediaTypeColumn();
     
     $sql = "INSERT INTO gallery 
-            (title, description, image_url, uploaded_by, status)
-            VALUES (?, ?, ?, ?, 'active')";
+            (title, description, image_url, media_type, uploaded_by, status)
+            VALUES (?, ?, ?, ?, ?, 'active')";
     
     $stmt = $conn->prepare($sql);
     $stmt->bind_param(
-        "sssi",
+        "ssssi",
         $gallery_data['title'],
         $gallery_data['description'],
         $gallery_data['image_url'],
+        $media_type,
         $uploaded_by
     );
     
@@ -1101,6 +1105,7 @@ function addGalleryItem($gallery_data) {
 
 function getGalleryItems() {
     $conn = getDBConnection();
+    ensureGalleryMediaTypeColumn();
     $conn->query("UPDATE gallery SET image_url = 'uploads/gallery/sample-gallery.svg' WHERE image_url LIKE '%via.placeholder.com%' OR image_url = ''");
     
     $sql = "SELECT * FROM gallery 
@@ -1140,6 +1145,18 @@ if (!function_exists('fetchAll')) {
             return $result->fetch_all(MYSQLI_ASSOC);
         }
         return array();
+    }
+}
+
+function ensureGalleryMediaTypeColumn() {
+    $conn = getDBConnection();
+    if (!tableExists('gallery')) {
+        return;
+    }
+
+    $result = $conn->query("SHOW COLUMNS FROM gallery LIKE 'media_type'");
+    if (!$result || $result->num_rows === 0) {
+        $conn->query("ALTER TABLE gallery ADD COLUMN media_type ENUM('image', 'video') DEFAULT 'image' AFTER image_url");
     }
 }
 
@@ -1462,7 +1479,7 @@ function getAdminDashboardDetail($type) {
         'events' => array('table' => 'events', 'sql' => "SELECT id, title, event_date, location, status, max_participants, current_participants, created_at FROM events ORDER BY created_at DESC LIMIT 100"),
         'announcements' => array('table' => 'announcements', 'sql' => "SELECT id, title, priority, published_at, expires_at, created_at FROM announcements ORDER BY created_at DESC LIMIT 100"),
         'resources' => array('table' => 'resources', 'sql' => "SELECT id, title, resource_type, category, url, downloads, created_at FROM resources ORDER BY created_at DESC LIMIT 100"),
-        'gallery' => array('table' => 'gallery', 'sql' => "SELECT id, title, description, image_url, created_at FROM gallery ORDER BY created_at DESC LIMIT 100"),
+        'gallery' => array('table' => 'gallery', 'sql' => "SELECT id, title, description, image_url, media_type, created_at FROM gallery ORDER BY created_at DESC LIMIT 100"),
         'leadership' => array('table' => 'leadership_profiles', 'sql' => "SELECT id, name, position, email, phone, status, created_at FROM leadership_profiles ORDER BY created_at DESC LIMIT 100"),
         'hadiths' => array('table' => 'hadiths', 'sql' => "SELECT id, reference, source, category, created_at FROM hadiths ORDER BY created_at DESC LIMIT 100"),
         'prayer' => array('table' => 'prayer_times', 'sql' => "SELECT id, date, fajr, dhuhr, asr, maghrib, isha, jummah_time, updated_at FROM prayer_times ORDER BY date DESC LIMIT 100")
@@ -1528,6 +1545,7 @@ function seedAdminSampleData() {
         'title' => 'Sample Gallery Item',
         'description' => 'This is a sample gallery record. Replace it with your uploaded images from the Gallery section.',
         'image_url' => 'uploads/gallery/sample-gallery.svg',
+        'media_type' => 'image',
         'uploaded_by' => $admin_id
     ));
 

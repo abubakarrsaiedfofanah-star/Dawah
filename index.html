@@ -595,16 +595,17 @@
         </div>
     </div>
 
-    <!-- Gallery Image Modal -->
+    <!-- Gallery Media Modal -->
     <div class="modal fade" id="galleryImageModal" tabindex="-1">
         <div class="modal-dialog modal-lg">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h5 class="modal-title" id="galleryModalTitle">Gallery Image</h5>
+                    <h5 class="modal-title" id="galleryModalTitle">Gallery Item</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
                 <div class="modal-body text-center">
-                    <img id="galleryImage" src="" alt="Gallery Image" class="img-fluid rounded mb-3" style="max-height: 400px;">
+                    <img id="galleryModalImage" src="" alt="Gallery image" class="img-fluid rounded mb-3" style="max-height: 400px;">
+                    <video id="galleryModalVideo" class="img-fluid rounded mb-3 d-none" style="max-height: 420px;" controls></video>
                     <h4 id="galleryTitle">Title</h4>
                     <p id="galleryDescription">Description</p>
                 </div>
@@ -2297,9 +2298,10 @@
                             <textarea class="form-control" id="galleryDescription" placeholder="Gallery item description" rows="3" required></textarea>
                         </div>
                         <div class="mb-3">
-                            <label class="form-label">Image</label>
-                            <input type="file" class="form-control" id="galleryImage" accept="image/*" onchange="previewGalleryImage()" required>
+                            <label class="form-label">Image or Video</label>
+                            <input type="file" class="form-control" id="galleryImage" accept="image/*,video/mp4,video/webm,video/ogg" onchange="previewGalleryImage()" required>
                             <img id="galleryImagePreview" src="" alt="Selected gallery image preview" class="img-fluid mt-2 d-none" style="max-height:200px; object-fit:contain;">
+                            <video id="galleryVideoPreview" class="img-fluid mt-2 d-none" style="max-height:220px; object-fit:contain;" controls muted></video>
                         </div>
                         <div class="mb-3">
                             <label class="form-label">Icon (FontAwesome class)</label>

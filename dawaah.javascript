@@ -237,15 +237,68 @@ function encodeLeaderDetails(leader) {
     }));
 }
 
-function showGalleryImage(title, description, imageUrl) {
-    document.getElementById('galleryModalTitle').textContent = title;
-    document.getElementById('galleryTitle').textContent = title;
-    document.getElementById('galleryDescription').textContent = description;
-    document.getElementById('galleryImage').src = imageUrl;
+function getGalleryMediaType(url, file = null) {
+    const fileType = (file?.type || '').toLowerCase();
+    if (fileType.startsWith('video/')) return 'video';
+    if (fileType.startsWith('image/')) return 'image';
+    return /\.(mp4|webm|ogg)(\?|#|$)/i.test(url || '') || /^data:video\//i.test(url || '') ? 'video' : 'image';
+}
+
+function encodeGalleryItem(item) {
+    const mediaUrl = item.image_url || item.imageData || item.imageUrl || '';
+    return encodeURIComponent(JSON.stringify({
+        title: item.title || '',
+        description: item.description || '',
+        media_url: mediaUrl,
+        media_type: item.media_type || getGalleryMediaType(mediaUrl)
+    }));
+}
+
+function showGalleryImage(encodedOrTitle, description = '', mediaUrl = '', mediaType = 'image') {
+    let item = null;
+    try {
+        item = JSON.parse(decodeURIComponent(encodedOrTitle));
+    } catch (error) {
+        item = { title: encodedOrTitle, description, media_url: mediaUrl, media_type: mediaType };
+    }
+
+    const resolvedMediaUrl = resolveAppUrl(item.media_url || '');
+    const resolvedMediaType = item.media_type || getGalleryMediaType(resolvedMediaUrl);
+    const modalImage = document.getElementById('galleryModalImage');
+    const modalVideo = document.getElementById('galleryModalVideo');
+
+    document.getElementById('galleryModalTitle').textContent = item.title || 'Gallery Item';
+    document.getElementById('galleryTitle').textContent = item.title || '';
+    document.getElementById('galleryDescription').textContent = item.description || '';
+
+    if (resolvedMediaType === 'video') {
+        modalImage.src = '';
+        modalImage.classList.add('d-none');
+        modalVideo.src = resolvedMediaUrl;
+        modalVideo.classList.remove('d-none');
+    } else {
+        modalVideo.pause();
+        modalVideo.removeAttribute('src');
+        modalVideo.load();
+        modalVideo.classList.add('d-none');
+        modalImage.src = resolvedMediaUrl;
+        modalImage.classList.remove('d-none');
+    }
 
     const modal = new bootstrap.Modal(document.getElementById('galleryImageModal'));
     modal.show();
 }
+
+document.addEventListener('DOMContentLoaded', function() {
+    const galleryModal = document.getElementById('galleryImageModal');
+    galleryModal?.addEventListener('hidden.bs.modal', function() {
+        const modalVideo = document.getElementById('galleryModalVideo');
+        if (!modalVideo) return;
+        modalVideo.pause();
+        modalVideo.removeAttribute('src');
+        modalVideo.load();
+    });
+});
 
 // LOAD DYNAMIC CONTENT FOR LANDING PAGE
 function loadLandingPageContent() {
@@ -353,18 +406,23 @@ function loadGalleryContent() {
             return;
         }
 
-        galleryContainer.innerHTML = galleryItems.map(item => `
+        galleryContainer.innerHTML = galleryItems.map(item => {
+            const mediaUrl = item.image_url || item.imageData || item.imageUrl || '';
+            const mediaType = item.media_type || getGalleryMediaType(mediaUrl);
+            return `
             <div class="col-md-6 col-lg-4 mb-4">
-                <div class="gallery-item" onclick="showGalleryImage('${item.title}', '${item.description || ''}', '${item.image_url || item.imageData || item.imageUrl || ''}')">
+                <div class="gallery-item" onclick="showGalleryImage('${encodeGalleryItem(item)}')">
                     <div class="gallery-image">
-                        ${item.image_url ? `<img src="${item.image_url}" alt="${item.title}" style="width: 100%; height: 150px; object-fit: cover; border-radius: 10px;" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">` : ''}
-                        <i class="fas ${item.icon || 'fa-images'} fa-4x" ${item.image_url ? 'style="display: none;"' : ''}></i>
+                        ${mediaUrl && mediaType === 'video' ? `<video src="${resolveAppUrl(mediaUrl)}" style="width: 100%; height: 150px; object-fit: cover; border-radius: 10px;" muted></video>` : ''}
+                        ${mediaUrl && mediaType !== 'video' ? `<img src="${resolveAppUrl(mediaUrl)}" alt="${item.title}" style="width: 100%; height: 150px; object-fit: cover; border-radius: 10px;" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">` : ''}
+                        <i class="fas ${mediaType === 'video' ? 'fa-video' : (item.icon || 'fa-images')} fa-4x" ${mediaUrl ? 'style="display: none;"' : ''}></i>
                     </div>
                     <h6>${item.title}</h6>
                     <p class="text-muted">${(item.description || '').substring(0, 50)}${(item.description || '').length > 50 ? '...' : ''}</p>
                 </div>
             </div>
-        `).join('');
+        `;
+        }).join('');
     })
     .catch(error => {
         console.log('Dynamic content unavailable, using local data:', error);
@@ -380,18 +438,23 @@ function loadGalleryContent() {
             return;
         }
 
-        galleryContainer.innerHTML = galleryItems.map(item => `
+        galleryContainer.innerHTML = galleryItems.map(item => {
+            const mediaUrl = item.imageData || item.imageUrl || item.image_url || '';
+            const mediaType = item.media_type || getGalleryMediaType(mediaUrl);
+            return `
             <div class="col-md-6 col-lg-4 mb-4">
-                <div class="gallery-item" onclick="showGalleryImage('${item.title}', '${item.description}', '${item.imageData || item.imageUrl || ''}')">
+                <div class="gallery-item" onclick="showGalleryImage('${encodeGalleryItem(item)}')">
                     <div class="gallery-image">
-                        ${item.imageData ? `<img src="${item.imageData}" alt="${item.title}" style="width: 100%; height: 150px; object-fit: cover; border-radius: 10px;" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">` : ''}
-                        <i class="fas ${item.icon || 'fa-images'} fa-4x" ${item.imageData ? 'style="display: none;"' : ''}></i>
+                        ${mediaUrl && mediaType === 'video' ? `<video src="${resolveAppUrl(mediaUrl)}" style="width: 100%; height: 150px; object-fit: cover; border-radius: 10px;" muted></video>` : ''}
+                        ${mediaUrl && mediaType !== 'video' ? `<img src="${resolveAppUrl(mediaUrl)}" alt="${item.title}" style="width: 100%; height: 150px; object-fit: cover; border-radius: 10px;" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">` : ''}
+                        <i class="fas ${mediaType === 'video' ? 'fa-video' : (item.icon || 'fa-images')} fa-4x" ${mediaUrl ? 'style="display: none;"' : ''}></i>
                     </div>
                     <h6>${item.title}</h6>
-                    <p class="text-muted">${item.description.substring(0, 50)}${item.description.length > 50 ? '...' : ''}</p>
+                    <p class="text-muted">${(item.description || '').substring(0, 50)}${(item.description || '').length > 50 ? '...' : ''}</p>
                 </div>
             </div>
-        `).join('');
+        `;
+        }).join('');
     });
 }
 
@@ -4038,13 +4101,14 @@ function loadAdminGallery() {
 
         galleryList.innerHTML = galleryItems.map((item, index) => {
             const imageUrl = item.image_url || item.imageData || item.imageUrl || '';
+            const mediaType = item.media_type || getGalleryMediaType(imageUrl);
             const removeId = item.id || index;
             return `
                 <tr>
                     <td>${item.title}</td>
                     <td>${item.description || ''}</td>
-                    <td>${imageUrl ? `<img src="${imageUrl}" alt="${item.title}" style="max-height:80px; max-width:120px; object-fit:cover; border-radius:6px;">` : '<span class="text-muted">No image</span>'}</td>
-                    <td><i class="${item.icon || 'fas fa-images'}"></i></td>
+                    <td>${imageUrl ? (mediaType === 'video' ? `<video src="${resolveAppUrl(imageUrl)}" style="max-height:80px; max-width:120px; object-fit:cover; border-radius:6px;" muted></video>` : `<img src="${resolveAppUrl(imageUrl)}" alt="${item.title}" style="max-height:80px; max-width:120px; object-fit:cover; border-radius:6px;">`) : '<span class="text-muted">No media</span>'}</td>
+                    <td><i class="${mediaType === 'video' ? 'fas fa-video' : (item.icon || 'fas fa-images')}"></i></td>
                     <td>
                         <button class="btn btn-sm btn-danger" onclick="removeGalleryItem(${removeId})">
                             <i class="fas fa-trash"></i> Remove
@@ -4068,17 +4132,35 @@ function showAddGalleryModal() {
 function previewGalleryImage() {
     const imageInput = document.getElementById('galleryImage');
     const preview = document.getElementById('galleryImagePreview');
+    const videoPreview = document.getElementById('galleryVideoPreview');
 
     if (imageInput && imageInput.files && imageInput.files[0]) {
+        const file = imageInput.files[0];
         const reader = new FileReader();
         reader.onload = function(e) {
-            preview.src = e.target.result;
-            preview.classList.remove('d-none');
+            const mediaType = getGalleryMediaType(e.target.result, file);
+            if (mediaType === 'video') {
+                preview.src = '';
+                preview.classList.add('d-none');
+                videoPreview.src = e.target.result;
+                videoPreview.classList.remove('d-none');
+            } else {
+                videoPreview.pause();
+                videoPreview.removeAttribute('src');
+                videoPreview.load();
+                videoPreview.classList.add('d-none');
+                preview.src = e.target.result;
+                preview.classList.remove('d-none');
+            }
         };
-        reader.readAsDataURL(imageInput.files[0]);
+        reader.readAsDataURL(file);
     } else {
         preview.src = '';
         preview.classList.add('d-none');
+        videoPreview.pause();
+        videoPreview.removeAttribute('src');
+        videoPreview.load();
+        videoPreview.classList.add('d-none');
     }
 }
 
@@ -4097,6 +4179,7 @@ function saveGalleryItem() {
     const reader = new FileReader();
     reader.onload = function(e) {
         const imageData = e.target.result;
+        const mediaType = getGalleryMediaType(imageData, file);
 
         if (!frontendOnly) {
             fetch('admin_api.php?action=addGalleryItem', {
@@ -4106,6 +4189,7 @@ function saveGalleryItem() {
                     title: title,
                     description: description,
                     image_url: imageData,
+                    media_type: mediaType,
                     uploaded_by: currentUser?.id || 0
                 })
             })
@@ -4134,7 +4218,9 @@ function saveGalleryItem() {
             title: title,
             description: description,
             icon: icon,
-            imageData: imageData
+            imageData: imageData,
+            imageUrl: imageData,
+            media_type: mediaType
         });
 
         localStorage.setItem('galleryItems', JSON.stringify(galleryItems));
@@ -4159,8 +4245,15 @@ function clearGalleryForm(imageInput) {
     document.getElementById('galleryIcon').value = '';
     imageInput.value = '';
     const preview = document.getElementById('galleryImagePreview');
+    const videoPreview = document.getElementById('galleryVideoPreview');
     preview.src = '';
     preview.classList.add('d-none');
+    if (videoPreview) {
+        videoPreview.pause();
+        videoPreview.removeAttribute('src');
+        videoPreview.load();
+        videoPreview.classList.add('d-none');
+    }
 }
 
 function removeGalleryItem(index) {

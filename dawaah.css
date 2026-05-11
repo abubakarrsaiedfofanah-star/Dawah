@@ -1403,8 +1403,9 @@ a:not(.btn):not(.nav-link):not(.navbar-brand):hover {
     margin-bottom: 10px;
 }
 
-/* GALLERY IMAGE MODAL */
-#galleryImage {
+/* GALLERY MEDIA MODAL */
+#galleryModalImage,
+#galleryModalVideo {
     border-radius: 10px;
     box-shadow: var(--shadow);
 }

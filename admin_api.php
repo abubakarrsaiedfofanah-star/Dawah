@@ -434,15 +434,18 @@ function executeApprovedAdminAction($requested_action, $request) {
     if ($requested_action === 'deleteLeader') return deletePublicLeader(intval($request['leader_id'] ?? 0));
     if ($requested_action === 'addGalleryItem') {
         $image_url = $request['image_url'] ?? '';
-        if (strpos($image_url, 'data:image/') === 0) {
-            $saved_image = saveGalleryDataImage($image_url);
-            if (!$saved_image['success']) return ['success' => false, 'error' => $saved_image['error']];
-            $image_url = $saved_image['path'];
+        $media_type = (($request['media_type'] ?? '') === 'video') ? 'video' : 'image';
+        if (strpos($image_url, 'data:image/') === 0 || strpos($image_url, 'data:video/') === 0) {
+            $saved_media = saveGalleryDataMedia($image_url);
+            if (!$saved_media['success']) return ['success' => false, 'error' => $saved_media['error']];
+            $image_url = $saved_media['path'];
+            $media_type = $saved_media['media_type'];
         }
         return addGalleryItem([
             'title' => $request['title'] ?? '',
             'description' => $request['description'] ?? '',
             'image_url' => $image_url,
+            'media_type' => $media_type,
             'uploaded_by' => intval($request['uploaded_by'] ?? 0)
         ]);
     }
@@ -1095,24 +1098,36 @@ if ($action === 'addGalleryItem' && $method === 'POST') {
     $title = isset($data['title']) ? $data['title'] : '';
     $description = isset($data['description']) ? $data['description'] : '';
     $image_url = isset($data['image_url']) ? $data['image_url'] : '';
+    $media_type = isset($data['media_type']) && $data['media_type'] === 'video' ? 'video' : 'image';
     $uploaded_by = isset($data['uploaded_by']) ? intval($data['uploaded_by']) : 0;
+
+    if (isset($_FILES['gallery_media']) && $_FILES['gallery_media']['error'] !== UPLOAD_ERR_NO_FILE) {
+        $saved_media = saveGalleryUpload($_FILES['gallery_media']);
+        if (!$saved_media['success']) {
+            respond(false, $saved_media['error']);
+        }
+        $image_url = $saved_media['path'];
+        $media_type = $saved_media['media_type'];
+    }
     
     if (empty($title) || empty($image_url)) {
-        respond(false, 'Title and image URL are required');
+        respond(false, 'Title and gallery media are required');
     }
 
-    if (strpos($image_url, 'data:image/') === 0) {
-        $saved_image = saveGalleryDataImage($image_url);
-        if (!$saved_image['success']) {
-            respond(false, $saved_image['error']);
+    if (strpos($image_url, 'data:image/') === 0 || strpos($image_url, 'data:video/') === 0) {
+        $saved_media = saveGalleryDataMedia($image_url);
+        if (!$saved_media['success']) {
+            respond(false, $saved_media['error']);
         }
-        $image_url = $saved_image['path'];
+        $image_url = $saved_media['path'];
+        $media_type = $saved_media['media_type'];
     }
     
     $gallery_data = [
         'title' => $title,
         'description' => $description,
         'image_url' => $image_url,
+        'media_type' => $media_type,
         'uploaded_by' => $uploaded_by
     ];
     
@@ -1121,23 +1136,27 @@ if ($action === 'addGalleryItem' && $method === 'POST') {
 }
 
 function saveGalleryDataImage($data_url) {
-    if (!preg_match('/^data:image\/(png|jpe?g|gif|webp);base64,/', $data_url, $matches)) {
-        return ['success' => false, 'error' => 'Unsupported image format'];
+    return saveGalleryDataMedia($data_url);
+}
+
+function saveGalleryDataMedia($data_url) {
+    if (!preg_match('/^data:(image|video)\/(png|jpe?g|gif|webp|mp4|webm|ogg);base64,/', $data_url, $matches)) {
+        return ['success' => false, 'error' => 'Unsupported gallery media format'];
     }
 
-    $extension = strtolower($matches[1]);
-    if ($extension === 'jpeg') {
-        $extension = 'jpg';
-    }
+    $media_type = strtolower($matches[1]);
+    $extension = strtolower($matches[2]);
+    if ($extension === 'jpeg') $extension = 'jpg';
 
     $base64 = substr($data_url, strpos($data_url, ',') + 1);
-    $image_data = base64_decode($base64, true);
-    if ($image_data === false) {
-        return ['success' => false, 'error' => 'Invalid image data'];
+    $media_data = base64_decode($base64, true);
+    if ($media_data === false) {
+        return ['success' => false, 'error' => 'Invalid gallery media data'];
     }
 
-    if (strlen($image_data) > 5 * 1024 * 1024) {
-        return ['success' => false, 'error' => 'Image is too large. Please use an image under 5MB.'];
+    $max_size = $media_type === 'video' ? 50 * 1024 * 1024 : 5 * 1024 * 1024;
+    if (strlen($media_data) > $max_size) {
+        return ['success' => false, 'error' => $media_type === 'video' ? 'Video is too large. Please use a video under 50MB.' : 'Image is too large. Please use an image under 5MB.'];
     }
 
     $upload_dir = __DIR__ . DIRECTORY_SEPARATOR . 'uploads' . DIRECTORY_SEPARATOR . 'gallery';
@@ -1145,14 +1164,51 @@ function saveGalleryDataImage($data_url) {
         return ['success' => false, 'error' => 'Could not create gallery upload folder'];
     }
 
-    $filename = 'gallery_' . date('Ymd_His') . '_' . bin2hex(random_bytes(4)) . '.' . $extension;
+    $filename = 'gallery_' . $media_type . '_' . date('Ymd_His') . '_' . bin2hex(random_bytes(4)) . '.' . $extension;
     $full_path = $upload_dir . DIRECTORY_SEPARATOR . $filename;
 
-    if (file_put_contents($full_path, $image_data) === false) {
-        return ['success' => false, 'error' => 'Could not save image file'];
+    if (file_put_contents($full_path, $media_data) === false) {
+        return ['success' => false, 'error' => 'Could not save gallery media file'];
     }
 
-    return ['success' => true, 'path' => 'uploads/gallery/' . $filename];
+    return ['success' => true, 'path' => 'uploads/gallery/' . $filename, 'media_type' => $media_type];
+}
+
+function saveGalleryUpload($file) {
+    if ($file['error'] !== UPLOAD_ERR_OK) {
+        return ['success' => false, 'error' => 'Gallery media upload failed'];
+    }
+
+    $extension = strtolower(pathinfo($file['name'], PATHINFO_EXTENSION));
+    $image_extensions = ['jpg', 'jpeg', 'png', 'gif', 'webp'];
+    $video_extensions = ['mp4', 'webm', 'ogg'];
+    if (in_array($extension, $image_extensions, true)) {
+        $media_type = 'image';
+        $max_size = 5 * 1024 * 1024;
+    } elseif (in_array($extension, $video_extensions, true)) {
+        $media_type = 'video';
+        $max_size = 50 * 1024 * 1024;
+    } else {
+        return ['success' => false, 'error' => 'Gallery media must be an image, MP4, WebM, or OGG file'];
+    }
+
+    if ($file['size'] > $max_size) {
+        return ['success' => false, 'error' => $media_type === 'video' ? 'Video is too large. Please use a video under 50MB.' : 'Image is too large. Please use an image under 5MB.'];
+    }
+
+    if ($extension === 'jpeg') $extension = 'jpg';
+    $upload_dir = __DIR__ . DIRECTORY_SEPARATOR . 'uploads' . DIRECTORY_SEPARATOR . 'gallery';
+    if (!is_dir($upload_dir) && !mkdir($upload_dir, 0755, true)) {
+        return ['success' => false, 'error' => 'Could not create gallery upload folder'];
+    }
+
+    $filename = 'gallery_' . $media_type . '_' . date('Ymd_His') . '_' . bin2hex(random_bytes(4)) . '.' . $extension;
+    $target = $upload_dir . DIRECTORY_SEPARATOR . $filename;
+    if (!move_uploaded_file($file['tmp_name'], $target)) {
+        return ['success' => false, 'error' => 'Could not save gallery media file'];
+    }
+
+    return ['success' => true, 'path' => 'uploads/gallery/' . $filename, 'media_type' => $media_type];
 }
 
 if ($action === 'getGallery' && $method === 'GET') {
