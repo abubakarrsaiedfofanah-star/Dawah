@@ -10,8 +10,19 @@ let payments = [];
 let leadershipRoles = [];
 let allMembers = [];
 let allEvents = [];
+let databaseActivities = [];
+let databaseVolunteerOpportunities = [];
+let databaseVolunteerRecords = [];
 let loginFailedAttempts = 0;
 let loginLockedUntil = 0;
+let hostingCapabilities = null;
+let resetPasswordEmail = '';
+const uploadLimits = {
+    profilePhoto: { bytes: 2 * 1024 * 1024, label: '2MB', types: ['image/'] },
+    galleryImage: { bytes: 5 * 1024 * 1024, label: '5MB', types: ['image/'] },
+    galleryVideo: { bytes: 50 * 1024 * 1024, label: '50MB', types: ['video/mp4', 'video/webm', 'video/ogg'] },
+    voice: { bytes: 10 * 1024 * 1024, label: '10MB', types: ['audio/', 'video/webm'] }
+};
 const paymentAccounts = {
     mpesaStk: {
         label: 'M-Pesa STK Push',
@@ -80,12 +91,41 @@ const schoolCourseCatalog = {
 const schoolOptions = Object.keys(schoolCourseCatalog);
 const yearOptions = ['1', '2', '3', '4', '5', '6'];
 const semesterOptions = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12'];
+const localStudentClearVersion = '2026-05-17-clear-student-accounts';
+const defaultActivities = [];
+const defaultVolunteerOpportunities = [
+    {
+        id: 'campus-cleanup',
+        title: 'Campus Clean-up Team',
+        description: 'Help coordinate cleanliness drives around prayer spaces and student areas.',
+        requiredHours: 3,
+        schedule: 'Saturday morning'
+    },
+    {
+        id: 'welfare-support',
+        title: 'Welfare Support Team',
+        description: 'Assist with welfare follow-ups, member check-ins, and support coordination.',
+        requiredHours: 2,
+        schedule: 'Flexible weekly slots'
+    },
+    {
+        id: 'event-support',
+        title: 'Event Support Team',
+        description: 'Support registration desks, seating, ushering, and programme flow during Dawaah events.',
+        requiredHours: 4,
+        schedule: 'During events'
+    }
+];
 
 const XAMPP_BASE_URL = 'http://localhost/dawaah/';
 const useXamppApi = location.protocol === 'file:' || Boolean(location.port && !['80', '443'].includes(location.port));
 const frontendOnly = location.hostname.endsWith('github.io');
 const realAppFetch = window.fetch.bind(window);
 const ACCOUNT_CLEAR_VERSION = '20260510-clear-accounts-v1';
+let contactVoiceRecorder = null;
+let contactVoiceStream = null;
+let contactVoiceChunks = [];
+let contactVoiceBlob = null;
 
 function clearStoredAccountsOnce() {
     if (localStorage.getItem('DawaahAccountClearVersion') === ACCOUNT_CLEAR_VERSION) return;
@@ -136,12 +176,56 @@ function readList(key) {
     return JSON.parse(localStorage.getItem(key)) || [];
 }
 
+function getLocalSiteSettings() {
+    return {
+        contact_location: 'UMMA University, Main Campus',
+        contact_phone: '+23231422167',
+        contact_email: 'info@dawaah.org',
+        contact_hours: 'Monday - Friday: 10 AM - 6 PM',
+        social_whatsapp: 'https://api.whatsapp.com/send?phone=23231422167&text=Assalamu%20alaikum%2C%20I%20would%20like%20to%20contact%20Dawa%27ah.',
+        social_facebook: '',
+        social_x: '',
+        social_instagram: '',
+        social_youtube: '',
+        social_tiktok: '',
+        social_linkedin: '',
+        ...(JSON.parse(localStorage.getItem('siteSettings') || '{}'))
+    };
+}
+
+function writeLocalSiteSettings(settings) {
+    localStorage.setItem('siteSettings', JSON.stringify({ ...getLocalSiteSettings(), ...(settings || {}) }));
+}
+
+function logLocalRoleActivity(actionName, details = {}) {
+    if (!currentUser) return;
+    const logs = readList('roleActivityLogs');
+    logs.push({
+        id: Date.now(),
+        user_id: currentUser.dbUserId || currentUser.user_id || currentUser.id || 0,
+        username: currentUser.username || currentUser.studentId || currentUser.email || 'Member',
+        email: currentUser.email || '',
+        action: actionName,
+        source: 'member_dashboard',
+        details: {
+            role: currentRole || currentUser.role || 'student',
+            username: currentUser.username || currentUser.studentId || '',
+            ...details
+        },
+        ip_address: 'local browser',
+        created_at: new Date().toISOString()
+    });
+    localStorage.setItem('roleActivityLogs', JSON.stringify(logs.slice(-200)));
+}
+
 function getStaticApiData(action) {
     switch (action) {
         case 'getLeaders':
             return { success: true, data: readList('publicLeaders') };
         case 'getGallery':
             return { success: true, data: readList('galleryItems') };
+        case 'getSiteSettings':
+            return { success: true, data: getLocalSiteSettings() };
         case 'getAnnouncements':
             return { success: true, data: readList('adminAnnouncements') };
         case 'getEvents':
@@ -207,18 +291,38 @@ function showLeaderDetails(leaderData) {
     const leader = typeof leaderData === 'string' ? JSON.parse(decodeURIComponent(leaderData)) : leaderData;
     const course = leader.course || '';
     const yearOfStudy = leader.year_of_study || leader.yearOfStudy || '';
+    const photoUrl = leader.photo_url || leader.photoData || leader.photo || '';
+    const addedAt = leader.created_at || leader.createdAt || '';
 
     document.getElementById('leaderModalTitle').textContent = `${leader.name} - ${leader.position}`;
     document.getElementById('leaderName').textContent = leader.name || '';
     document.getElementById('leaderPosition').textContent = leader.position || '';
-    document.getElementById('leaderBio').textContent = leader.bio || '';
-    document.getElementById('leaderDescription').textContent = leader.description || '';
-    document.getElementById('leaderEmail').textContent = leader.email || '';
-    document.getElementById('leaderPhone').textContent = leader.phone || '';
+    document.getElementById('leaderBio').textContent = leader.bio || 'No bio added yet.';
+    document.getElementById('leaderDescription').textContent = leader.description || 'No description added yet.';
+    document.getElementById('leaderEmail').textContent = leader.email || 'N/A';
+    document.getElementById('leaderPhone').textContent = leader.phone || 'N/A';
     document.getElementById('leaderCourse').textContent = course || 'N/A';
     document.getElementById('leaderYearOfStudy').textContent = yearOfStudy || 'N/A';
     document.getElementById('leaderCourseRow').classList.toggle('d-none', !course);
     document.getElementById('leaderYearRow').classList.toggle('d-none', !yearOfStudy);
+    document.getElementById('leaderAddedAt').textContent = addedAt ? new Date(addedAt).toLocaleString() : 'N/A';
+    document.getElementById('leaderAddedRow').classList.toggle('d-none', !addedAt);
+
+    const leaderPhotoImage = document.getElementById('leaderPhotoImage');
+    const leaderPhotoIcon = document.getElementById('leaderPhotoIcon');
+    if (photoUrl && leaderPhotoImage) {
+        leaderPhotoImage.src = resolveAppUrl(photoUrl);
+        leaderPhotoImage.alt = leader.name ? `${leader.name} profile photo` : 'Leader profile photo';
+        leaderPhotoImage.classList.remove('d-none');
+        leaderPhotoIcon?.classList.add('d-none');
+        leaderPhotoImage.onerror = function() {
+            leaderPhotoImage.classList.add('d-none');
+            leaderPhotoIcon?.classList.remove('d-none');
+        };
+    } else {
+        leaderPhotoImage?.classList.add('d-none');
+        leaderPhotoIcon?.classList.remove('d-none');
+    }
 
     const modal = new bootstrap.Modal(document.getElementById('leaderDetailsModal'));
     modal.show();
@@ -226,6 +330,7 @@ function showLeaderDetails(leaderData) {
 
 function encodeLeaderDetails(leader) {
     return encodeURIComponent(JSON.stringify({
+        id: leader.id || '',
         name: leader.name || '',
         position: leader.position || '',
         course: leader.course || '',
@@ -233,8 +338,10 @@ function encodeLeaderDetails(leader) {
         bio: leader.bio || '',
         description: leader.description || '',
         email: leader.email || '',
-        phone: leader.phone || ''
-    }));
+        phone: leader.phone || '',
+        photo_url: leader.photo_url || leader.photoData || leader.photo || '',
+        created_at: leader.created_at || leader.createdAt || ''
+    })).replace(/'/g, '%27');
 }
 
 function getGalleryMediaType(url, file = null) {
@@ -302,8 +409,75 @@ document.addEventListener('DOMContentLoaded', function() {
 
 // LOAD DYNAMIC CONTENT FOR LANDING PAGE
 function loadLandingPageContent() {
+    loadPublicSiteSettings();
     loadLeadershipContent();
     loadGalleryContent();
+    loadPublicActivitiesPreview();
+}
+
+function setTextById(id, value) {
+    const element = document.getElementById(id);
+    if (element) element.textContent = value || '';
+}
+
+function whatsappLabel(url, fallbackPhone = '') {
+    const phone = String(fallbackPhone || '').trim();
+    if (phone) return phone;
+    const match = String(url || '').match(/(?:phone=|wa\.me\/)(\d+)/i);
+    return match ? `+${match[1]}` : 'WhatsApp';
+}
+
+function renderPublicSocialLinks(settings) {
+    const container = document.getElementById('publicSocialLinks');
+    if (!container) return;
+    const links = [
+        ['social_whatsapp', 'WhatsApp', 'fab fa-whatsapp'],
+        ['contact_email', 'Email', 'fas fa-envelope', value => `mailto:${value}`],
+        ['social_facebook', 'Facebook', 'fab fa-facebook'],
+        ['social_x', 'X', 'fab fa-twitter'],
+        ['social_instagram', 'Instagram', 'fab fa-instagram'],
+        ['social_youtube', 'YouTube', 'fab fa-youtube'],
+        ['social_tiktok', 'TikTok', 'fab fa-tiktok'],
+        ['social_linkedin', 'LinkedIn', 'fab fa-linkedin']
+    ];
+    container.innerHTML = links
+        .filter(([key]) => settings[key])
+        .map(([key, label, icon, hrefBuilder]) => {
+            const href = hrefBuilder ? hrefBuilder(settings[key]) : settings[key];
+            const targetAttrs = key === 'contact_email' ? '' : ' target="_blank" rel="noopener"';
+            return `<a href="${escapeHtml(href)}"${targetAttrs} aria-label="${escapeHtml(label)}"><i class="${icon}"></i></a>`;
+        })
+        .join('');
+}
+
+function applyPublicSiteSettings(settings = {}) {
+    const merged = { ...getLocalSiteSettings(), ...settings };
+    setTextById('publicContactLocation', merged.contact_location);
+    setTextById('publicContactPhone', merged.contact_phone);
+    setTextById('publicContactEmail', merged.contact_email);
+    setTextById('publicContactHours', merged.contact_hours);
+
+    const whatsapp = document.getElementById('publicContactWhatsapp');
+    if (whatsapp) {
+        whatsapp.href = merged.social_whatsapp || '#contact';
+        whatsapp.textContent = whatsappLabel(merged.social_whatsapp, merged.contact_phone);
+        whatsapp.closest('.contact-item')?.classList.toggle('d-none', !merged.social_whatsapp);
+    }
+    renderPublicSocialLinks(merged);
+}
+
+function loadPublicSiteSettings() {
+    const request = frontendOnly
+        ? Promise.resolve(getStaticApiData('getSiteSettings'))
+        : fetch('api.php?action=getSiteSettings').then(response => parseJsonResponse(response));
+
+    return request
+        .then(result => {
+            if (!result.success) throw new Error(result.message || 'Could not load site settings');
+            writeLocalSiteSettings(result.data || {});
+            applyPublicSiteSettings(result.data || {});
+        })
+        .catch(() => applyPublicSiteSettings(getLocalSiteSettings()));
 }
 
 function loadLeadershipContent() {
@@ -334,17 +508,17 @@ function loadLeadershipContent() {
 
         leadershipContainer.innerHTML = leaders.map(leader => `
             <div class="col-md-6 col-lg-3 mb-4">
-                <div class="leadership-card" onclick="showLeaderDetails('${encodeLeaderDetails(leader)}')">
+                <button type="button" class="leadership-card leadership-card-button" onclick="showLeaderDetails('${encodeLeaderDetails(leader)}')" aria-label="View ${escapeHtml(leader.name)} details">
                     <div class="leader-photo">
-                        ${leader.photo_url ? `<img src="${leader.photo_url}" alt="${leader.name}" style="width: 100%; height: 100px; object-fit: cover; border-radius: 50%;" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">` : ''}
+                        ${leader.photo_url ? `<img src="${resolveAppUrl(leader.photo_url)}" alt="${escapeHtml(leader.name)}" style="width: 100%; height: 100px; object-fit: cover; border-radius: 50%;" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">` : ''}
                         <i class="fas fa-user-circle fa-5x" ${leader.photo_url ? 'style="display: none;"' : ''}></i>
                     </div>
-                    <h6>${leader.name}</h6>
-                    <p class="position">${leader.position}</p>
-                    ${leader.course ? `<p class="bio"><strong>Course:</strong> ${leader.course}</p>` : ''}
-                    ${leader.year_of_study ? `<p class="bio"><strong>Year:</strong> ${leader.year_of_study}</p>` : ''}
-                    <p class="bio">${leader.bio || ''}</p>
-                </div>
+                    <h6>${escapeHtml(leader.name)}</h6>
+                    <p class="position">${escapeHtml(leader.position)}</p>
+                    ${leader.course ? `<p class="bio"><strong>Course:</strong> ${escapeHtml(leader.course)}</p>` : ''}
+                    ${leader.year_of_study ? `<p class="bio"><strong>Year:</strong> ${escapeHtml(leader.year_of_study)}</p>` : ''}
+                    <p class="bio">${escapeHtml(leader.bio || '')}</p>
+                </button>
             </div>
         `).join('');
     })
@@ -364,17 +538,17 @@ function loadLeadershipContent() {
 
         leadershipContainer.innerHTML = publicLeaders.map(leader => `
             <div class="col-md-6 col-lg-3 mb-4">
-                <div class="leadership-card" onclick="showLeaderDetails('${encodeLeaderDetails(leader)}')">
+                <button type="button" class="leadership-card leadership-card-button" onclick="showLeaderDetails('${encodeLeaderDetails(leader)}')" aria-label="View ${escapeHtml(leader.name)} details">
                     <div class="leader-photo">
-                        ${leader.photoData ? `<img src="${leader.photoData}" alt="${leader.name}" style="width: 100%; height: 100px; object-fit: cover; border-radius: 50%;" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">` : ''}
+                        ${leader.photoData ? `<img src="${leader.photoData}" alt="${escapeHtml(leader.name)}" style="width: 100%; height: 100px; object-fit: cover; border-radius: 50%;" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">` : ''}
                         <i class="fas fa-user-circle fa-5x" ${leader.photoData ? 'style="display: none;"' : ''}></i>
                     </div>
-                    <h6>${leader.name}</h6>
-                    <p class="position">${leader.position}</p>
-                    ${leader.course ? `<p class="bio"><strong>Course:</strong> ${leader.course}</p>` : ''}
-                    ${leader.year_of_study ? `<p class="bio"><strong>Year:</strong> ${leader.year_of_study}</p>` : ''}
-                    <p class="bio">${leader.bio}</p>
-                </div>
+                    <h6>${escapeHtml(leader.name)}</h6>
+                    <p class="position">${escapeHtml(leader.position)}</p>
+                    ${leader.course ? `<p class="bio"><strong>Course:</strong> ${escapeHtml(leader.course)}</p>` : ''}
+                    ${leader.year_of_study ? `<p class="bio"><strong>Year:</strong> ${escapeHtml(leader.year_of_study)}</p>` : ''}
+                    <p class="bio">${escapeHtml(leader.bio)}</p>
+                </button>
             </div>
         `).join('');
     });
@@ -500,7 +674,8 @@ function savePublicLeader() {
         description: description,
         email: email,
         phone: phone,
-        photoData: null
+        photoData: null,
+        createdAt: new Date().toISOString()
     };
 
     // Handle photo upload if provided
@@ -541,13 +716,16 @@ function loadPublicLeadershipList() {
             <div class="card-body">
                 <div class="d-flex justify-content-between align-items-start">
                     <div class="flex-grow-1">
-                        <h6 class="card-title">${leader.name}</h6>
-                        <p class="card-subtitle mb-2 text-muted">${leader.position}</p>
-                        ${leader.course ? `<p class="card-text small mb-1"><strong>Course:</strong> ${leader.course}</p>` : ''}
-                        ${leader.year_of_study ? `<p class="card-text small mb-1"><strong>Year:</strong> ${leader.year_of_study}</p>` : ''}
-                        <p class="card-text small">${leader.bio}</p>
+                        <h6 class="card-title">${escapeHtml(leader.name)}</h6>
+                        <p class="card-subtitle mb-2 text-muted">${escapeHtml(leader.position)}</p>
+                        ${leader.course ? `<p class="card-text small mb-1"><strong>Course:</strong> ${escapeHtml(leader.course)}</p>` : ''}
+                        ${leader.year_of_study ? `<p class="card-text small mb-1"><strong>Year:</strong> ${escapeHtml(leader.year_of_study)}</p>` : ''}
+                        <p class="card-text small">${escapeHtml(leader.bio)}</p>
                     </div>
                     <div>
+                        <button class="btn btn-sm btn-outline-primary me-2" onclick="showLeaderDetails('${encodeLeaderDetails(leader)}')">
+                            <i class="fas fa-eye"></i> Details
+                        </button>
                         <button class="btn btn-sm btn-outline-danger" onclick="deletePublicLeader(${leader.id})">
                             <i class="fas fa-trash"></i> Delete
                         </button>
@@ -573,6 +751,7 @@ function deletePublicLeader(id) {
 document.addEventListener('DOMContentLoaded', function() {
     initializeApp();
     attachEventListeners();
+    loadHostingCapabilities();
     attachWelfareSyncListeners();
     loadLandingPageContent(); // Load dynamic content for landing page
 });
@@ -610,6 +789,7 @@ function initializeApp() {
     leadershipRoles = JSON.parse(localStorage.getItem('leadershipRoles')) || [];
     allMembers = JSON.parse(localStorage.getItem('allMembers')) || [];
     allEvents = JSON.parse(localStorage.getItem('allEvents')) || [];
+    clearCachedStudentAccountsOnce();
 
     const savedUser = localStorage.getItem('currentUser');
     if (savedUser) {
@@ -619,18 +799,114 @@ function initializeApp() {
     }
 }
 
+function clearCachedStudentAccountsOnce() {
+    if (localStorage.getItem('localStudentClearVersion') === localStudentClearVersion) {
+        return;
+    }
+
+    allMembers = allMembers.filter(member => (member.role || 'student') !== 'student');
+    localStorage.setItem('allMembers', JSON.stringify(allMembers));
+
+    const cachedUser = JSON.parse(localStorage.getItem('currentUser') || 'null');
+    if (cachedUser && (cachedUser.role || 'student') === 'student') {
+        localStorage.removeItem('currentUser');
+        localStorage.removeItem('currentRole');
+        currentUser = null;
+        currentRole = null;
+    }
+
+    localStorage.setItem('localStudentClearVersion', localStudentClearVersion);
+}
+
 function attachEventListeners() {
     initializeAcademicSelectors();
     document.getElementById('loginForm')?.addEventListener('submit', handleLogin);
     document.getElementById('registrationForm')?.addEventListener('submit', handleRegistration);
     document.getElementById('forgotPasswordForm')?.addEventListener('submit', handleForgotPassword);
+    document.getElementById('contactForm')?.addEventListener('submit', submitContactVoiceMessage);
+    document.getElementById('startVoiceRecording')?.addEventListener('click', startContactVoiceRecording);
+    document.getElementById('stopVoiceRecording')?.addEventListener('click', stopContactVoiceRecording);
+    document.getElementById('clearVoiceRecording')?.addEventListener('click', clearContactVoiceRecording);
+    document.getElementById('contactVoiceFile')?.addEventListener('change', handleContactVoiceFileChange);
+    document.getElementById('passportPhoto')?.addEventListener('change', handlePassportPhotoFileChange);
     document.getElementById('togglePassword')?.addEventListener('click', togglePasswordVisibility);
     document.getElementById('loginUsername')?.addEventListener('blur', populateLoginRoleFromUsername);
     document.getElementById('school')?.addEventListener('change', () => renderCourseOptions('course', document.getElementById('school').value));
     document.getElementById('editSchool')?.addEventListener('change', () => renderCourseOptions('editCourse', document.getElementById('editSchool').value));
     document.getElementById('yearOfStudy')?.addEventListener('change', () => updateSemesterAvailability('yearOfStudy', 'semester'));
     document.getElementById('editYearOfStudy')?.addEventListener('change', () => updateSemesterAvailability('editYearOfStudy', 'editSemester'));
+    document.getElementById('regPassword')?.addEventListener('input', updatePasswordStrengthMeter);
     updateSemesterAvailability('yearOfStudy', 'semester');
+    updatePasswordStrengthMeter();
+}
+
+function loadHostingCapabilities() {
+    if (frontendOnly) {
+        hostingCapabilities = { mpesa_stk_available: false };
+        refreshPaymentMethodAvailability();
+        return Promise.resolve(hostingCapabilities);
+    }
+
+    return fetch('api.php?action=hostingCheck')
+        .then(response => parseJsonResponse(response))
+        .then(result => {
+            if (result.success) {
+                hostingCapabilities = result.data || {};
+                refreshPaymentMethodAvailability();
+            }
+            return hostingCapabilities;
+        })
+        .catch(error => {
+            console.warn('Hosting capability check failed:', error);
+            hostingCapabilities = { mpesa_stk_available: false };
+            refreshPaymentMethodAvailability();
+            return hostingCapabilities;
+        });
+}
+
+function canUseMpesaStk() {
+    return !frontendOnly && hostingCapabilities && hostingCapabilities.mpesa_stk_available === true;
+}
+
+function refreshPaymentMethodAvailability() {
+    ['paymentMethod', 'donationPaymentMethod'].forEach(selectId => {
+        const select = document.getElementById(selectId);
+        if (!select) return;
+        const option = Array.from(select.options).find(item => item.value === 'mpesaStk');
+        if (!option) return;
+        option.disabled = !canUseMpesaStk();
+        option.textContent = canUseMpesaStk() ? 'M-Pesa STK Push' : 'M-Pesa STK Push (not available here)';
+        if (option.disabled && select.value === 'mpesaStk') {
+            select.value = '';
+            updatePaymentInstructions(selectId === 'donationPaymentMethod' ? 'donation' : 'payment');
+        }
+    });
+}
+
+function validateUploadFile(file, limitKey) {
+    if (!file || !uploadLimits[limitKey]) return true;
+    const limit = uploadLimits[limitKey];
+    const allowed = limit.types.some(type => type.endsWith('/') ? file.type.startsWith(type) : file.type === type);
+    if (!allowed) {
+        showNotification('Please choose a supported file type.', 'warning');
+        return false;
+    }
+    if (file.size > limit.bytes) {
+        showNotification(`File is too large. Maximum allowed size is ${limit.label}.`, 'warning');
+        return false;
+    }
+    return true;
+}
+
+function getGalleryUploadLimitKey(file) {
+    return file?.type?.startsWith('video/') ? 'galleryVideo' : 'galleryImage';
+}
+
+function handlePassportPhotoFileChange(event) {
+    const file = event.target.files?.[0];
+    if (file && !validateUploadFile(file, 'profilePhoto')) {
+        event.target.value = '';
+    }
 }
 
 function initializeAcademicSelectors() {
@@ -714,11 +990,40 @@ function updateSemesterAvailability(yearSelectId, semesterSelectId) {
     }
 }
 
+function getPasswordStrength(password = '') {
+    let score = 0;
+    if (password.length >= 8) score += 25;
+    if (/[a-z]/i.test(password)) score += 20;
+    if (/\d/.test(password)) score += 20;
+    if (/[^a-zA-Z0-9]/.test(password)) score += 25;
+    if (password.length >= 12) score += 10;
+    return Math.min(score, 100);
+}
+
+function updatePasswordStrengthMeter() {
+    const input = document.getElementById('regPassword');
+    const wrapper = document.querySelector('.password-strength');
+    const bar = document.getElementById('passwordStrengthBar');
+    const text = document.getElementById('passwordStrengthText');
+    if (!input || !wrapper || !bar || !text) return;
+
+    const score = getPasswordStrength(input.value);
+    bar.style.width = `${score}%`;
+    wrapper.classList.toggle('is-medium', score >= 50 && score < 80);
+    wrapper.classList.toggle('is-strong', score >= 80);
+    text.textContent = score >= 80
+        ? 'Strong password.'
+        : score >= 50
+            ? 'Good start. Add a symbol or more characters for stronger protection.'
+            : 'Use 8+ characters with letters, numbers, and a symbol.';
+}
+
 function populateLoginRoleFromUsername() {
     const username = document.getElementById('loginUsername').value.trim();
     const user = getRegisteredUser(username);
-    if (user) {
-        document.getElementById('userRole').value = user.role;
+    const roleSelect = document.getElementById('userRole');
+    if (user && roleSelect) {
+        roleSelect.value = user.role;
     }
 }
 
@@ -728,6 +1033,18 @@ function getRegisteredUser(identifier) {
         member.studentId === identifier ||
         member.email === identifier ||
         member.username === identifier
+    );
+}
+
+function isUniqueRegistrationRole(role) {
+    return !['student', 'admin'].includes(String(role || 'student').toLowerCase());
+}
+
+function getExistingRoleHolder(role) {
+    if (!isUniqueRegistrationRole(role)) return null;
+    return allMembers.find(member =>
+        String(member.role || '').toLowerCase() === String(role || '').toLowerCase() &&
+        !['rejected', 'suspended'].includes(String(member.status || '').toLowerCase())
     );
 }
 
@@ -743,15 +1060,14 @@ function handleLogin(e) {
 
     const username = document.getElementById('loginUsername').value.trim();
     const password = document.getElementById('loginPassword').value;
-    const role = document.getElementById('userRole').value;
 
-    if (!username || !password || !role) {
+    if (!username || !password) {
         alert('Please fill in all fields.');
         return;
     }
 
     if (!frontendOnly) {
-        loginWithServerSession(username, password, role);
+        loginWithServerSession(username, password);
         return;
     }
 
@@ -766,12 +1082,7 @@ function handleLogin(e) {
         return;
     }
 
-    if (user.role !== role) {
-        recordFailedLoginAttempt('Role mismatch. Please login with the role you registered as: ' + (user.role || 'student') + '.');
-        return;
-    }
-
-    if (['inactive', 'pending'].includes(String(user.status || 'Active').toLowerCase())) {
+    if (['inactive', 'pending', 'suspended'].includes(String(user.status || 'Active').toLowerCase())) {
         recordFailedLoginAttempt('This account is pending approval or inactive. Please contact the admin.');
         return;
     }
@@ -779,16 +1090,16 @@ function handleLogin(e) {
     loginFailedAttempts = 0;
     loginLockedUntil = 0;
     currentUser = user;
-    currentRole = role;
+    currentRole = user.role || 'student';
 
     localStorage.setItem('currentUser', JSON.stringify(user));
-    localStorage.setItem('currentRole', role);
+    localStorage.setItem('currentRole', currentRole);
 
     document.getElementById('loginForm').reset();
     showDashboard();
 }
 
-function loginWithServerSession(username, password, selectedRole) {
+function loginWithServerSession(username, password) {
     fetch('api.php?action=loginUser', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -802,13 +1113,6 @@ function loginWithServerSession(username, password, selectedRole) {
         }
 
         const serverUser = result.data;
-        if (serverUser.role !== selectedRole) {
-            fetch('api.php?action=logoutUser', {
-                method: 'POST',
-                credentials: 'same-origin'
-            }).catch(() => {});
-            throw new Error('Role mismatch. Please login with the role you registered as: ' + (serverUser.role || 'student') + '.');
-        }
 
         return fetch(`api.php?action=getStudentByIdentifier&identifier=${encodeURIComponent(username)}`, {
             credentials: 'same-origin'
@@ -890,12 +1194,7 @@ function handleRegistration(e) {
     const password = document.getElementById('regPassword').value;
     const confirmPassword = document.getElementById('confirmPassword').value;
     const email = document.getElementById('email').value.trim();
-    const role = document.getElementById('regRole').value;
-
-    if (!role) {
-        alert('Please select a role for registration.');
-        return;
-    }
+    const role = 'student';
 
     if (password !== confirmPassword) {
         alert('Passwords do not match.');
@@ -907,13 +1206,32 @@ function handleRegistration(e) {
         return;
     }
 
+    if (getPasswordStrength(password) < 50) {
+        alert('Please use a stronger password with letters, numbers, and a symbol.');
+        return;
+    }
+
     if (getRegisteredUser(studentId) || getRegisteredUser(email)) {
         alert('A user with this Student ID or email is already registered.');
         return;
     }
 
+    if (frontendOnly && allMembers.some(member => member.password && member.password === password)) {
+        alert('Please choose a different password. Each student must use a unique password.');
+        return;
+    }
+
+    const existingRoleHolder = getExistingRoleHolder(role);
+    if (existingRoleHolder) {
+        alert(`${role.charAt(0).toUpperCase() + role.slice(1)} role is already requested or assigned. Main admin must approve/reject or remove the existing holder first.`);
+        return;
+    }
+
     const passportPhotoInput = document.getElementById('passportPhoto');
     const passportPhotoFile = passportPhotoInput?.files?.[0];
+    if (passportPhotoFile && !validateUploadFile(passportPhotoFile, 'profilePhoto')) {
+        return;
+    }
 
     const newUser = {
         username: studentId,
@@ -967,12 +1285,7 @@ function continueRegistration(newUser, fullName, password) {
             .then(savedUser => completeLocalRegistration(savedUser))
             .catch(error => {
                 console.error('Registration database error:', error);
-                newUser.databaseSynced = false;
-                newUser.databaseSyncError = error.message || 'Database save unavailable';
-                completeLocalRegistration(newUser, {
-                    databaseSynced: false,
-                    message: 'Registration successful locally. Database sync is unavailable, but you can login now.'
-                });
+                alert(error.message || 'Registration failed. Please check your details and try again.');
             });
         return;
     }
@@ -981,7 +1294,7 @@ function continueRegistration(newUser, fullName, password) {
 }
 
 function completeLocalRegistration(newUser, options = {}) {
-    const needsApproval = !['student', 'admin'].includes(newUser.role || 'student');
+    const needsApproval = (newUser.role || 'student') !== 'student';
     const { passportPhotoFile, ...storableUser } = { ...newUser, status: newUser.status || (needsApproval ? 'Pending' : 'Active') };
     const existingIndex = allMembers.findIndex(member =>
         member.studentId === storableUser.studentId ||
@@ -1068,7 +1381,8 @@ function saveRegistrationToDatabase(newUser, fullName, password) {
                 ...newUser,
                 dbUserId: userId,
                 dbStudentId: studentResult.data.student_id,
-                status: ['student', 'admin'].includes(newUser.role || 'student') ? 'Active' : 'Pending',
+                status: (newUser.role || 'student') === 'student' ? 'Active' : 'Pending',
+                password: '',
                 passportPhotoData: uploadedPath ? '' : newUser.passportPhotoData,
                 passport_photo: uploadedPath || newUser.passport_photo || ''
             };
@@ -1078,16 +1392,41 @@ function saveRegistrationToDatabase(newUser, fullName, password) {
 
 function handleForgotPassword(e) {
     e.preventDefault();
-    const email = document.getElementById('forgotEmail').value;
-    alert('Password reset link sent to ' + email);
-    document.getElementById('forgotPasswordForm').reset();
-    const modal = bootstrap.Modal.getInstance(document.getElementById('forgotPasswordModal'));
-    modal?.hide();
+    sendResetLink();
 }
 
 function showForgotPassword() {
+    resetForgotPasswordModal();
     const modal = new bootstrap.Modal(document.getElementById('forgotPasswordModal'));
     modal.show();
+}
+
+function resetForgotPasswordModal() {
+    resetPasswordEmail = '';
+    document.getElementById('forgotPasswordForm')?.reset();
+    document.querySelectorAll('.reset-step-code').forEach(item => item.classList.add('d-none'));
+    document.querySelectorAll('.reset-step-email').forEach(item => item.classList.remove('d-none'));
+    const button = document.getElementById('forgotPasswordActionButton');
+    if (button) button.textContent = 'Send Code';
+    const resendButton = document.getElementById('forgotPasswordResendButton');
+    if (resendButton) resendButton.classList.add('d-none');
+    const help = document.getElementById('forgotPasswordHelp');
+    if (help) help.textContent = 'Use the same email you registered with. A verification code will be sent there.';
+}
+
+function showResetCodeStep(email, result) {
+    resetPasswordEmail = email;
+    document.querySelectorAll('.reset-step-email').forEach(item => item.classList.add('d-none'));
+    document.querySelectorAll('.reset-step-code').forEach(item => item.classList.remove('d-none'));
+    const button = document.getElementById('forgotPasswordActionButton');
+    if (button) button.textContent = 'Set New Password';
+    const resendButton = document.getElementById('forgotPasswordResendButton');
+    if (resendButton) resendButton.classList.remove('d-none');
+    const help = document.getElementById('forgotPasswordHelp');
+    if (help) {
+        const devCode = result?.data?.dev_code ? ` Local test code: ${result.data.dev_code}` : '';
+        help.textContent = `Code sent to ${email}. It expires in 15 minutes.${devCode}`;
+    }
 }
 
 function togglePasswordVisibility() {
@@ -1104,9 +1443,94 @@ function togglePasswordVisibility() {
 }
 
 function sendResetLink() {
-    const email = document.getElementById('forgotEmail').value;
-    alert('Password reset link sent to ' + email);
-    bootstrap.Modal.getInstance(document.getElementById('forgotPasswordModal')).hide();
+    if (resetPasswordEmail) {
+        submitPasswordResetWithCode();
+        return;
+    }
+
+    const email = document.getElementById('forgotEmail').value.trim();
+    if (!email) {
+        showNotification('Please enter your email address.', 'warning');
+        return;
+    }
+
+    fetch('api.php?action=requestPasswordReset', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email })
+    })
+    .then(response => parseJsonResponse(response))
+    .then(result => {
+        if (!result.success) {
+            throw new Error(result.message || 'Could not record reset request');
+        }
+        showNotification(result.data?.mail_sent ? 'Verification code sent to your email.' : 'Code created. If email is not delivered, contact admin to check mail setup.', 'success');
+        showResetCodeStep(email, result);
+    })
+    .catch(error => showNotification(error.message || 'Could not send reset code', 'danger'));
+}
+
+function resendResetCode() {
+    const email = resetPasswordEmail || document.getElementById('forgotEmail')?.value.trim();
+    if (!email) {
+        showNotification('Enter your registered email first.', 'warning');
+        return;
+    }
+
+    fetch('api.php?action=requestPasswordReset', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email })
+    })
+    .then(response => parseJsonResponse(response))
+    .then(result => {
+        if (!result.success) {
+            throw new Error(result.message || 'Could not resend reset code');
+        }
+        document.getElementById('forgotCode').value = '';
+        showNotification(result.data?.mail_sent ? 'New verification code sent.' : 'New code created. If email is not delivered, check mail setup.', 'success');
+        showResetCodeStep(email, result);
+    })
+    .catch(error => showNotification(error.message || 'Could not resend reset code', 'danger'));
+}
+
+function submitPasswordResetWithCode() {
+    const code = document.getElementById('forgotCode').value.trim();
+    const password = document.getElementById('forgotNewPassword').value;
+    const confirmPassword = document.getElementById('forgotConfirmPassword').value;
+
+    if (!/^\d{6}$/.test(code)) {
+        showNotification('Enter the 6-digit code sent to your email.', 'warning');
+        return;
+    }
+    if (!password || password.length < 6) {
+        showNotification('New password must be at least 6 characters.', 'warning');
+        return;
+    }
+    if (password !== confirmPassword) {
+        showNotification('New passwords do not match.', 'warning');
+        return;
+    }
+
+    fetch('api.php?action=resetPasswordWithCode', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+            email: resetPasswordEmail,
+            code,
+            password
+        })
+    })
+    .then(response => parseJsonResponse(response))
+    .then(result => {
+        if (!result.success) {
+            throw new Error(result.message || 'Could not reset password');
+        }
+        showNotification('Password reset successfully. Login with your new password.', 'success');
+        bootstrap.Modal.getInstance(document.getElementById('forgotPasswordModal'))?.hide();
+        resetForgotPasswordModal();
+    })
+    .catch(error => showNotification(error.message || 'Could not reset password', 'danger'));
 }
 
 // DASHBOARD
@@ -1160,6 +1584,7 @@ function getViewPermission(viewName) {
         membershipStatus: 'view_membership',
         prayer: 'view_prayer_times',
         events: 'register_events',
+        activities: 'view_announcements',
         announcements: 'view_announcements',
         resources: 'view_resources',
         welfare: 'welfare_request',
@@ -1172,7 +1597,8 @@ function getViewPermission(viewName) {
         leadership: 'manage_leadership',
         reports: 'view_reports',
         adminGallery: 'manage_gallery',
-        adminContact: 'manage_contact'
+        adminContact: 'manage_contact',
+        officerHadiths: 'manage_hadiths'
     };
 
     return viewPermissions[viewName] || null;
@@ -1214,6 +1640,9 @@ function loadViewData(viewName) {
         case 'events':
             loadEventsData();
             break;
+        case 'activities':
+            loadActivitiesData();
+            break;
         case 'announcements':
             loadAnnouncements();
             break;
@@ -1245,6 +1674,7 @@ function loadViewData(viewName) {
             loadLeadership();
             break;
         case 'reports':
+            loadReportsData();
             setTimeout(() => initializeCharts(), 300);
             break;
         case 'adminGallery':
@@ -1253,7 +1683,315 @@ function loadViewData(viewName) {
         case 'adminContact':
             loadAdminContact();
             break;
+        case 'officerHadiths':
+            loadOfficerHadiths();
+            break;
     }
+}
+
+// ACTIVITIES
+function loadActivitiesData() {
+    Promise.allSettled([loadEventsFromApi(), loadActivitiesFromApi()]).finally(() => {
+        const managerPanel = document.getElementById('activityManagerPanel');
+        managerPanel?.classList.toggle('d-none', !hasPermission('manage_activities'));
+        renderActivityGroup('daily', 'dailyActivitiesList');
+        renderActivityGroup('weekly', 'weeklyActivitiesList');
+        renderActivityGroup('monthly', 'monthlyActivitiesList');
+    });
+}
+
+function loadPublicActivitiesPreview() {
+    Promise.allSettled([loadEventsFromApi(), loadActivitiesFromApi()]).finally(renderPublicActivitiesPreview);
+}
+
+function loadActivitiesFromApi() {
+    if (frontendOnly) {
+        databaseActivities = [];
+        return Promise.resolve([]);
+    }
+
+    return fetch('api.php?action=getActivities', { credentials: 'same-origin' })
+        .then(response => parseJsonResponse(response))
+        .then(result => {
+            if (!result.success) {
+                throw new Error(result.message || 'Could not load activities');
+            }
+            databaseActivities = (result.data || []).map(normalizeDatabaseActivity);
+            return databaseActivities;
+        })
+        .catch(error => {
+            console.warn('Database activities unavailable:', error);
+            databaseActivities = [];
+            return [];
+        });
+}
+
+function normalizeDatabaseActivity(activity) {
+    return {
+        id: `db-${activity.id}`,
+        dbActivityId: Number(activity.id),
+        source: 'database',
+        title: activity.title || 'Dawaah Activity',
+        period: normalizeActivityPeriod(activity.period),
+        date: activity.activity_date || activity.date || '',
+        time: activity.activity_time || activity.time || '',
+        schedule: activity.schedule_note || activity.schedule || '',
+        location: activity.location || 'Location will be announced',
+        description: activity.description || 'Activity details will be shared soon.',
+        createdBy: activity.created_by_name || ''
+    };
+}
+
+function getActivities() {
+    const savedActivities = readList('adminActivities').map(activity => ({
+        ...activity,
+        source: activity.source || 'local',
+        period: normalizeActivityPeriod(activity.period)
+    }));
+    return [...databaseActivities, ...savedActivities, ...defaultActivities].filter((activity, index, list) => {
+        const key = `${activity.period}-${activity.id || activity.title}`;
+        return index === list.findIndex(item => `${item.period}-${item.id || item.title}` === key);
+    });
+}
+
+function normalizeActivityPeriod(value = '', dateValue = '') {
+    const text = String(value || '').toLowerCase();
+    if (text.includes('daily')) return 'daily';
+    if (text.includes('weekly')) return 'weekly';
+    if (text.includes('monthly')) return 'monthly';
+
+    const parsedDate = dateValue ? new Date(dateValue) : null;
+    if (parsedDate && !Number.isNaN(parsedDate.getTime())) {
+        const daysAway = Math.ceil((parsedDate - new Date()) / (1000 * 60 * 60 * 24));
+        if (daysAway <= 1) return 'daily';
+        if (daysAway <= 7) return 'weekly';
+    }
+
+    return 'monthly';
+}
+
+function formatActivityDateTime(activity = {}) {
+    const dateText = activity.date ? formatDisplayDate(activity.date) : '';
+    const timeText = activity.time ? formatDisplayTime(activity.time) : '';
+    const dateTimeText = [dateText, timeText].filter(Boolean).join(' at ');
+    return dateTimeText || activity.schedule || 'Schedule will be announced';
+}
+
+function formatDisplayDate(value) {
+    const parsedDate = new Date(`${value}T00:00:00`);
+    if (Number.isNaN(parsedDate.getTime())) return value;
+    return parsedDate.toLocaleDateString(undefined, {
+        year: 'numeric',
+        month: 'short',
+        day: 'numeric'
+    });
+}
+
+function formatDisplayTime(value) {
+    const [hours = '', minutes = ''] = String(value).split(':');
+    if (!hours || !minutes) return value;
+    const parsedDate = new Date();
+    parsedDate.setHours(Number(hours), Number(minutes), 0, 0);
+    if (Number.isNaN(parsedDate.getTime())) return value;
+    return parsedDate.toLocaleTimeString(undefined, {
+        hour: 'numeric',
+        minute: '2-digit'
+    });
+}
+
+function renderActivityGroup(period, containerId) {
+    const container = document.getElementById(containerId);
+    if (!container) return;
+
+    const activities = getActivities().filter(activity => activity.period === period);
+    if (!activities.length) {
+        container.innerHTML = renderEmptyState('fa-calendar-plus', 'No activities yet', 'Organizer can add activities for this period.');
+        return;
+    }
+
+    container.innerHTML = activities.map(activity => renderActivityCard(activity, false)).join('');
+}
+
+function renderPublicActivitiesPreview() {
+    const container = document.getElementById('publicActivitiesPreview');
+    if (!container) return;
+
+    const periods = ['daily', 'weekly', 'monthly'];
+    container.innerHTML = periods.map(period => {
+        const activities = getActivities().filter(item => item.period === period);
+        if (!activities.length) return '';
+        const periodLabel = period.charAt(0).toUpperCase() + period.slice(1);
+        return `
+            <section class="activity-preview-group activity-preview-group--${period}">
+                <div class="activity-preview-group__header">
+                    <span class="activity-preview-group__icon"><i class="fas ${getActivityPeriodIcon(period)}"></i></span>
+                    <div>
+                        <h3>${periodLabel}</h3>
+                        <p>${activities.length} ${activities.length === 1 ? 'activity' : 'activities'} available</p>
+                    </div>
+                </div>
+                <div class="activity-preview-group__list">
+                    ${activities.map(activity => renderActivityCard(activity, true)).join('')}
+                </div>
+            </section>
+        `;
+    }).join('') || '<div class="text-center text-muted">Activities will be updated soon.</div>';
+}
+
+function renderEmptyState(icon, title, message, actionLabel = '', action = '') {
+    return `
+        <div class="empty-state">
+            <i class="fas ${icon}"></i>
+            <h5>${escapeHtml(title)}</h5>
+            <p class="text-muted mb-0">${escapeHtml(message)}</p>
+            ${actionLabel && action ? `<button type="button" class="btn btn-sm btn-outline-primary mt-3" onclick="${action}">${escapeHtml(actionLabel)}</button>` : ''}
+        </div>
+    `;
+}
+
+function getActivityPeriodIcon(period) {
+    if (period === 'daily') return 'fa-sun';
+    if (period === 'weekly') return 'fa-calendar-week';
+    return 'fa-calendar-days';
+}
+
+function renderActivityCard(activity, compact = false) {
+    const periodLabel = activity.period ? activity.period.charAt(0).toUpperCase() + activity.period.slice(1) : 'Activity';
+    const dateTimeLabel = formatActivityDateTime(activity);
+    const scheduleNote = activity.schedule && activity.schedule !== dateTimeLabel ? activity.schedule : '';
+    const canDelete = !compact && hasPermission('manage_activities') && (activity.source === 'database' || String(activity.id || '').startsWith('custom-'));
+    return `
+        <div class="activity-card ${compact ? 'activity-card--public' : ''}">
+            <div class="activity-card__top">
+                <span class="activity-badge">${escapeHtml(periodLabel)}</span>
+                <span class="activity-card__schedule"><i class="fas fa-calendar-days"></i> ${escapeHtml(dateTimeLabel)}</span>
+            </div>
+            <h5>${escapeHtml(activity.title || 'Dawaah Activity')}</h5>
+            <p>${escapeHtml(activity.description || 'Activity details will be shared soon.')}</p>
+            <div class="activity-card__meta">
+                <span><i class="fas fa-location-dot"></i> ${escapeHtml(activity.location || 'Location will be announced')}</span>
+                ${scheduleNote ? `<span><i class="fas fa-clock"></i> ${escapeHtml(scheduleNote)}</span>` : ''}
+                ${canDelete ? `<button type="button" class="btn btn-sm btn-outline-danger" onclick="deleteActivity('${escapeHtml(activity.id)}')"><i class="fas fa-trash"></i> Remove</button>` : ''}
+            </div>
+        </div>
+    `;
+}
+
+function saveActivity(event) {
+    event.preventDefault();
+    if (!hasPermission('manage_activities')) {
+        showNotification('Only the Organizer can add activities.', 'warning');
+        return;
+    }
+
+    const activity = {
+        id: `custom-${Date.now()}`,
+        title: document.getElementById('activityTitle').value.trim(),
+        period: document.getElementById('activityPeriod').value,
+        date: document.getElementById('activityDate').value,
+        time: document.getElementById('activityTime').value,
+        schedule: document.getElementById('activitySchedule').value.trim(),
+        location: document.getElementById('activityLocation').value.trim(),
+        description: document.getElementById('activityDescription').value.trim()
+    };
+
+    if (!activity.title || !activity.period || !activity.date || !activity.time || !activity.location || !activity.description) {
+        showNotification('Please fill in all activity fields.', 'warning');
+        return;
+    }
+
+    if (!frontendOnly) {
+        saveActivityToDatabase(activity)
+            .then(() => {
+                document.getElementById('activityForm').reset();
+                logLocalRoleActivity('saveActivity', { title: activity.title, period: activity.period, date: activity.date, time: activity.time, schedule: activity.schedule });
+                return loadActivitiesFromApi();
+            })
+            .then(() => {
+                loadActivitiesData();
+                renderPublicActivitiesPreview();
+                renderDashboardActivityCalendar();
+                showNotification('Activity saved to the database.', 'success');
+            })
+            .catch(error => {
+                console.error('Activity database save error:', error);
+                showNotification(error.message || 'Could not save activity to database.', 'danger');
+            });
+        return;
+    }
+
+    const savedActivities = readList('adminActivities');
+    savedActivities.unshift(activity);
+    localStorage.setItem('adminActivities', JSON.stringify(savedActivities));
+    document.getElementById('activityForm').reset();
+    logLocalRoleActivity('saveActivity', { title: activity.title, period: activity.period, date: activity.date, time: activity.time, schedule: activity.schedule });
+    loadActivitiesData();
+    renderPublicActivitiesPreview();
+    showNotification('Activity added successfully.', 'success');
+}
+
+function saveActivityToDatabase(activity) {
+    return fetch('api.php?action=createActivity', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'same-origin',
+        body: JSON.stringify(authPayload({
+            title: activity.title,
+            period: activity.period,
+            date: activity.date,
+            time: activity.time,
+            schedule: activity.schedule,
+            location: activity.location,
+            description: activity.description,
+            created_by: currentUser?.dbUserId || currentUser?.user_id || currentUser?.id || 0
+        }))
+    })
+    .then(response => parseJsonResponse(response))
+    .then(result => {
+        if (!result.success) {
+            throw new Error(result.message || 'Could not save activity');
+        }
+        return result.data || {};
+    });
+}
+
+function deleteActivity(activityId) {
+    if (!hasPermission('manage_activities')) {
+        showNotification('Only the Organizer can remove activities.', 'warning');
+        return;
+    }
+    if (!confirm('Remove this activity?')) return;
+
+    const activity = getActivities().find(item => String(item.id) === String(activityId));
+    if (activity?.source === 'database' && activity.dbActivityId) {
+        fetch(`api.php?action=deleteActivity&id=${encodeURIComponent(activity.dbActivityId)}`, {
+            method: 'DELETE',
+            headers: { 'Content-Type': 'application/json' },
+            credentials: 'same-origin',
+            body: JSON.stringify(authPayload({ activity_id: activity.dbActivityId }))
+        })
+        .then(response => parseJsonResponse(response))
+        .then(result => {
+            if (!result.success) throw new Error(result.message || 'Could not delete activity');
+            logLocalRoleActivity('deleteActivity', { activity_id: activity.dbActivityId });
+            return loadActivitiesFromApi();
+        })
+        .then(() => {
+            loadActivitiesData();
+            renderPublicActivitiesPreview();
+            renderDashboardActivityCalendar();
+            showNotification('Activity deleted from the database.', 'success');
+        })
+        .catch(error => showNotification(error.message || 'Could not delete activity', 'danger'));
+        return;
+    }
+
+    const savedActivities = readList('adminActivities').filter(activity => activity.id !== activityId);
+    localStorage.setItem('adminActivities', JSON.stringify(savedActivities));
+    logLocalRoleActivity('deleteActivity', { activity_id: activityId });
+    loadActivitiesData();
+    renderPublicActivitiesPreview();
+    showNotification('Activity removed.', 'success');
 }
 
 // PROFILE
@@ -1943,6 +2681,7 @@ function editEvent(eventName) {
 function loadAnnouncements() {
     const container = document.getElementById('announcementsContainer');
     if (!container) return;
+    document.getElementById('announcementManagerPanel')?.classList.toggle('d-none', !hasPermission('create_announcements'));
 
     const announcementRequest = frontendOnly
         ? Promise.resolve(getStaticApiData('getAnnouncements'))
@@ -2000,6 +2739,61 @@ function loadAnnouncements() {
             </div>
         `).join('');
     });
+}
+
+function saveAnnouncement(event) {
+    event.preventDefault();
+    if (!hasPermission('create_announcements')) {
+        showNotification('Only the secretary and admins can publish announcements.', 'warning');
+        return;
+    }
+
+    const announcement = {
+        title: document.getElementById('announcementTitle').value.trim(),
+        content: document.getElementById('announcementContent').value.trim(),
+        priority: document.getElementById('announcementPriority').value || 'normal',
+        author_id: currentUser?.dbUserId || currentUser?.user_id || currentUser?.id || 0
+    };
+
+    if (!announcement.title || !announcement.content) {
+        showNotification('Please enter an announcement title and message.', 'warning');
+        return;
+    }
+
+    const finishSave = () => {
+        document.getElementById('announcementForm').reset();
+        loadAnnouncements();
+        showNotification('Announcement published.', 'success');
+    };
+
+    if (!frontendOnly) {
+        fetch('api.php?action=createAnnouncement', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(announcement)
+        })
+        .then(response => parseJsonResponse(response))
+        .then(result => {
+            if (!result.success) {
+                throw new Error(result.message || 'Could not publish announcement');
+            }
+            finishSave();
+        })
+        .catch(error => showNotification(error.message || 'Could not publish announcement', 'danger'));
+        return;
+    }
+
+    const announcements = readList('adminAnnouncements');
+    announcements.unshift({
+        id: Date.now(),
+        title: announcement.title,
+        content: announcement.content,
+        priority: announcement.priority,
+        created_at: new Date().toISOString()
+    });
+    localStorage.setItem('adminAnnouncements', JSON.stringify(announcements));
+    logLocalRoleActivity('createAnnouncement', { title: announcement.title, priority: announcement.priority });
+    finishSave();
 }
 
 // RESOURCES
@@ -2321,6 +3115,8 @@ function loadDuesData() {
             </div>
         `;
     }
+    syncTreasurerPaymentRecords();
+    renderMpesaReadinessPanel();
     renderPaymentStatusSummary();
     renderPaymentHistory();
 }
@@ -2378,6 +3174,126 @@ function formatPaymentType(type) {
     return labels[type] || type || 'Payment';
 }
 
+function toDisplayStatus(status) {
+    const normalized = String(status || '').toLowerCase();
+    const labels = {
+        pending: 'Pending Approval',
+        completed: 'Completed',
+        failed: 'Failed',
+        rejected: 'Rejected',
+        late: 'Late',
+        waived: 'Waived'
+    };
+    return labels[normalized] || status || 'Pending Approval';
+}
+
+function statusBadgeClass(status) {
+    const normalized = String(status || '').toLowerCase();
+    if (normalized === 'completed') return 'bg-success';
+    if (['failed', 'rejected', 'late'].includes(normalized)) return 'bg-danger';
+    if (normalized === 'waived') return 'bg-secondary';
+    return 'bg-warning text-dark';
+}
+
+function normalizedDisplayStatus(status) {
+    return String(status || '').toLowerCase();
+}
+
+function transactionMatchesFilter(record, search, filter) {
+    const status = normalizedDisplayStatus(record.status);
+    const filterMatch = filter === 'all'
+        || (filter === 'pending' && (status.includes('pending') || status.includes('m-pesa')))
+        || (filter === 'failed' && (status.includes('failed') || status.includes('rejected') || status.includes('late')))
+        || (filter === 'completed' && status.includes('completed'))
+        || (filter === 'waived' && status.includes('waived'));
+    if (!filterMatch) return false;
+
+    const haystack = [
+        record.memberName,
+        record.donor,
+        record.studentId,
+        record.type,
+        record.paymentMethod,
+        record.transactionRef,
+        record.receiptNumber,
+        record.amount,
+        record.status
+    ].join(' ').toLowerCase();
+    return !search || haystack.includes(search.toLowerCase());
+}
+
+function sortTransactions(records) {
+    const priority = status => {
+        const normalized = normalizedDisplayStatus(status);
+        if (normalized.includes('pending')) return 0;
+        if (normalized.includes('failed') || normalized.includes('rejected')) return 1;
+        if (normalized.includes('waived') || normalized.includes('late')) return 2;
+        return 3;
+    };
+    return [...records].sort((a, b) => priority(a.status) - priority(b.status));
+}
+
+function renderMpesaReadinessPanel() {
+    const panel = document.getElementById('mpesaReadinessPanel');
+    if (!panel) return;
+    const ready = canUseMpesaStk();
+    panel.innerHTML = `
+        <div class="card-body">
+            <div class="d-flex align-items-center justify-content-between gap-3 flex-wrap">
+                <div>
+                    <h6 class="mb-1">M-Pesa STK Status</h6>
+                    <small class="text-muted">${ready ? 'Live STK Push is available for member payments.' : 'STK Push is not configured here. Manual payment methods remain available.'}</small>
+                </div>
+                <span class="badge ${ready ? 'bg-success' : 'bg-warning text-dark'}">${ready ? 'Configured' : 'Manual mode'}</span>
+            </div>
+        </div>
+    `;
+}
+
+function mergeByDatabaseId(localRecords, remoteRecords, idKey) {
+    const merged = [...localRecords];
+    remoteRecords.forEach(record => {
+        const index = merged.findIndex(item => Number(item[idKey]) === Number(record[idKey]));
+        if (index >= 0) {
+            merged[index] = { ...merged[index], ...record };
+        } else {
+            merged.push(record);
+        }
+    });
+    return merged;
+}
+
+function syncTreasurerPaymentRecords() {
+    if (frontendOnly || !hasPermission('manage_payments')) return;
+    fetch(`api.php?action=getPaymentRecords&${authQuery()}`)
+        .then(response => parseJsonResponse(response))
+        .then(result => {
+            if (!result.success || !Array.isArray(result.data)) return;
+            const remotePayments = result.data.map(row => {
+                const memberName = [row.first_name, row.last_name].filter(Boolean).join(' ').trim();
+                return {
+                    dbPaymentId: Number(row.id),
+                    memberName: memberName || row.student_id || row.email || 'Member',
+                    studentId: row.student_id || '',
+                    type: row.payment_type || 'Payment',
+                    amount: row.amount,
+                    date: row.created_at ? new Date(row.created_at.replace(' ', 'T')).toLocaleDateString() : 'Recently',
+                    status: toDisplayStatus(row.status),
+                    paymentMethod: row.payment_method || 'Not specified',
+                    transactionRef: row.transaction_id || '',
+                    receiptNumber: row.receipt_number || row.transaction_id || '',
+                    notes: row.notes || '',
+                    approvedBy: row.approved_by || ''
+                };
+            });
+            payments = mergeByDatabaseId(payments, remotePayments, 'dbPaymentId');
+            localStorage.setItem('payments', JSON.stringify(payments));
+            renderPaymentStatusSummary();
+            renderPaymentHistory();
+        })
+        .catch(error => console.error('Payment records sync error:', error));
+}
+
 function showPaymentModal() {
     updatePaymentInstructions('payment');
     const modal = new bootstrap.Modal(document.getElementById('paymentModal'));
@@ -2402,7 +3318,13 @@ function updatePaymentInstructions(context) {
     const phoneGroupId = context === 'donation' ? 'donationMpesaPhoneGroup' : 'paymentMpesaPhoneGroup';
     const phoneGroup = document.getElementById(phoneGroupId);
     if (phoneGroup) {
-        phoneGroup.classList.toggle('d-none', select.value !== 'mpesaStk');
+        phoneGroup.classList.toggle('d-none', select.value !== 'mpesaStk' || !canUseMpesaStk());
+    }
+
+    if (select.value === 'mpesaStk' && !canUseMpesaStk()) {
+        box.innerHTML = '<strong>M-Pesa STK Push is not available on this server yet.</strong><br>Use Bank Transfer, Normal Transfer, or Cash Payment and the Treasurer can confirm it from the admin panel.';
+        box.classList.remove('d-none');
+        return;
     }
 
     const account = paymentAccounts[select.value];
@@ -2430,6 +3352,10 @@ function processPayment() {
     }
 
     if (paymentMethod === 'mpesaStk') {
+        if (!canUseMpesaStk()) {
+            alert('M-Pesa STK Push is not available on this hosting setup yet. Please use Bank Transfer, Normal Transfer, or Cash Payment.');
+            return;
+        }
         startMpesaPayment({
             source: 'payment',
             type: paymentType,
@@ -2492,6 +3418,11 @@ function startMpesaPayment(details) {
 
     if (frontendOnly) {
         alert('M-Pesa STK Push needs the PHP backend, so it is not available on the GitHub Pages demo. Please use Bank Transfer, Normal Transfer, or Cash on the live demo.');
+        return;
+    }
+
+    if (!canUseMpesaStk()) {
+        alert('M-Pesa STK Push is not ready on this server. Please use Bank Transfer, Normal Transfer, or Cash Payment.');
         return;
     }
 
@@ -2703,19 +3634,31 @@ function renderPaymentHistory() {
     const tbody = document.getElementById('paymentHistoryList');
     if (!tbody) return;
 
+    const controls = document.getElementById('paymentReviewControls');
+    if (controls) controls.classList.toggle('d-none', !hasPermission('manage_payments') && payments.length < 2);
+    const statusFilter = document.getElementById('paymentStatusFilter')?.value || 'all';
+    const search = document.getElementById('paymentSearchInput')?.value || '';
+    const visiblePayments = sortTransactions(payments.map((payment, index) => ({ ...payment, originalIndex: index })))
+        .filter(payment => transactionMatchesFilter(payment, search, statusFilter));
+
     if (payments.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="6" class="text-center text-muted">No payments made yet.</td></tr>';
+        tbody.innerHTML = `<tr><td colspan="6">${renderEmptyState('fa-receipt', 'No payments yet', 'Payment history will appear here after dues are submitted.')}</td></tr>`;
         return;
     }
 
-    tbody.innerHTML = payments.map((payment, index) => `
+    if (visiblePayments.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="6" class="text-center text-muted">No matching payments found.</td></tr>';
+        return;
+    }
+
+    tbody.innerHTML = visiblePayments.map((payment) => `
         <tr>
             <td>${payment.date}</td>
-            <td>${formatPaymentType(payment.type)}</td>
+            <td>${formatPaymentType(payment.type)}${payment.memberName ? `<br><small class="text-muted">${escapeHtml(payment.memberName)}</small>` : ''}</td>
             <td>$${payment.amount}</td>
-            <td>${payment.paymentMethod || 'Not specified'}</td>
-            <td><span class="badge ${payment.status === 'Completed' ? 'bg-success' : 'bg-warning text-dark'}">${payment.status}</span></td>
-            <td>${renderPaymentActions(payment, index)}</td>
+            <td>${payment.paymentMethod || 'Not specified'}${payment.transactionRef ? `<br><small class="text-muted">${escapeHtml(payment.transactionRef)}</small>` : ''}</td>
+            <td><span class="badge ${statusBadgeClass(payment.status)}">${payment.status}</span></td>
+            <td>${renderPaymentActions(payment, payment.originalIndex)}</td>
         </tr>
     `).join('');
 }
@@ -2723,6 +3666,9 @@ function renderPaymentHistory() {
 function renderPaymentActions(payment, index) {
     if (payment.status === 'Completed') {
         return `<button class="btn btn-sm btn-outline-primary" onclick="downloadReceipt(${index})">Download</button>`;
+    }
+    if (['Failed', 'Rejected', 'Late', 'Waived'].includes(payment.status)) {
+        return `<span class="text-muted">${payment.status}</span>`;
     }
     if (hasPermission('manage_payments')) {
         return `
@@ -2747,7 +3693,7 @@ function updateLocalPaymentStatus(index, displayStatus, dbStatus) {
     payments[index] = {
         ...payment,
         status: displayStatus,
-        receiptNumber: payment.receiptNumber || ('RCP' + Date.now())
+        receiptNumber: displayStatus === 'Completed' ? (payment.receiptNumber || ('RCP' + Date.now())) : payment.receiptNumber
     };
     localStorage.setItem('payments', JSON.stringify(payments));
     renderPaymentHistory();
@@ -2768,35 +3714,86 @@ function updateLocalPaymentStatus(index, displayStatus, dbStatus) {
     showNotification(`Payment ${displayStatus.toLowerCase()}.`, 'success');
 }
 
+function openOfficialReceipt(details) {
+    const receiptNumber = details.receiptNumber || details.transactionRef || 'receipt';
+    const approvedBy = details.approvedBy || (details.status === 'Completed' ? (currentUser?.fullName || currentUser?.username || 'Treasurer') : 'Pending');
+    const html = `<!doctype html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>${escapeHtml(receiptNumber)} Receipt</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 0; background: #f7f6ef; color: #111827; }
+        .receipt { max-width: 760px; margin: 28px auto; background: #fff; border: 1px solid #d6b25e; padding: 32px; }
+        .top { display: flex; justify-content: space-between; gap: 24px; border-bottom: 2px solid #d6b25e; padding-bottom: 18px; }
+        h1 { margin: 0; font-size: 24px; letter-spacing: 0; }
+        .brand { color: #14532d; font-weight: 700; margin-top: 6px; }
+        .badge { display: inline-block; background: #14532d; color: #fff; padding: 6px 12px; border-radius: 4px; font-size: 12px; }
+        table { width: 100%; border-collapse: collapse; margin-top: 24px; }
+        td { padding: 12px 10px; border-bottom: 1px solid #e5e7eb; }
+        td:first-child { color: #6b7280; width: 34%; }
+        .amount { font-size: 28px; font-weight: 700; color: #14532d; }
+        .actions { max-width: 760px; margin: 18px auto; display: flex; gap: 10px; justify-content: flex-end; }
+        button, a { border: 0; background: #111827; color: #fff; padding: 10px 14px; border-radius: 4px; text-decoration: none; cursor: pointer; }
+        @media print { .actions { display: none; } body { background: #fff; } .receipt { margin: 0; border: 0; } }
+    </style>
+</head>
+<body>
+    <div class="actions"><button onclick="window.print()">Print</button><a id="downloadReceipt" download="${escapeHtml(receiptNumber)}.html">Download HTML</a></div>
+    <main class="receipt">
+        <div class="top">
+            <div>
+                <h1>Official ${escapeHtml(details.kind)} Receipt</h1>
+                <div class="brand">UMMA University Dawa'ah</div>
+            </div>
+            <div><span class="badge">${escapeHtml(details.status || 'Completed')}</span></div>
+        </div>
+        <table>
+            <tr><td>Receipt Number</td><td>${escapeHtml(receiptNumber)}</td></tr>
+            <tr><td>Name</td><td>${escapeHtml(details.name || 'Member')}</td></tr>
+            <tr><td>Type</td><td>${escapeHtml(details.type || details.kind)}</td></tr>
+            <tr><td>Amount</td><td class="amount">$${escapeHtml(details.amount || '0')}</td></tr>
+            <tr><td>Payment Method</td><td>${escapeHtml(details.method || 'Not specified')}</td></tr>
+            <tr><td>Transaction Reference</td><td>${escapeHtml(details.transactionRef || 'Not recorded')}</td></tr>
+            <tr><td>Approved By</td><td>${escapeHtml(approvedBy)}</td></tr>
+            <tr><td>Date</td><td>${escapeHtml(details.date || new Date().toLocaleDateString())}</td></tr>
+        </table>
+    </main>
+    <script>
+        const html = document.documentElement.outerHTML;
+        const blob = new Blob([html], { type: 'text/html' });
+        document.getElementById('downloadReceipt').href = URL.createObjectURL(blob);
+    <\/script>
+</body>
+</html>`;
+    const blob = new Blob([html], { type: 'text/html' });
+    const url = URL.createObjectURL(blob);
+    window.open(url, '_blank');
+}
+
 function downloadReceipt(index) {
     const payment = payments[index];
     if (!payment) return;
-    const userName = currentUser?.fullName || currentUser?.name || currentUser?.username || 'Member';
-    const receipt = [
-        "Dawa'ah Payment Receipt",
-        '----------------------',
-        `Receipt No: ${payment.receiptNumber}`,
-        `Name: ${userName}`,
-        `Payment Type: ${payment.type}`,
-        `Amount: $${payment.amount}`,
-        `Method: ${payment.paymentMethod || 'Online'}`,
-        `Status: ${payment.status}`,
-        `Date: ${payment.date}`
-    ].join('\n');
-    const blob = new Blob([receipt], { type: 'text/plain' });
-    const link = document.createElement('a');
-    link.href = URL.createObjectURL(blob);
-    link.download = `${payment.receiptNumber}.txt`;
-    link.click();
-    URL.revokeObjectURL(link.href);
+    openOfficialReceipt({
+        kind: 'Payment',
+        receiptNumber: payment.receiptNumber,
+        transactionRef: payment.transactionRef,
+        name: payment.memberName || currentUser?.fullName || currentUser?.name || currentUser?.username || 'Member',
+        type: formatPaymentType(payment.type),
+        amount: payment.amount,
+        method: payment.paymentMethod || 'Online',
+        status: payment.status,
+        date: payment.date,
+        approvedBy: payment.approvedBy
+    });
 }
 
 // DONATIONS
 function loadDonationsData() {
     const donationStats = [
-        { name: 'Zakat', amount: '$500', description: 'Obligatory Charity', color: 'primary' },
-        { name: 'Sadaqah', amount: '$250', description: 'Voluntary Charity', color: 'success' },
-        { name: 'Community Fund', amount: '$150', description: 'Community Support', color: 'info' }
+        { name: 'Zakat', amount: 'Open', description: 'Obligatory Charity', color: 'primary' },
+        { name: 'Sadaqah', amount: 'Open', description: 'Voluntary Charity', color: 'success' },
+        { name: 'Community Fund', amount: 'Open', description: 'Community Support', color: 'info' }
     ];
 
     const container = document.getElementById('donationStats');
@@ -2814,7 +3811,55 @@ function loadDonationsData() {
             </div>
         `).join('');
     }
+    syncTreasurerDonationRecords();
     renderDonationHistory();
+}
+
+function syncTreasurerDonationRecords() {
+    if (frontendOnly || !hasPermission('manage_payments')) return;
+    fetch(`api.php?action=getDonationRecords&${authQuery()}`)
+        .then(response => parseJsonResponse(response))
+        .then(result => {
+            if (!result.success || !Array.isArray(result.data)) return;
+            const remoteDonations = result.data.map(row => ({
+                dbDonationId: Number(row.id),
+                type: row.donation_type || 'Donation',
+                purpose: row.purpose || "Dawa'ah donation",
+                amount: row.amount,
+                date: row.created_at ? new Date(row.created_at.replace(' ', 'T')).toLocaleDateString() : 'Recently',
+                paymentMethod: row.payment_method || 'Not specified',
+                transactionRef: row.transaction_id || '',
+                status: toDisplayStatus(row.status),
+                anonymous: false,
+                donor: row.donor_name || row.donor_email || 'Donor',
+                receiptNumber: row.receipt_number || row.transaction_id || '',
+                approvedBy: row.approved_by || ''
+            }));
+            donations = mergeByDatabaseId(donations, remoteDonations, 'dbDonationId');
+            localStorage.setItem('donations', JSON.stringify(donations));
+            renderDonationHistory();
+        })
+        .catch(error => console.error('Donation records sync error:', error));
+}
+
+function loadReportsData() {
+    const activeMembers = allMembers.filter(member => String(member.status || '').toLowerCase() === 'active').length;
+    const completedDonations = donations
+        .filter(donation => String(donation.status || '').toLowerCase() === 'completed')
+        .reduce((sum, donation) => sum + Number(donation.amount || 0), 0);
+    const completedEvents = allEvents.filter(event => ['completed', 'held'].includes(String(event.status || '').toLowerCase())).length;
+
+    const reportValues = {
+        reportTotalMembers: allMembers.length,
+        reportActiveMembers: activeMembers,
+        reportTotalDonations: completedDonations ? formatCurrency(completedDonations) : '0',
+        reportEventsHeld: completedEvents
+    };
+
+    Object.entries(reportValues).forEach(([id, value]) => {
+        const element = document.getElementById(id);
+        if (element) element.textContent = String(value);
+    });
 }
 
 function showDonationModal(donationType) {
@@ -2835,6 +3880,10 @@ function submitDonation() {
     }
 
     if (paymentMethod === 'mpesaStk') {
+        if (!canUseMpesaStk()) {
+            alert('M-Pesa STK Push is not available on this hosting setup yet. Please use Bank Transfer, Normal Transfer, or Cash Payment.');
+            return;
+        }
         startMpesaPayment({
             source: 'donation',
             type: document.getElementById('donationModalTitle').textContent.replace('Make ', '').replace(' Donation', ''),
@@ -2908,19 +3957,32 @@ function renderDonationHistory() {
     const tbody = document.getElementById('donationHistoryList');
     if (!tbody) return;
 
+    const controls = document.getElementById('donationReviewControls');
+    if (controls) controls.classList.toggle('d-none', !hasPermission('manage_payments') && donations.length < 2);
+    const statusFilter = document.getElementById('donationStatusFilter')?.value || 'all';
+    const search = document.getElementById('donationSearchInput')?.value || '';
+    const visibleDonations = sortTransactions(donations.map((donation, index) => ({ ...donation, originalIndex: index })))
+        .filter(donation => transactionMatchesFilter(donation, search, statusFilter));
+
     if (donations.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="6" class="text-center text-muted">No donations made yet.</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="7" class="text-center text-muted">No donations made yet.</td></tr>';
         return;
     }
 
-    tbody.innerHTML = donations.map((donation, index) => `
+    if (visibleDonations.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="7" class="text-center text-muted">No matching donations found.</td></tr>';
+        return;
+    }
+
+    tbody.innerHTML = visibleDonations.map((donation) => `
         <tr>
             <td>${donation.date || 'Recently'}</td>
-            <td>${donation.type || 'Donation'}</td>
+            <td>${donation.type || 'Donation'}${donation.donor ? `<br><small class="text-muted">${escapeHtml(donation.donor)}</small>` : ''}</td>
             <td>$${donation.amount}</td>
             <td>${donation.purpose || "Dawa'ah donation"}</td>
-            <td>${donation.paymentMethod || 'Not specified'}</td>
-            <td>${renderDonationActions(donation, index)}</td>
+            <td>${donation.paymentMethod || 'Not specified'}${donation.transactionRef ? `<br><small class="text-muted">${escapeHtml(donation.transactionRef)}</small>` : ''}</td>
+            <td><span class="badge ${statusBadgeClass(donation.status)}">${donation.status || 'Pending Approval'}</span></td>
+            <td>${renderDonationActions(donation, donation.originalIndex)}</td>
         </tr>
     `).join('');
 }
@@ -2928,6 +3990,9 @@ function renderDonationHistory() {
 function renderDonationActions(donation, index) {
     if (donation.status === 'Completed') {
         return `<button class="btn btn-sm btn-outline-primary" onclick="downloadDonationReceipt(${index})">Download</button>`;
+    }
+    if (['Failed', 'Rejected'].includes(donation.status)) {
+        return `<span class="text-muted">${donation.status}</span>`;
     }
     if (hasPermission('manage_payments')) {
         return `
@@ -2943,7 +4008,7 @@ function confirmDonation(index) {
 }
 
 function rejectDonation(index) {
-    updateLocalDonationStatus(index, 'Rejected', 'failed');
+    updateLocalDonationStatus(index, 'Rejected', 'rejected');
 }
 
 function updateLocalDonationStatus(index, displayStatus, dbStatus) {
@@ -2952,7 +4017,7 @@ function updateLocalDonationStatus(index, displayStatus, dbStatus) {
     donations[index] = {
         ...donation,
         status: displayStatus,
-        receiptNumber: donation.receiptNumber || ('DRT' + Date.now())
+        receiptNumber: displayStatus === 'Completed' ? (donation.receiptNumber || ('DRT' + Date.now())) : donation.receiptNumber
     };
     localStorage.setItem('donations', JSON.stringify(donations));
     renderDonationHistory();
@@ -2974,24 +4039,18 @@ function updateLocalDonationStatus(index, displayStatus, dbStatus) {
 function downloadDonationReceipt(index) {
     const donation = donations[index];
     if (!donation) return;
-    const userName = donation.donor || currentUser?.fullName || currentUser?.name || currentUser?.username || 'Donor';
-    const receipt = [
-        "Dawa'ah Donation Receipt",
-        '-----------------------',
-        `Receipt No: ${donation.receiptNumber}`,
-        `Donor: ${userName}`,
-        `Donation Type: ${donation.type || 'Donation'}`,
-        `Purpose: ${donation.purpose || "Dawa'ah donation"}`,
-        `Payment Method: ${donation.paymentMethod || 'Not specified'}`,
-        `Amount: $${donation.amount}`,
-        `Date: ${donation.date || new Date().toLocaleDateString()}`
-    ].join('\n');
-    const blob = new Blob([receipt], { type: 'text/plain' });
-    const link = document.createElement('a');
-    link.href = URL.createObjectURL(blob);
-    link.download = `${donation.receiptNumber || 'donation-receipt'}.txt`;
-    link.click();
-    URL.revokeObjectURL(link.href);
+    openOfficialReceipt({
+        kind: 'Donation',
+        receiptNumber: donation.receiptNumber,
+        transactionRef: donation.transactionRef,
+        name: donation.donor || currentUser?.fullName || currentUser?.name || currentUser?.username || 'Donor',
+        type: donation.type || 'Donation',
+        amount: donation.amount,
+        method: donation.paymentMethod || 'Not specified',
+        status: donation.status,
+        date: donation.date || new Date().toLocaleDateString(),
+        approvedBy: donation.approvedBy
+    });
 }
 
 // ADMIN FUNCTIONS
@@ -3167,11 +4226,16 @@ function setMemberStatus(studentId, nextStatus) {
         showNotification('Member record not found.', 'warning');
         return;
     }
+    if (String(nextStatus || '').toLowerCase() === 'active' && isUniqueRegistrationRole(member.role)) {
+        showNotification('Special roles must be approved by the main admin from the admin panel Role Requests.', 'warning');
+        return;
+    }
 
     allMembers = allMembers.map(item =>
         item.studentId === studentId || item.username === studentId ? { ...item, status: nextStatus } : item
     );
     localStorage.setItem('allMembers', JSON.stringify(allMembers));
+    logLocalRoleActivity('updateStudentStatus', { student_id: studentId, status: nextStatus });
     if (currentUser && (currentUser.studentId === studentId || currentUser.username === studentId)) {
         currentUser.status = nextStatus;
         localStorage.setItem('currentUser', JSON.stringify(currentUser));
@@ -3487,32 +4551,61 @@ function hasPermission(permission) {
         'register_volunteer'
     ];
 
-    const leadershipPermissions = [
+    const adminPermissions = [
         ...memberPermissions,
         'manage_members',
         'manage_events',
+        'manage_activities',
         'manage_welfare',
-        'manage_leadership',
         'manage_gallery',
         'manage_contact',
+        'manage_payments',
         'manage_prayer_times',
+        'manage_lectures',
+        'manage_hadiths',
         'view_reports',
         'generate_reports',
-        'create_announcements'
+        'create_announcements',
+        'manage_leadership'
     ];
 
     const rolePermissions = {
         'student': memberPermissions,
-        'executive': leadershipPermissions,
-        'chairman': leadershipPermissions,
-        'chairlady': leadershipPermissions,
-        'secretary': leadershipPermissions,
-        'admin': leadershipPermissions,
+        'executive': adminPermissions,
+        'chairman': [
+            ...memberPermissions,
+            'manage_welfare',
+            'view_reports'
+        ],
+        'chairlady': [
+            ...memberPermissions,
+            'manage_welfare',
+            'view_reports'
+        ],
+        'secretary': [
+            ...memberPermissions,
+            'manage_members',
+            'view_reports',
+            'generate_reports',
+            'create_announcements'
+        ],
+        'admin': adminPermissions,
         'treasurer': [
             ...memberPermissions,
             'manage_payments',
             'view_reports',
             'generate_reports'
+        ],
+        'media': [
+            ...memberPermissions,
+            'manage_gallery',
+            'manage_contact'
+        ],
+        'organizer': [
+            ...memberPermissions,
+            'manage_events',
+            'manage_activities',
+            'register_volunteer'
         ],
         'imam': [
             'view_profile',
@@ -3521,7 +4614,7 @@ function hasPermission(permission) {
             'view_resources',
             'manage_prayer_times',
             'manage_lectures',
-            'create_announcements'
+            'manage_hadiths'
         ]
     };
 
@@ -3699,6 +4792,11 @@ function loadDashboardData() {
     const welfareCount = welfareRequests.filter(w => w.status === 'Pending' || w.status === 'Pending Review').length;
     document.getElementById('welfareStatusValue').textContent = welfareCount || '0';
     loadDashboardPrayerTimes();
+    renderRoleWorkspace();
+    renderProfileCompletion();
+    renderDashboardAlerts();
+    renderDashboardActivityCalendar();
+    loadActivitiesFromApi().then(renderDashboardActivityCalendar);
 
     // Load Announcements
     const announcementsList = document.getElementById('announcementsList');
@@ -3710,7 +4808,7 @@ function loadDashboardData() {
         }));
 
         if (announcements.length === 0) {
-            announcementsList.innerHTML = '<p class="text-center text-muted mb-0">No announcements have been added yet.</p>';
+            announcementsList.innerHTML = renderEmptyState('fa-bullhorn', 'No announcements yet', 'Secretary announcements will appear here.');
         } else {
             announcementsList.innerHTML = announcements.map(ann => `
                 <div class="announcement-item">
@@ -3725,20 +4823,128 @@ function loadDashboardData() {
     // Load Meetings
     const meetingsList = document.getElementById('meetingsList');
     if (meetingsList) {
-        meetingsList.innerHTML = '<p class="text-center text-muted mb-0">No meetings have been added yet.</p>';
+        meetingsList.innerHTML = renderEmptyState('fa-clipboard-list', 'No meetings yet', 'Meeting records can be added later.');
     }
+}
+
+function renderRoleWorkspace() {
+    const role = currentRole || currentUser?.role || 'student';
+    const roleBadge = document.getElementById('dashboardRoleBadge');
+    const summary = document.getElementById('dashboardRoleSummary');
+    const actions = document.getElementById('roleQuickActions');
+    if (!actions) return;
+
+    const actionMap = {
+        organizer: [['Activities', 'activities', 'fa-calendar-days', 'Plan daily, weekly, monthly'], ['Events', 'events', 'fa-calendar', 'Coordinate programmes'], ['Volunteer', 'volunteer', 'fa-hands-helping', 'Manage service teams']],
+        treasurer: [['Dues', 'dues', 'fa-money-bill', 'Track member dues'], ['Donations', 'donations', 'fa-hand-holding-dollar', 'Confirm contributions'], ['Reports', 'reports', 'fa-chart-line', 'Review finance trends']],
+        media: [['Gallery & Videos', 'adminGallery', 'fa-photo-film', 'Publish media'], ['Contact & Social', 'adminContact', 'fa-share-nodes', 'Update public links']],
+        secretary: [['Members', 'memberDatabase', 'fa-users', 'Member records'], ['Announcements', 'announcements', 'fa-bullhorn', 'Post updates'], ['Reports', 'reports', 'fa-chart-pie', 'Meeting summaries']],
+        imam: [['Prayer Times', 'prayer', 'fa-mosque', 'Religious schedule'], ['Hadiths', 'officerHadiths', 'fa-book-open', 'Daily reminders'], ['Resources', 'resources', 'fa-book-open-reader', 'Learning materials']],
+        chairman: [['Welfare', 'adminWelfare', 'fa-hand-holding-heart', 'Support requests'], ['Reports', 'reports', 'fa-chart-line', 'Leadership overview']],
+        chairlady: [['Welfare', 'adminWelfare', 'fa-hand-holding-heart', 'Support requests'], ['Reports', 'reports', 'fa-chart-line', 'Leadership overview']],
+        executive: [['Members', 'memberDatabase', 'fa-users-cog', 'Manage members'], ['Events', 'adminEvents', 'fa-calendar-check', 'Approve programmes'], ['Reports', 'reports', 'fa-chart-pie', 'System overview']],
+        admin: [['Members', 'memberDatabase', 'fa-users-cog', 'Manage members'], ['Leadership', 'leadership', 'fa-user-tie', 'Public officers'], ['Reports', 'reports', 'fa-chart-pie', 'System overview']],
+        student: [['Profile', 'profile', 'fa-id-card', 'Your record'], ['Events', 'events', 'fa-calendar', 'Join programmes'], ['Volunteer', 'volunteer', 'fa-hands-helping', 'Serve the Jamaat'], ['Dues', 'dues', 'fa-money-bill', 'Payment status']]
+    };
+    const items = actionMap[role] || actionMap.student;
+    if (roleBadge) roleBadge.textContent = formatRoleName(role);
+    if (summary) summary.textContent = getRoleDashboardMessage();
+    actions.innerHTML = items.map(([label, view, icon, helper]) => `
+        <button type="button" class="btn btn-outline-primary btn-sm role-action-card" onclick="switchView('${view}')">
+            <i class="fas ${icon}"></i>
+            <span>
+                <strong>${escapeHtml(label)}</strong>
+                <small>${escapeHtml(helper || '')}</small>
+            </span>
+        </button>
+    `).join('');
+}
+
+function formatRoleName(role) {
+    const labels = {
+        executive: 'Sub Admin / Executive',
+        chairman: 'Chairman',
+        chairlady: 'Chairlady',
+        secretary: 'Secretary',
+        organizer: 'Organizer',
+        media: 'Media',
+        treasurer: 'Treasurer',
+        imam: 'Imam',
+        admin: 'Main Admin',
+        student: 'Student Member'
+    };
+    return labels[role] || 'Member';
+}
+
+function renderProfileCompletion() {
+    const fields = ['fullName', 'studentId', 'email', 'phone', 'school', 'course', 'yearOfStudy', 'semester', 'emergencyContact', 'localGuardian'];
+    const completed = fields.filter(field => currentUser?.[field]).length;
+    const percent = Math.round((completed / fields.length) * 100);
+    const value = document.getElementById('profileCompletionValue');
+    const text = document.getElementById('profileCompletionText');
+    const ring = document.querySelector('.profile-meter__ring');
+    if (value) value.textContent = `${percent}%`;
+    if (text) text.textContent = percent >= 90 ? 'Your member record looks complete.' : 'Add missing details for a complete record.';
+    if (ring) ring.style.background = `conic-gradient(var(--primary-color) ${percent * 3.6}deg, rgba(15, 81, 50, 0.12) 0deg)`;
+}
+
+function renderDashboardAlerts() {
+    const alerts = [];
+    const role = currentRole || currentUser?.role || 'student';
+    const pendingPayments = payments.filter(item => item.status !== 'Completed').length;
+    const pendingWelfare = welfareRequests.filter(item => ['Pending', 'Pending Review', 'pending'].includes(item.status)).length;
+    const volunteerSignups = databaseVolunteerRecords.filter(item => item.status === 'registered').length;
+    if ((currentUser?.status || 'Active').toLowerCase() === 'pending') alerts.push(['fa-user-clock', 'Your role request is waiting for main admin approval.']);
+    if (hasPermission('manage_payments') && pendingPayments) alerts.push(['fa-money-check', `${pendingPayments} payment/donation item(s) need confirmation.`]);
+    if (hasPermission('manage_welfare') && pendingWelfare) alerts.push(['fa-hand-holding-heart', `${pendingWelfare} welfare request(s) need review.`]);
+    if (hasPermission('manage_events') && volunteerSignups) alerts.push(['fa-hands-helping', `${volunteerSignups} volunteer signup(s) need follow-up.`]);
+    if (role === 'organizer') alerts.push(['fa-calendar-days', `${getActivities().length} activities are available to review.`]);
+    if (!alerts.length) alerts.push(['fa-circle-check', 'No urgent items right now.']);
+
+    const count = document.getElementById('dashboardAlertCount');
+    const list = document.getElementById('dashboardAlertsList');
+    if (count) count.textContent = String(Math.max(0, alerts.length - (alerts[0][0] === 'fa-circle-check' ? 1 : 0)));
+    if (list) {
+        list.innerHTML = `<div class="dashboard-alert-list">${alerts.map(([icon, message]) => `
+            <div class="dashboard-alert-item"><i class="fas ${icon}"></i><span>${escapeHtml(message)}</span></div>
+        `).join('')}</div>`;
+    }
+}
+
+function renderDashboardActivityCalendar() {
+    const container = document.getElementById('dashboardActivityCalendar');
+    if (!container) return;
+    const activities = getActivities();
+    const today = new Date();
+    const days = Array.from({ length: 7 }, (_, index) => {
+        const date = new Date(today);
+        date.setDate(today.getDate() + index);
+        return date;
+    });
+    container.innerHTML = days.map(day => {
+        const key = day.toISOString().slice(0, 10);
+        const dayActivities = activities.filter(activity => activity.date === key).slice(0, 3);
+        return `
+            <div class="activity-calendar__day">
+                <div class="activity-calendar__date">${day.toLocaleDateString(undefined, { weekday: 'short', day: 'numeric' })}</div>
+                ${dayActivities.length ? dayActivities.map(activity => `<span class="activity-calendar__event">${escapeHtml(activity.title)}</span>`).join('') : '<span class="text-muted small">No activity</span>'}
+            </div>
+        `;
+    }).join('');
 }
 
 function getRoleDashboardMessage() {
     const role = currentRole || currentUser?.role || 'student';
     const messages = {
-        chairman: 'Leadership workspace for members, events, welfare, reports, and association oversight.',
-        chairlady: 'Leadership workspace for members, events, welfare, reports, and association oversight.',
-        secretary: 'Secretary workspace for member records, events, announcements, and reports.',
+        chairman: 'Chairman workspace for welfare requests, member support, and oversight reports.',
+        chairlady: 'Chairlady workspace for welfare requests, member support, and oversight reports.',
+        secretary: 'Secretary workspace for member records, announcements, and general reports.',
         executive: 'Executive workspace for member management, programmes, welfare, reports, and communication.',
         admin: 'Admin workspace for full system management, reports, content, and member records.',
         treasurer: 'Treasurer workspace for dues, donations, payment confirmation, and financial reports.',
-        imam: 'Imam/Leader workspace for prayer times, announcements, Islamic resources, and guidance.',
+        media: 'Media workspace for gallery, videos, contact messages, and publicity.',
+        organizer: 'Organizer workspace for events, activities, volunteers, and programme coordination.',
+        imam: 'Imam/Leader workspace for prayer times, hadiths, Islamic resources, lectures, and religious reminders.',
         student: 'Member workspace for profile, events, welfare, dues, donations, and resources.'
     };
     return messages[role] || messages.student;
@@ -3807,6 +5013,7 @@ function toggleDetails(detailsId) {
 
 // VOLUNTEER FUNCTIONS
 function showVolunteerModal() {
+    populateVolunteerOpportunities();
     const modal = new bootstrap.Modal(document.getElementById('volunteerModal'));
     modal.show();
 }
@@ -3822,6 +5029,33 @@ function submitVolunteerSignup() {
         return;
     }
 
+    const selectedOpportunity = getVolunteerOpportunities().find(item => String(item.id || item.title) === String(opportunity) || item.title === opportunity);
+    if (!frontendOnly && selectedOpportunity?.dbOpportunityId) {
+        getCurrentStudentId()
+            .then(studentId => fetch('api.php?action=registerVolunteer', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                credentials: 'same-origin',
+                body: JSON.stringify(authPayload({
+                    opportunity_id: selectedOpportunity.dbOpportunityId,
+                    student_id: studentId,
+                    skills,
+                    availability
+                }))
+            }))
+            .then(response => parseJsonResponse(response))
+            .then(result => {
+                if (!result.success) throw new Error(result.message || 'Could not register for volunteering');
+                logLocalRoleActivity('registerVolunteer', { opportunity: selectedOpportunity.title, availability });
+                bootstrap.Modal.getInstance(document.getElementById('volunteerModal')).hide();
+                document.getElementById('volunteerForm').reset();
+                showNotification('Volunteer signup saved to the database.', 'success');
+                return loadVolunteerData();
+            })
+            .catch(error => showNotification(error.message || 'Could not save volunteer signup', 'danger'));
+        return;
+    }
+
     // Add to volunteer records
     const volunteerRecord = {
         opportunity: opportunity,
@@ -3834,17 +5068,19 @@ function submitVolunteerSignup() {
     let volunteerRecords = JSON.parse(localStorage.getItem('volunteerRecords')) || [];
     volunteerRecords.push(volunteerRecord);
     localStorage.setItem('volunteerRecords', JSON.stringify(volunteerRecords));
+    logLocalRoleActivity('registerVolunteer', { opportunity, availability });
 
     bootstrap.Modal.getInstance(document.getElementById('volunteerModal')).hide();
     showNotification('Successfully signed up for volunteering!', 'success');
 
     // Clear form
     document.getElementById('volunteerForm').reset();
+    loadVolunteerData();
 }
 
 function registerVolunteer(opportunity) {
-    document.getElementById('volunteerOpportunity').value = opportunity;
     showVolunteerModal();
+    document.getElementById('volunteerOpportunity').value = decodeURIComponent(opportunity);
 }
 
 // Update loadViewData to include volunteer view
@@ -3860,11 +5096,393 @@ window.loadViewData = function(viewName) {
 };
 
 function loadVolunteerData() {
-    const volunteerRecords = JSON.parse(localStorage.getItem('volunteerRecords')) || [];
-    // Data is already shown in HTML, this function can be used for dynamic updates if needed
+    const managerPanel = document.getElementById('volunteerManagerPanel');
+    managerPanel?.classList.toggle('d-none', !hasPermission('manage_events'));
+    return Promise.allSettled([loadVolunteerOpportunitiesFromApi(), loadVolunteerRecordsFromApi()])
+        .finally(() => {
+            const volunteerRecords = getVolunteerRecords();
+            renderVolunteerOpportunities();
+            renderVolunteerRecords(volunteerRecords);
+            populateVolunteerOpportunities();
+        });
+}
+
+function loadVolunteerOpportunitiesFromApi() {
+    if (frontendOnly) {
+        databaseVolunteerOpportunities = [];
+        return Promise.resolve([]);
+    }
+    return fetch('api.php?action=getVolunteerOps', { credentials: 'same-origin' })
+        .then(response => parseJsonResponse(response))
+        .then(result => {
+            if (!result.success) throw new Error(result.message || 'Could not load volunteer opportunities');
+            databaseVolunteerOpportunities = (result.data || []).map(normalizeDatabaseVolunteerOpportunity);
+            return databaseVolunteerOpportunities;
+        })
+        .catch(error => {
+            console.warn('Database volunteer opportunities unavailable:', error);
+            databaseVolunteerOpportunities = [];
+            return [];
+        });
+}
+
+function loadVolunteerRecordsFromApi() {
+    if (frontendOnly || !currentUser) {
+        databaseVolunteerRecords = [];
+        return Promise.resolve([]);
+    }
+    const actor = authQuery();
+    const loadRecords = studentId => fetch(`api.php?action=getVolunteerRegistrations&${actor}&student_id=${encodeURIComponent(studentId || 0)}`, { credentials: 'same-origin' });
+    const request = hasPermission('manage_events')
+        ? loadRecords(0)
+        : getCurrentStudentId().then(loadRecords);
+    return request
+        .then(response => parseJsonResponse(response))
+        .then(result => {
+            if (!result.success) throw new Error(result.message || 'Could not load volunteer records');
+            databaseVolunteerRecords = (result.data || []).map(normalizeDatabaseVolunteerRecord);
+            return databaseVolunteerRecords;
+        })
+        .catch(error => {
+            console.warn('Database volunteer records unavailable:', error);
+            databaseVolunteerRecords = [];
+            return [];
+        });
+}
+
+function normalizeDatabaseVolunteerOpportunity(opportunity) {
+    const schedule = [opportunity.start_date, opportunity.end_date].filter(Boolean).join(' to ') || opportunity.duration || 'Schedule will be announced';
+    return {
+        id: `db-volunteer-${opportunity.id}`,
+        dbOpportunityId: Number(opportunity.id),
+        source: 'database',
+        title: opportunity.title,
+        description: opportunity.description,
+        requiredHours: opportunity.required_hours,
+        schedule,
+        signupCount: Number(opportunity.signup_count || 0)
+    };
+}
+
+function normalizeDatabaseVolunteerRecord(record) {
+    return {
+        id: `db-volunteer-record-${record.id}`,
+        dbRegistrationId: Number(record.id),
+        opportunity: record.opportunity_title,
+        availability: record.availability || '-',
+        skills: record.skills || '-',
+        dateSignedUp: record.registered_at ? new Date(record.registered_at).toLocaleDateString() : '-',
+        status: record.status || 'registered',
+        hoursCompleted: record.hours_completed || 0,
+        studentName: [record.first_name, record.last_name].filter(Boolean).join(' '),
+        studentNumber: record.student_number || '',
+        email: record.email || ''
+    };
+}
+
+function getVolunteerRecords() {
+    const localRecords = JSON.parse(localStorage.getItem('volunteerRecords')) || [];
+    return [...databaseVolunteerRecords, ...localRecords];
+}
+
+function getVolunteerOpportunities() {
+    const savedOpportunities = readList('volunteerOpportunities').map(item => ({ ...item, source: item.source || 'local' }));
+    const activityOpportunities = getActivities()
+        .filter(activity => /volunteer|service|support|outreach/i.test(`${activity.title} ${activity.description}`))
+        .map(activity => ({
+            id: `activity-${activity.id || activity.title}`,
+            title: activity.title,
+            description: activity.description,
+            requiredHours: 2,
+            schedule: activity.schedule || 'Schedule will be announced'
+        }));
+
+    return [...databaseVolunteerOpportunities, ...savedOpportunities, ...activityOpportunities, ...defaultVolunteerOpportunities].filter((opportunity, index, list) => {
+        const key = opportunity.id || opportunity.title;
+        return index === list.findIndex(item => (item.id || item.title) === key);
+    });
+}
+
+function renderVolunteerOpportunities() {
+    const container = document.getElementById('volunteerOpportunitiesList');
+    if (!container) return;
+
+    const opportunities = getVolunteerOpportunities();
+    if (!opportunities.length) {
+        container.innerHTML = '<div class="col-12 text-center text-muted">No volunteer opportunities have been added yet.</div>';
+        return;
+    }
+
+    container.innerHTML = opportunities.map(opportunity => `
+        <div class="col-md-6 col-lg-4 mb-3">
+            <div class="card volunteer-card h-100">
+                <div class="card-header">
+                    <h6 class="mb-0">${escapeHtml(opportunity.title)}</h6>
+                    <small>${escapeHtml(opportunity.schedule || 'Schedule will be announced')}</small>
+                </div>
+                <div class="card-body d-flex flex-column">
+                    <p class="text-muted">${escapeHtml(opportunity.description || 'Details will be shared soon.')}</p>
+                    <div class="volunteer-details mt-auto">
+                        <small><strong>Hours:</strong> ${escapeHtml(String(opportunity.requiredHours || opportunity.required_hours || 'Flexible'))}</small>
+                        ${opportunity.signupCount ? `<br><small><strong>Signups:</strong> ${escapeHtml(String(opportunity.signupCount))}</small>` : ''}
+                    </div>
+                    <button class="btn btn-sm btn-primary mt-2" onclick="registerVolunteer('${encodeURIComponent(opportunity.id || opportunity.title)}')">
+                        <i class="fas fa-user-plus"></i> Sign Up
+                    </button>
+                </div>
+            </div>
+        </div>
+    `).join('');
+}
+
+function populateVolunteerOpportunities() {
+    const select = document.getElementById('volunteerOpportunity');
+    if (!select) return;
+
+    const opportunities = getVolunteerOpportunities();
+    select.innerHTML = '<option value="">Select opportunity</option>' + opportunities.map(opportunity =>
+        `<option value="${escapeHtml(opportunity.id || opportunity.title)}">${escapeHtml(opportunity.title)}</option>`
+    ).join('');
+}
+
+function renderVolunteerRecords(volunteerRecords) {
+    const tbody = document.getElementById('volunteerRecordsList');
+    if (!tbody) return;
+
+    if (!volunteerRecords.length) {
+        tbody.innerHTML = '<tr><td colspan="5" class="text-center text-muted">No volunteer signups yet.</td></tr>';
+        return;
+    }
+
+    tbody.innerHTML = volunteerRecords.map(record => `
+        <tr>
+            <td>
+                ${escapeHtml(record.opportunity || '-')}
+                ${hasPermission('manage_events') && record.studentName ? `<br><small class="text-muted">${escapeHtml(record.studentName)} ${record.studentNumber ? '(' + escapeHtml(record.studentNumber) + ')' : ''}</small>` : ''}
+            </td>
+            <td>${escapeHtml(record.availability || '-')}</td>
+            <td>${escapeHtml(record.skills || '-')}</td>
+            <td>${escapeHtml(record.dateSignedUp || '-')}</td>
+            <td>
+                <span class="badge bg-success">${escapeHtml(record.status || 'Active')}</span>
+                ${hasPermission('manage_events') && record.dbRegistrationId ? renderVolunteerStatusActions(record) : ''}
+            </td>
+        </tr>
+    `).join('');
+}
+
+function renderVolunteerStatusActions(record) {
+    return `
+        <div class="btn-group btn-group-sm mt-2" role="group" aria-label="Volunteer status">
+            <button class="btn btn-outline-primary" onclick="updateVolunteerStatus(${record.dbRegistrationId}, 'registered')">Registered</button>
+            <button class="btn btn-outline-primary" onclick="updateVolunteerStatus(${record.dbRegistrationId}, 'in-progress')">Progress</button>
+            <button class="btn btn-outline-success" onclick="updateVolunteerStatus(${record.dbRegistrationId}, 'completed')">Done</button>
+        </div>
+    `;
+}
+
+function updateVolunteerStatus(registrationId, status) {
+    const hours = status === 'completed' ? prompt('Hours completed?', '1') : '';
+    fetch('api.php?action=updateVolunteerRegistration', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'same-origin',
+        body: JSON.stringify(authPayload({
+            registration_id: registrationId,
+            status,
+            hours_completed: hours === '' ? undefined : Number(hours)
+        }))
+    })
+    .then(response => parseJsonResponse(response))
+    .then(result => {
+        if (!result.success) throw new Error(result.message || 'Could not update volunteer status');
+        showNotification('Volunteer status updated.', 'success');
+        return loadVolunteerData();
+    })
+    .catch(error => showNotification(error.message || 'Could not update volunteer status', 'danger'));
+}
+
+function saveVolunteerOpportunity(event) {
+    event.preventDefault();
+    if (!hasPermission('manage_events')) {
+        showNotification('Only event managers and organizers can add volunteer opportunities.', 'warning');
+        return;
+    }
+
+    const opportunity = {
+        id: `custom-volunteer-${Date.now()}`,
+        title: document.getElementById('volunteerOpportunityTitle').value.trim(),
+        description: document.getElementById('volunteerOpportunityDescription').value.trim(),
+        requiredHours: Number(document.getElementById('volunteerOpportunityHours').value) || 1,
+        schedule: document.getElementById('volunteerOpportunitySchedule').value.trim()
+    };
+
+    if (!opportunity.title || !opportunity.description || !opportunity.schedule) {
+        showNotification('Please fill in all volunteer opportunity fields.', 'warning');
+        return;
+    }
+
+    if (!frontendOnly) {
+        fetch('api.php?action=createVolunteerOp', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            credentials: 'same-origin',
+            body: JSON.stringify(authPayload({
+                title: opportunity.title,
+                description: opportunity.description,
+                required_hours: opportunity.requiredHours,
+                duration: opportunity.schedule,
+                schedule: opportunity.schedule,
+                created_by: currentUser?.dbUserId || currentUser?.user_id || currentUser?.id || 0
+            }))
+        })
+        .then(response => parseJsonResponse(response))
+        .then(result => {
+            if (!result.success) throw new Error(result.message || 'Could not add volunteer opportunity');
+            logLocalRoleActivity('createVolunteerOp', { title: opportunity.title, requiredHours: opportunity.requiredHours, schedule: opportunity.schedule });
+            document.getElementById('volunteerOpportunityForm').reset();
+            showNotification('Volunteer opportunity saved to the database.', 'success');
+            return loadVolunteerData();
+        })
+        .catch(error => showNotification(error.message || 'Could not add volunteer opportunity', 'danger'));
+        return;
+    }
+
+    const opportunities = readList('volunteerOpportunities');
+    opportunities.unshift(opportunity);
+    localStorage.setItem('volunteerOpportunities', JSON.stringify(opportunities));
+    logLocalRoleActivity('createVolunteerOp', { title: opportunity.title, requiredHours: opportunity.requiredHours, schedule: opportunity.schedule });
+    document.getElementById('volunteerOpportunityForm').reset();
+    loadVolunteerData();
+    showNotification('Volunteer opportunity added.', 'success');
 }
 // ============================================
-// HADITH MANAGEMENT SYSTEM
+// OFFICER HADITH MANAGEMENT
+// ============================================
+
+function saveOfficerHadith(event) {
+    event.preventDefault();
+    if (!hasPermission('manage_hadiths')) {
+        showNotification('Only the Imam can manage hadiths.', 'warning');
+        return;
+    }
+
+    const payload = {
+        arabic: document.getElementById('officerHadithArabic')?.value.trim() || '',
+        english: document.getElementById('officerHadithEnglish')?.value.trim() || '',
+        reference: document.getElementById('officerHadithReference')?.value.trim() || '',
+        source: document.getElementById('officerHadithSource')?.value.trim() || '',
+        category: document.getElementById('officerHadithCategory')?.value.trim() || ''
+    };
+
+    if (!payload.arabic || !payload.english) {
+        showNotification('Arabic and English texts are required.', 'warning');
+        return;
+    }
+
+    if (frontendOnly) {
+        const hadiths = readList('adminHadiths');
+        hadiths.unshift({ id: Date.now(), ...payload, created_at: new Date().toISOString() });
+        localStorage.setItem('adminHadiths', JSON.stringify(hadiths));
+        document.getElementById('officerHadithForm')?.reset();
+        loadOfficerHadiths();
+        initializeHadiths();
+        showNotification('Hadith added successfully.', 'success');
+        return;
+    }
+
+    fetch('api.php?action=addHadith', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'same-origin',
+        body: JSON.stringify(authPayload(payload))
+    })
+    .then(response => parseJsonResponse(response))
+    .then(result => {
+        if (!result.success) throw new Error(result.message || 'Could not add hadith');
+        document.getElementById('officerHadithForm')?.reset();
+        loadOfficerHadiths();
+        initializeHadiths();
+        showNotification('Hadith added successfully.', 'success');
+    })
+    .catch(error => showNotification(error.message || 'Could not add hadith', 'danger'));
+}
+
+function loadOfficerHadiths() {
+    const container = document.getElementById('officerHadithsList');
+    if (!container) return;
+    container.innerHTML = '<p class="text-muted mb-0">Loading hadiths...</p>';
+
+    const request = frontendOnly
+        ? Promise.resolve(getStaticApiData('getAllHadiths'))
+        : fetch('api.php?action=getHadiths', { credentials: 'same-origin' }).then(response => parseJsonResponse(response));
+
+    request
+    .then(result => {
+        const hadiths = result.data || [];
+        if (!hadiths.length) {
+            container.innerHTML = '<p class="text-muted mb-0">No hadiths added yet.</p>';
+            return;
+        }
+
+        container.innerHTML = hadiths.map(hadith => `
+            <div class="item-card">
+                <div class="item-info flex-grow-1">
+                    <p style="font-size: 16px; margin: 10px 0; direction: rtl; font-weight: bold;">
+                        <i class="fas fa-quote-left"></i> ${escapeHtml(hadith.arabic || '')}
+                    </p>
+                    <p class="mb-2"><strong>English:</strong> ${escapeHtml(hadith.english || '')}</p>
+                    ${hadith.reference ? `<p class="mb-1"><strong>Reference:</strong> ${escapeHtml(hadith.reference)}</p>` : ''}
+                    ${hadith.source ? `<p class="mb-1"><strong>Source:</strong> ${escapeHtml(hadith.source)}</p>` : ''}
+                    ${hadith.category ? `<p class="mb-1"><strong>Category:</strong> <span class="badge bg-info">${escapeHtml(hadith.category)}</span></p>` : ''}
+                </div>
+                <div class="item-actions">
+                    <button class="btn btn-sm btn-outline-danger" onclick="deleteOfficerHadith(${Number(hadith.id)})">
+                        <i class="fas fa-trash"></i> Delete
+                    </button>
+                </div>
+            </div>
+        `).join('');
+    })
+    .catch(error => {
+        container.innerHTML = `<p class="text-danger mb-0">${escapeHtml(error.message || 'Could not load hadiths')}</p>`;
+    });
+}
+
+function deleteOfficerHadith(hadithId) {
+    if (!hasPermission('manage_hadiths')) {
+        showNotification('Only the Imam can delete hadiths.', 'warning');
+        return;
+    }
+    if (!confirm('Delete this hadith?')) return;
+
+    if (frontendOnly) {
+        const hadiths = readList('adminHadiths').filter(hadith => Number(hadith.id) !== Number(hadithId));
+        localStorage.setItem('adminHadiths', JSON.stringify(hadiths));
+        loadOfficerHadiths();
+        initializeHadiths();
+        showNotification('Hadith deleted.', 'success');
+        return;
+    }
+
+    fetch('api.php?action=deleteHadith', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'same-origin',
+        body: JSON.stringify(authPayload({ hadith_id: Number(hadithId) }))
+    })
+    .then(response => parseJsonResponse(response))
+    .then(result => {
+        if (!result.success) throw new Error(result.message || 'Could not delete hadith');
+        loadOfficerHadiths();
+        initializeHadiths();
+        showNotification('Hadith deleted.', 'success');
+    })
+    .catch(error => showNotification(error.message || 'Could not delete hadith', 'danger'));
+}
+
+// ============================================
+// HADITH REMINDER SYSTEM
 // ============================================
 
 let currentHadithIndex = 0;
@@ -4022,63 +5640,350 @@ window.showDashboard = function() {
 
 // CONTACT MANAGEMENT
 function loadAdminContact() {
-    // Load contact info from localStorage
-    let contactInfo = JSON.parse(localStorage.getItem('contactInfo')) || {
-        location: '',
-        phone: '+23231422167',
-        email: '',
-        hours: ''
+    const applySettings = settings => {
+        const merged = { ...getLocalSiteSettings(), ...(settings || {}) };
+        document.getElementById('contactLocation').value = merged.contact_location || '';
+        document.getElementById('contactPhone').value = merged.contact_phone || '';
+        document.getElementById('contactEmail').value = merged.contact_email || '';
+        document.getElementById('contactHours').value = merged.contact_hours || '';
+        document.getElementById('contactWhatsapp').value = merged.social_whatsapp || '';
+        document.getElementById('contactFacebook').value = merged.social_facebook || '';
+        document.getElementById('contactX').value = merged.social_x || '';
+        document.getElementById('contactInstagram').value = merged.social_instagram || '';
+        document.getElementById('contactYoutube').value = merged.social_youtube || '';
+        document.getElementById('contactTiktok').value = merged.social_tiktok || '';
+        document.getElementById('contactLinkedin').value = merged.social_linkedin || '';
+        document.getElementById('displayLocation').textContent = merged.contact_location || '-';
+        document.getElementById('displayPhone').textContent = merged.contact_phone || '-';
+        document.getElementById('displayEmail').textContent = merged.contact_email || '-';
+        document.getElementById('displayHours').textContent = merged.contact_hours || '-';
     };
 
-    // Populate form fields
-    document.getElementById('contactLocation').value = contactInfo.location || '';
-    document.getElementById('contactPhone').value = contactInfo.phone || '';
-    document.getElementById('contactEmail').value = contactInfo.email || '';
-    document.getElementById('contactHours').value = contactInfo.hours || '';
+    const request = frontendOnly
+        ? Promise.resolve(getStaticApiData('getSiteSettings'))
+        : fetch('api.php?action=getSiteSettings').then(response => parseJsonResponse(response));
+
+    request
+        .then(result => {
+            if (!result.success) throw new Error(result.message || 'Could not load contact settings');
+            writeLocalSiteSettings(result.data || {});
+            applySettings(result.data || {});
+        })
+        .catch(() => applySettings(getLocalSiteSettings()));
+    loadContactVoiceMessages();
 }
 
 function updateContactInfo(type) {
-    let contactInfo = JSON.parse(localStorage.getItem('contactInfo')) || {
-        location: '',
-        phone: '+23231422167',
-        email: '',
-        hours: ''
-    };
-
     let value = '';
     let fieldName = '';
+    const fields = {
+        location: ['contactLocation', 'Location'],
+        phone: ['contactPhone', 'Phone Number'],
+        email: ['contactEmail', 'Email Address'],
+        hours: ['contactHours', 'Office Hours']
+    };
 
-    switch(type) {
-        case 'location':
-            value = document.getElementById('contactLocation').value.trim();
-            fieldName = 'Location';
-            if (value) contactInfo.location = value;
-            break;
-        case 'phone':
-            value = document.getElementById('contactPhone').value.trim();
-            fieldName = 'Phone Number';
-            if (value) contactInfo.phone = value;
-            break;
-        case 'email':
-            value = document.getElementById('contactEmail').value.trim();
-            fieldName = 'Email Address';
-            if (value) contactInfo.email = value;
-            break;
-        case 'hours':
-            value = document.getElementById('contactHours').value.trim();
-            fieldName = 'Office Hours';
-            if (value) contactInfo.hours = value;
-            break;
-    }
+    if (!fields[type]) return;
+    value = document.getElementById(fields[type][0]).value.trim();
+    fieldName = fields[type][1];
 
     if (!value) {
         showNotification('Please enter a value for ' + fieldName, 'warning');
         return;
     }
 
-    // Save to localStorage
-    localStorage.setItem('contactInfo', JSON.stringify(contactInfo));
-    showNotification(fieldName + ' updated successfully!', 'success');
+    saveContactAndSocialInfo(fieldName + ' updated successfully!');
+}
+
+function getContactSettingsPayload() {
+    return {
+        contact_location: document.getElementById('contactLocation')?.value.trim() || '',
+        contact_phone: document.getElementById('contactPhone')?.value.trim() || '',
+        contact_email: document.getElementById('contactEmail')?.value.trim() || '',
+        contact_hours: document.getElementById('contactHours')?.value.trim() || '',
+        social_whatsapp: document.getElementById('contactWhatsapp')?.value.trim() || '',
+        social_facebook: document.getElementById('contactFacebook')?.value.trim() || '',
+        social_x: document.getElementById('contactX')?.value.trim() || '',
+        social_instagram: document.getElementById('contactInstagram')?.value.trim() || '',
+        social_youtube: document.getElementById('contactYoutube')?.value.trim() || '',
+        social_tiktok: document.getElementById('contactTiktok')?.value.trim() || '',
+        social_linkedin: document.getElementById('contactLinkedin')?.value.trim() || ''
+    };
+}
+
+function saveContactAndSocialInfo(successMessage = 'Contact and social links updated successfully!') {
+    if (!hasPermission('manage_contact')) {
+        showNotification('Only media/contact officers can update contact and social links.', 'warning');
+        return;
+    }
+    const payload = getContactSettingsPayload();
+    if (frontendOnly) {
+        writeLocalSiteSettings(payload);
+        loadAdminContact();
+        loadPublicSiteSettings();
+        showNotification(successMessage, 'success');
+        return;
+    }
+
+    fetch('api.php?action=updateSiteSettings', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(authPayload(payload))
+    })
+    .then(response => parseJsonResponse(response))
+    .then(result => {
+        if (!result.success) throw new Error(result.message || 'Could not save contact settings');
+        writeLocalSiteSettings(result.data?.settings || payload);
+        loadAdminContact();
+        loadPublicSiteSettings();
+        showNotification(successMessage, 'success');
+    })
+    .catch(error => showNotification(error.message || 'Could not update contact settings', 'danger'));
+}
+
+function getSupportedContactVoiceMime() {
+    if (typeof MediaRecorder === 'undefined' || typeof MediaRecorder.isTypeSupported !== 'function') {
+        return '';
+    }
+    return [
+        'audio/webm;codecs=opus',
+        'audio/webm',
+        'audio/ogg;codecs=opus',
+        'audio/ogg',
+        'audio/mp4'
+    ].find(type => MediaRecorder.isTypeSupported(type)) || '';
+}
+
+function setVoiceRecordingStatus(message, type = 'muted') {
+    const status = document.getElementById('voiceRecordingStatus');
+    if (!status) return;
+    status.textContent = message;
+    status.className = `small mt-2 text-${type}`;
+}
+
+async function startContactVoiceRecording() {
+    if (typeof MediaRecorder === 'undefined' || !navigator.mediaDevices?.getUserMedia) {
+        setVoiceRecordingStatus('Recording is not supported in this browser. Upload an audio file instead.', 'danger');
+        return;
+    }
+
+    try {
+        clearContactVoiceRecording(false);
+        contactVoiceStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        const mimeType = getSupportedContactVoiceMime();
+        contactVoiceRecorder = new MediaRecorder(contactVoiceStream, mimeType ? { mimeType } : undefined);
+        contactVoiceChunks = [];
+
+        contactVoiceRecorder.addEventListener('dataavailable', event => {
+            if (event.data && event.data.size > 0) {
+                contactVoiceChunks.push(event.data);
+            }
+        });
+
+        contactVoiceRecorder.addEventListener('stop', () => {
+            const type = contactVoiceRecorder.mimeType || mimeType || 'audio/webm';
+            contactVoiceBlob = new Blob(contactVoiceChunks, { type });
+            stopContactVoiceStream();
+            showContactVoicePreview(contactVoiceBlob);
+            setVoiceRecordingStatus('Voice message ready. You can play it before sending.', 'success');
+        });
+
+        contactVoiceRecorder.start();
+        document.getElementById('startVoiceRecording').disabled = true;
+        document.getElementById('stopVoiceRecording').disabled = false;
+        document.getElementById('clearVoiceRecording').disabled = true;
+        document.getElementById('contactVoiceFile').value = '';
+        setVoiceRecordingStatus('Recording... allow the microphone prompt if your browser asks.', 'danger');
+    } catch (error) {
+        stopContactVoiceStream();
+        const secureHint = location.protocol !== 'https:' && location.hostname !== 'localhost' && location.hostname !== '127.0.0.1'
+            ? ' Open the site through localhost or HTTPS, or upload an audio file.'
+            : '';
+        setVoiceRecordingStatus(`Microphone could not start.${secureHint}`, 'danger');
+    }
+}
+
+function stopContactVoiceRecording() {
+    if (contactVoiceRecorder && contactVoiceRecorder.state === 'recording') {
+        contactVoiceRecorder.stop();
+    }
+    document.getElementById('startVoiceRecording').disabled = false;
+    document.getElementById('stopVoiceRecording').disabled = true;
+    document.getElementById('clearVoiceRecording').disabled = false;
+}
+
+function stopContactVoiceStream() {
+    if (!contactVoiceStream) return;
+    contactVoiceStream.getTracks().forEach(track => track.stop());
+    contactVoiceStream = null;
+}
+
+function clearContactVoiceRecording(resetStatus = true) {
+    if (contactVoiceRecorder && contactVoiceRecorder.state === 'recording') {
+        contactVoiceRecorder.stop();
+    }
+    stopContactVoiceStream();
+    contactVoiceRecorder = null;
+    contactVoiceChunks = [];
+    contactVoiceBlob = null;
+    const preview = document.getElementById('voiceRecordingPreview');
+    if (preview) {
+        if (preview.src) URL.revokeObjectURL(preview.src);
+        preview.removeAttribute('src');
+        preview.classList.add('d-none');
+    }
+    const fileInput = document.getElementById('contactVoiceFile');
+    if (fileInput) fileInput.value = '';
+    document.getElementById('startVoiceRecording').disabled = false;
+    document.getElementById('stopVoiceRecording').disabled = true;
+    document.getElementById('clearVoiceRecording').disabled = true;
+    if (resetStatus) {
+        setVoiceRecordingStatus('Record a voice message or upload an audio file below.');
+    }
+}
+
+function showContactVoicePreview(blobOrFile) {
+    const preview = document.getElementById('voiceRecordingPreview');
+    if (!preview || !blobOrFile) return;
+    if (preview.src) URL.revokeObjectURL(preview.src);
+    preview.src = URL.createObjectURL(blobOrFile);
+    preview.classList.remove('d-none');
+}
+
+function handleContactVoiceFileChange(event) {
+    const file = event.target.files?.[0];
+    contactVoiceBlob = null;
+    if (!file) {
+        clearContactVoiceRecording();
+        return;
+    }
+    if (!validateUploadFile(file, 'voice')) {
+        event.target.value = '';
+        clearContactVoiceRecording();
+        return;
+    }
+    showContactVoicePreview(file);
+    document.getElementById('clearVoiceRecording').disabled = false;
+    setVoiceRecordingStatus('Audio file ready. You can play it before sending.', 'success');
+}
+
+function getContactVoiceFileForSubmit() {
+    const uploadedFile = document.getElementById('contactVoiceFile')?.files?.[0];
+    if (uploadedFile) return uploadedFile;
+    if (!contactVoiceBlob) return null;
+    const extension = contactVoiceBlob.type.includes('ogg') ? 'ogg' : contactVoiceBlob.type.includes('mp4') ? 'm4a' : 'webm';
+    return new File([contactVoiceBlob], `contact-voice.${extension}`, { type: contactVoiceBlob.type || 'audio/webm' });
+}
+
+function resetContactFormAfterSubmit() {
+    document.getElementById('contactForm')?.reset();
+    clearContactVoiceRecording();
+}
+
+function submitContactVoiceMessage(event) {
+    event.preventDefault();
+    if (frontendOnly) {
+        showNotification('Voice messages need the PHP backend. Please open this through XAMPP/localhost.', 'warning');
+        return;
+    }
+
+    const voiceFile = getContactVoiceFileForSubmit();
+    if (!voiceFile) {
+        showNotification('Please record a voice message or upload an audio file.', 'warning');
+        return;
+    }
+    if (!validateUploadFile(voiceFile, 'voice')) {
+        return;
+    }
+
+    const formData = new FormData();
+    formData.append('name', document.getElementById('contactName').value.trim());
+    formData.append('email', document.getElementById('contactEmailAddress').value.trim());
+    formData.append('subject', document.getElementById('contactSubject').value.trim());
+    formData.append('message', document.getElementById('contactMessage').value.trim());
+    formData.append('voice_message', voiceFile);
+
+    const button = document.getElementById('contactSubmitButton');
+    const originalText = button?.innerHTML;
+    if (button) {
+        button.disabled = true;
+        button.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Sending...';
+    }
+
+    fetch('api.php?action=submitContactVoiceMessage', {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => parseJsonResponse(response))
+    .then(result => {
+        if (!result.success) {
+            throw new Error(result.message || 'Could not send voice message');
+        }
+        showNotification('Voice message sent successfully.', 'success');
+        resetContactFormAfterSubmit();
+    })
+    .catch(error => showNotification(error.message || 'Could not send voice message', 'danger'))
+    .finally(() => {
+        if (button) {
+            button.disabled = false;
+            button.innerHTML = originalText;
+        }
+    });
+}
+
+function loadContactVoiceMessages() {
+    const container = document.getElementById('contactVoiceMessagesList');
+    if (!container) return;
+    container.innerHTML = '<p class="text-muted mb-0">Loading voice messages...</p>';
+
+    fetch('api.php?action=getContactVoiceMessages')
+    .then(response => parseJsonResponse(response))
+    .then(result => {
+        if (!result.success) {
+            throw new Error(result.message || 'Could not load voice messages');
+        }
+        renderContactVoiceMessages(result.data || []);
+    })
+    .catch(error => {
+        container.innerHTML = `<p class="text-danger mb-0">${escapeHtml(error.message || 'Could not load voice messages')}</p>`;
+    });
+}
+
+function renderContactVoiceMessages(messages) {
+    const container = document.getElementById('contactVoiceMessagesList');
+    if (!container) return;
+    if (!messages.length) {
+        container.innerHTML = '<p class="text-muted mb-0">No voice messages yet.</p>';
+        return;
+    }
+
+    container.innerHTML = messages.map(message => `
+        <div class="voice-inbox-item">
+            <div class="voice-inbox-item__header">
+                <div>
+                    <h6>${escapeHtml(message.subject)}</h6>
+                    <p class="text-muted mb-1">${escapeHtml(message.name)} &lt;${escapeHtml(message.email)}&gt;</p>
+                    <p class="text-muted mb-0">${message.created_at ? new Date(message.created_at).toLocaleString() : ''}</p>
+                </div>
+                <span class="badge bg-${message.status === 'read' ? 'success' : 'warning'}">${message.status === 'read' ? 'Listened' : 'New'}</span>
+            </div>
+            ${message.message ? `<p class="mt-2 mb-2">${escapeHtml(message.message)}</p>` : ''}
+            <audio class="w-100 contact-voice-audio" controls data-message-id="${Number(message.id)}" src="${resolveAppUrl(message.audio_path)}"></audio>
+        </div>
+    `).join('');
+
+    container.querySelectorAll('.contact-voice-audio').forEach(audio => {
+        audio.addEventListener('play', () => markContactVoiceMessageRead(audio.dataset.messageId));
+    });
+}
+
+function markContactVoiceMessageRead(messageId) {
+    if (!messageId) return;
+    fetch('api.php?action=markContactVoiceMessageRead', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ message_id: Number(messageId) })
+    }).catch(() => {});
 }
 
 // GALLERY MANAGEMENT
@@ -4095,7 +6000,7 @@ function loadAdminGallery() {
         let galleryItems = result.data || [];
 
         if (galleryItems.length === 0) {
-            galleryList.innerHTML = '<tr><td colspan="5" class="text-center text-muted">No gallery items yet</td></tr>';
+        galleryList.innerHTML = '<tr><td colspan="5" class="text-center text-muted">No gallery or video items yet</td></tr>';
             return;
         }
 
@@ -4136,6 +6041,18 @@ function previewGalleryImage() {
 
     if (imageInput && imageInput.files && imageInput.files[0]) {
         const file = imageInput.files[0];
+        if (!validateUploadFile(file, getGalleryUploadLimitKey(file))) {
+            imageInput.value = '';
+            preview.src = '';
+            preview.classList.add('d-none');
+            if (videoPreview) {
+                videoPreview.pause();
+                videoPreview.removeAttribute('src');
+                videoPreview.load();
+                videoPreview.classList.add('d-none');
+            }
+            return;
+        }
         const reader = new FileReader();
         reader.onload = function(e) {
             const mediaType = getGalleryMediaType(e.target.result, file);
@@ -4171,18 +6088,21 @@ function saveGalleryItem() {
     const imageInput = document.getElementById('galleryImage');
 
     if (!title || !description || !imageInput || !imageInput.files || imageInput.files.length === 0) {
-        showNotification('Please fill in all gallery fields and choose an image.', 'warning');
+        showNotification('Please fill in all media fields and choose an image or video.', 'warning');
         return;
     }
 
     const file = imageInput.files[0];
+    if (!validateUploadFile(file, getGalleryUploadLimitKey(file))) {
+        return;
+    }
     const reader = new FileReader();
     reader.onload = function(e) {
         const imageData = e.target.result;
         const mediaType = getGalleryMediaType(imageData, file);
 
         if (!frontendOnly) {
-            fetch('admin_api.php?action=addGalleryItem', {
+            fetch('api.php?action=addGalleryItem', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
@@ -4203,11 +6123,11 @@ function saveGalleryItem() {
                 bootstrap.Modal.getInstance(document.getElementById('addGalleryModal')).hide();
                 loadAdminGallery();
                 loadGalleryContent();
-                showNotification('Gallery item added successfully!', 'success');
+                showNotification('Media item added successfully!', 'success');
             })
             .catch(error => {
                 console.error('Error:', error);
-                showNotification(error.message || 'Error saving gallery item', 'danger');
+                showNotification(error.message || 'Error saving media item', 'danger');
             });
             return;
         }
@@ -4224,6 +6144,7 @@ function saveGalleryItem() {
         });
 
         localStorage.setItem('galleryItems', JSON.stringify(galleryItems));
+        logLocalRoleActivity('addGalleryItem', { title, media_type: mediaType });
 
         clearGalleryForm(imageInput);
 
@@ -4234,7 +6155,7 @@ function saveGalleryItem() {
         loadAdminGallery();
         loadGalleryContent(); // Refresh landing page gallery
 
-        showNotification('Gallery item added successfully!', 'success');
+        showNotification('Media item added successfully!', 'success');
     };
     reader.readAsDataURL(file);
 }
@@ -4260,7 +6181,7 @@ function removeGalleryItem(index) {
     if (!confirm('Are you sure you want to remove this gallery item?')) return;
 
     if (!frontendOnly) {
-        fetch('admin_api.php?action=deleteGalleryItem', {
+        fetch('api.php?action=deleteGalleryItem', {
             method: 'DELETE',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ gallery_id: index })
@@ -4284,6 +6205,7 @@ function removeGalleryItem(index) {
     let galleryItems = JSON.parse(localStorage.getItem('galleryItems')) || [];
     galleryItems.splice(index, 1);
     localStorage.setItem('galleryItems', JSON.stringify(galleryItems));
+    logLocalRoleActivity('deleteGalleryItem', { gallery_id: index });
 
     loadAdminGallery();
     loadGalleryContent(); // Refresh landing page gallery

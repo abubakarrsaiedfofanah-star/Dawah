@@ -1,0 +1,11 @@
+{
+  "name": "dawaah-ui-smoke",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "test:ui": "playwright test"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.52.0"
+  }
+}

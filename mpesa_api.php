@@ -61,6 +61,10 @@ function mpesaBaseUrl() {
 }
 
 function mpesaAccessToken() {
+    if (!function_exists('curl_init')) {
+        return array('success' => false, 'error' => 'PHP cURL is not enabled on this server');
+    }
+
     $credentials = base64_encode(MPESA_CONSUMER_KEY . ':' . MPESA_CONSUMER_SECRET);
     $ch = curl_init(mpesaBaseUrl() . '/oauth/v1/generate?grant_type=client_credentials');
     curl_setopt_array($ch, array(
@@ -85,6 +89,10 @@ function mpesaAccessToken() {
 }
 
 function initiateStkPush($payload) {
+    if (!function_exists('curl_init')) {
+        return array('success' => false, 'error' => 'M-Pesa STK Push needs PHP cURL. Use Bank Transfer, Normal Transfer, or Cash until cURL is enabled.');
+    }
+
     if (MPESA_CONSUMER_KEY === 'YOUR_DARAJA_CONSUMER_KEY' || MPESA_PASSKEY === 'YOUR_DARAJA_PASSKEY') {
         return array('success' => false, 'error' => 'Daraja credentials are not configured in mpesa_config.php');
     }
@@ -96,7 +104,7 @@ function initiateStkPush($payload) {
         return array('success' => false, 'error' => 'Valid amount and M-Pesa phone number are required');
     }
 
-    $transaction_id = 'MPESA-PENDING-' . time();
+    $transaction_id = 'MPESA-PENDING-' . date('YmdHis') . '-' . bin2hex(random_bytes(3));
     if ($source === 'payment') {
         $student_id = isset($payload['student_id']) ? intval($payload['student_id']) : 0;
         if ($student_id <= 0) {
@@ -242,12 +250,21 @@ function handleMpesaCallback($payload) {
     $stmt->execute();
 
     $tx = getMpesaTransaction($checkout);
-    if ($tx && $status === 'completed') {
-        if (!empty($tx['payment_id'])) {
-            completePayment(intval($tx['payment_id']), $receipt);
-        }
-        if (!empty($tx['donation_id'])) {
-            completeDonation(intval($tx['donation_id']), $receipt);
+    if ($tx) {
+        if ($status === 'completed') {
+            if (!empty($tx['payment_id'])) {
+                completePayment(intval($tx['payment_id']), $receipt);
+            }
+            if (!empty($tx['donation_id'])) {
+                completeDonation(intval($tx['donation_id']), $receipt);
+            }
+        } else {
+            if (!empty($tx['payment_id'])) {
+                updatePaymentStatus(intval($tx['payment_id']), 'failed', $checkout, $result_desc);
+            }
+            if (!empty($tx['donation_id'])) {
+                updateDonationStatus(intval($tx['donation_id']), 'failed', $checkout);
+            }
         }
     }
 

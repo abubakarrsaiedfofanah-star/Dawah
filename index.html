@@ -21,10 +21,18 @@
                     <i class="fas fa-mosque brand-logo__icon" aria-hidden="true"></i>
                     <span>Dawa'ah</span>
                 </a>
-                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
-                    <span class="navbar-toggler-icon"></span>
+                <button class="navbar-toggler premium-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#landingNavbarNav" aria-controls="landingNavbarNav" aria-expanded="false" aria-label="Toggle navigation">
+                    <span class="premium-toggler__label" aria-hidden="true">
+                        <span class="label-open">Menu</span>
+                        <span class="label-close">Close</span>
+                    </span>
+                    <span class="hamburger-lines" aria-hidden="true">
+                        <span class="hamburger-line"></span>
+                        <span class="hamburger-line"></span>
+                        <span class="hamburger-line"></span>
+                    </span>
                 </button>
-                <div class="collapse navbar-collapse" id="navbarNav">
+                <div class="collapse navbar-collapse" id="landingNavbarNav">
                     <ul class="navbar-nav ms-auto nav nav-tabs" role="tablist">
                         <li class="nav-item">
                             <a class="nav-link" href="#home" onclick="showLanding(); scrollToSection('home')"><i class="fas fa-home"></i> Home</a>
@@ -34,6 +42,9 @@
                         </li>
                         <li class="nav-item">
                             <a class="nav-link" href="#mission" onclick="showLanding(); scrollToSection('mission')"><i class="fas fa-hand-holding-heart"></i> What We Do</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="#activities" onclick="showLanding(); scrollToSection('activities')"><i class="fas fa-calendar-days"></i> Activities</a>
                         </li>
                         <li class="nav-item">
                             <a class="nav-link" href="#leadership" onclick="showLanding(); scrollToSection('leadership')"><i class="fas fa-users"></i> Our Leadership</a>
@@ -62,10 +73,16 @@
                 </h1>
                 <p class="hero-subtitle">UMMA University Muslim Jamaat</p>
                 <p class="hero-description">Building a compassionate community of Muslim healthcare professionals</p>
+                <div class="hero-highlights" aria-label="Dawa'ah highlights">
+                    <span><i class="fas fa-mosque"></i> Prayer & Guidance</span>
+                    <span><i class="fas fa-hands-helping"></i> Welfare & Service</span>
+                    <span><i class="fas fa-photo-film"></i> Events & Media</span>
+                </div>
                 <div class="hero-buttons">
-                    <button class="btn btn-primary btn-lg me-3" onclick="showLoginPage()">Join Us Today</button>
-                    <a href="#about" onclick="showLanding(); scrollToSection('about')" class="btn btn-light btn-lg visit-dawaah-link" title="Visit Dawa'ah public information">
-                        <i class="fas fa-globe"></i> Visit Dawa'ah Official Website
+                    <button class="btn btn-primary btn-lg" onclick="activateAuthTab('register')"><i class="fas fa-user-plus"></i> Join/Register</button>
+                    <button class="btn btn-outline-light btn-lg" onclick="activateAuthTab('login')"><i class="fas fa-right-to-bracket"></i> Login</button>
+                    <a href="#activities" onclick="showLanding(); scrollToSection('activities')" class="btn btn-light btn-lg visit-dawaah-link" title="View Dawa'ah activities">
+                        <i class="fas fa-calendar-days"></i> View Activities
                     </a>
                 </div>
             </div>
@@ -159,6 +176,19 @@
             </div>
         </section>
 
+        <!-- Activities Section -->
+        <section id="activities" class="landing-section bg-light">
+            <div class="container">
+                <h2 class="section-title">Activities</h2>
+                <div class="activity-public-intro">
+                    <p>Daily, weekly, and monthly programmes that keep the Dawa'ah community connected, learning, and serving.</p>
+                </div>
+                <div id="publicActivitiesPreview" class="activity-public-grid">
+                    <div class="text-center text-muted">Activities will be updated soon.</div>
+                </div>
+            </div>
+        </section>
+
         <!-- Gallery Section -->
         <section id="gallery" class="landing-section bg-light">
             <div class="container">
@@ -181,35 +211,35 @@
                                 <i class="fas fa-map-marker-alt"></i>
                                 <div>
                                     <h6>Location</h6>
-                                    <p>UMMA University, Main Campus</p>
+                                    <p id="publicContactLocation">UMMA University, Main Campus</p>
                                 </div>
                             </div>
                             <div class="contact-item">
                                 <i class="fas fa-phone"></i>
                                 <div>
                                     <h6>Phone</h6>
-                                    <p>+23231422167</p>
+                                    <p id="publicContactPhone">+23231422167</p>
                                 </div>
                             </div>
                             <div class="contact-item">
                                 <i class="fab fa-whatsapp"></i>
                                 <div>
                                     <h6>WhatsApp</h6>
-                                    <p><a href="https://api.whatsapp.com/send?phone=23231422167&text=Assalamu%20alaikum%2C%20I%20would%20like%20to%20contact%20Dawa'ah." target="_blank" rel="noopener">+23231422167</a></p>
+                                    <p><a id="publicContactWhatsapp" href="https://api.whatsapp.com/send?phone=23231422167&text=Assalamu%20alaikum%2C%20I%20would%20like%20to%20contact%20Dawa'ah." target="_blank" rel="noopener">+23231422167</a></p>
                                 </div>
                             </div>
                             <div class="contact-item">
                                 <i class="fas fa-envelope"></i>
                                 <div>
                                     <h6>Email</h6>
-                                    <p>info@dawaah.org</p>
+                                    <p id="publicContactEmail">info@dawaah.org</p>
                                 </div>
                             </div>
                             <div class="contact-item">
                                 <i class="fas fa-clock"></i>
                                 <div>
                                     <h6>Office Hours</h6>
-                                    <p>Monday - Friday: 10 AM - 6 PM</p>
+                                    <p id="publicContactHours">Monday - Friday: 10 AM - 6 PM</p>
                                 </div>
                             </div>
                         </div>
@@ -218,21 +248,40 @@
                         <form id="contactForm" class="contact-form">
                             <div class="mb-3">
                                 <label class="form-label">Your Name</label>
-                                <input type="text" class="form-control" required>
+                                <input type="text" class="form-control" id="contactName" required>
                             </div>
                             <div class="mb-3">
                                 <label class="form-label">Your Email</label>
-                                <input type="email" class="form-control" required>
+                                <input type="email" class="form-control" id="contactEmailAddress" required>
                             </div>
                             <div class="mb-3">
                                 <label class="form-label">Subject</label>
-                                <input type="text" class="form-control" required>
+                                <input type="text" class="form-control" id="contactSubject" required>
                             </div>
                             <div class="mb-3">
                                 <label class="form-label">Message</label>
-                                <textarea class="form-control" rows="4" required></textarea>
+                                <textarea class="form-control" id="contactMessage" rows="4"></textarea>
                             </div>
-                            <button type="submit" class="btn btn-primary w-100">Send Message</button>
+                            <div class="mb-3">
+                                <label class="form-label">Voice Message</label>
+                                <div class="voice-recorder">
+                                    <div class="voice-recorder__controls">
+                                        <button type="button" class="btn btn-outline-primary btn-sm" id="startVoiceRecording">
+                                            <i class="fas fa-microphone"></i> Record
+                                        </button>
+                                        <button type="button" class="btn btn-outline-danger btn-sm" id="stopVoiceRecording" disabled>
+                                            <i class="fas fa-stop"></i> Stop
+                                        </button>
+                                        <button type="button" class="btn btn-outline-secondary btn-sm" id="clearVoiceRecording" disabled>
+                                            <i class="fas fa-trash"></i> Clear
+                                        </button>
+                                    </div>
+                                    <div class="small text-muted mt-2" id="voiceRecordingStatus">Record a voice message or upload an audio file below.</div>
+                                    <audio id="voiceRecordingPreview" class="w-100 mt-2 d-none" controls></audio>
+                                    <input type="file" class="form-control mt-2" id="contactVoiceFile" accept="audio/*">
+                                </div>
+                            </div>
+                            <button type="submit" class="btn btn-primary w-100" id="contactSubmitButton">Send Message</button>
                         </form>
                     </div>
                 </div>
@@ -262,17 +311,14 @@
                     </div>
                     <div class="col-md-4">
                         <h6>Connect With Us</h6>
-                        <div class="social-links">
-                            <a href="#"><i class="fab fa-facebook"></i></a>
-                            <a href="#"><i class="fab fa-twitter"></i></a>
-                            <a href="#"><i class="fab fa-instagram"></i></a>
-                            <a href="#"><i class="fab fa-linkedin"></i></a>
+                        <div class="social-links" id="publicSocialLinks">
+                            <a href="https://api.whatsapp.com/send?phone=23231422167&text=Assalamu%20alaikum%2C%20I%20would%20like%20to%20contact%20Dawa'ah." target="_blank" rel="noopener" aria-label="WhatsApp"><i class="fab fa-whatsapp"></i></a>
                         </div>
                     </div>
                 </div>
                 <hr>
                 <div class="text-center">
-                    <p>&copy; 2024 Dawa'ah. All rights reserved.</p>
+                    <p>&copy; 2026 Dawa'ah. All rights reserved.</p>
                 </div>
             </div>
         </footer>
@@ -325,19 +371,6 @@
                                     </button>
                                 </div>
                             </div>
-                            <div class="mb-3">
-                                <label class="form-label">Login As</label>
-                                <select class="form-select" id="userRole" required>
-                                    <option value="" disabled selected>Select Role</option>
-                                    <option value="student">Student Member</option>
-                                    <option value="executive">Executive/Admin</option>
-                                    <option value="chairman">Chairman</option>
-                                    <option value="chairlady">Chairlady</option>
-                                    <option value="secretary">Secretary</option>
-                                    <option value="treasurer">Treasurer</option>
-                                    <option value="imam">Imam/Leader</option>
-                                </select>
-                            </div>
                             <button type="submit" class="btn btn-primary w-100 mb-2" id="loginSubmitBtn">Login</button>
                             <button type="button" class="btn btn-link w-100" onclick="showForgotPassword()">Forgot Password?</button>
                         </form>
@@ -355,20 +388,6 @@
                                     <label class="form-label">Student ID</label>
                                     <input type="text" class="form-control" id="studentId" placeholder="Student ID" required>
                                 </div>
-                            </div>
-
-                            <div class="mb-3">
-                                <label class="form-label">Role</label>
-                                <select class="form-select" id="regRole" required>
-                                    <option value="" disabled selected>Select Role</option>
-                                    <option value="student">Student Member</option>
-                                    <option value="executive">Executive/Admin</option>
-                                    <option value="chairman">Chairman</option>
-                                    <option value="chairlady">Chairlady</option>
-                                    <option value="secretary">Secretary</option>
-                                    <option value="treasurer">Treasurer</option>
-                                    <option value="imam">Imam/Leader</option>
-                                </select>
                             </div>
 
                             <div class="mb-3">
@@ -503,6 +522,10 @@
                             <div class="mb-3">
                                 <label class="form-label">Password</label>
                                 <input type="password" class="form-control" id="regPassword" placeholder="Enter password" required>
+                                <div class="password-strength mt-2" aria-live="polite">
+                                    <div class="password-strength__bar"><span id="passwordStrengthBar"></span></div>
+                                    <small id="passwordStrengthText" class="text-muted">Use 8+ characters with letters, numbers, and a symbol.</small>
+                                </div>
                             </div>
 
                             <div class="mb-3">
@@ -543,16 +566,31 @@
                 </div>
                 <div class="modal-body">
                     <form id="forgotPasswordForm">
-                        <div class="mb-3">
+                        <div class="mb-3 reset-step reset-step-email">
                             <label class="form-label">Enter your email address</label>
                             <input type="email" class="form-control" id="forgotEmail" required>
                         </div>
-                        <small class="text-muted">A password reset link will be sent to your email</small>
+                        <div class="reset-step reset-step-code d-none">
+                            <div class="mb-3">
+                                <label class="form-label">Email verification code</label>
+                                <input type="text" class="form-control" id="forgotCode" inputmode="numeric" maxlength="6" placeholder="6-digit code">
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">New password</label>
+                                <input type="password" class="form-control" id="forgotNewPassword" minlength="6" placeholder="Enter new password">
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">Confirm new password</label>
+                                <input type="password" class="form-control" id="forgotConfirmPassword" minlength="6" placeholder="Confirm new password">
+                            </div>
+                        </div>
+                        <small class="text-muted" id="forgotPasswordHelp">Use the same email you registered with. A verification code will be sent there.</small>
                     </form>
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                    <button type="button" class="btn btn-primary" onclick="sendResetLink()">Send Reset Link</button>
+                    <button type="button" class="btn btn-outline-primary d-none" id="forgotPasswordResendButton" onclick="resendResetCode()">Resend Code</button>
+                    <button type="button" class="btn btn-primary" id="forgotPasswordActionButton" onclick="sendResetLink()">Send Code</button>
                 </div>
             </div>
         </div>
@@ -570,7 +608,8 @@
                     <div class="row">
                         <div class="col-md-4 text-center">
                             <div class="leader-photo-modal">
-                                <i class="fas fa-user-circle fa-6x text-primary"></i>
+                                <img id="leaderPhotoImage" src="" alt="" class="leader-photo-modal__image d-none">
+                                <i id="leaderPhotoIcon" class="fas fa-user-circle fa-6x text-primary"></i>
                             </div>
                         </div>
                         <div class="col-md-8">
@@ -584,6 +623,7 @@
                                 <p><strong>Description:</strong> <span id="leaderDescription"></span></p>
                                 <p><strong>Email:</strong> <span id="leaderEmail"></span></p>
                                 <p><strong>Phone:</strong> <span id="leaderPhone"></span></p>
+                                <p id="leaderAddedRow"><strong>Added:</strong> <span id="leaderAddedAt"></span></p>
                             </div>
                         </div>
                     </div>
@@ -626,10 +666,18 @@
                     <i class="fas fa-mosque brand-logo__icon" aria-hidden="true"></i>
                     <span>Dawa'ah</span>
                 </a>
-                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
-                    <span class="navbar-toggler-icon"></span>
+                <button class="navbar-toggler premium-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#dashboardNavbarNav" aria-controls="dashboardNavbarNav" aria-expanded="false" aria-label="Toggle navigation">
+                    <span class="premium-toggler__label" aria-hidden="true">
+                        <span class="label-open">Menu</span>
+                        <span class="label-close">Close</span>
+                    </span>
+                    <span class="hamburger-lines" aria-hidden="true">
+                        <span class="hamburger-line"></span>
+                        <span class="hamburger-line"></span>
+                        <span class="hamburger-line"></span>
+                    </span>
                 </button>
-                <div class="collapse navbar-collapse" id="navbarNav">
+                <div class="collapse navbar-collapse" id="dashboardNavbarNav">
                     <ul class="navbar-nav ms-auto">
                         <li class="nav-item">
                             <span class="navbar-text me-3">
@@ -674,6 +722,12 @@
                             <a href="#" class="nav-link" onclick="switchView('events')">
                                 <i class="fas fa-calendar"></i> Events
                             </a>
+                            <a href="#" class="nav-link" onclick="switchView('activities')">
+                                <i class="fas fa-calendar-days"></i> Activities
+                            </a>
+                            <a href="#" class="nav-link" onclick="switchView('volunteer')">
+                                <i class="fas fa-hands-helping"></i> Volunteer
+                            </a>
                             <a href="#" class="nav-link" onclick="switchView('announcements')">
                                 <i class="fas fa-bullhorn"></i> Announcements
                             </a>
@@ -699,7 +753,7 @@
                     </div>
 
                     <div class="menu-section" id="roleAdminMenu">
-                        <h6 class="menu-title">ROLE TOOLS</h6>
+                        <h6 class="menu-title">OFFICER TOOLS</h6>
                         <nav class="nav flex-column">
                             <a href="#" class="nav-link role-tool-link" data-permission="manage_members" onclick="switchView('memberDatabase')">
                                 <i class="fas fa-users-cog"></i> Member Database
@@ -717,10 +771,13 @@
                                 <i class="fas fa-chart-pie"></i> Reports
                             </a>
                             <a href="#" class="nav-link role-tool-link" data-permission="manage_gallery" onclick="switchView('adminGallery')">
-                                <i class="fas fa-images"></i> Gallery
+                                <i class="fas fa-photo-film"></i> Gallery & Videos
                             </a>
                             <a href="#" class="nav-link role-tool-link" data-permission="manage_contact" onclick="switchView('adminContact')">
                                 <i class="fas fa-envelope-open-text"></i> Contact Messages
+                            </a>
+                            <a href="#" class="nav-link role-tool-link" data-permission="manage_hadiths" onclick="switchView('officerHadiths')">
+                                <i class="fas fa-book-open"></i> Hadiths
                             </a>
                         </nav>
                     </div>
@@ -833,6 +890,57 @@
                                         <p class="stat-value" id="announcementCount">3</p>
                                     </div>
                                 </div>
+                            </div>
+                        </div>
+
+                        <div class="row g-3 mb-4">
+                            <div class="col-lg-4">
+                                <div class="card premium-dashboard-card">
+                                    <div class="card-header d-flex justify-content-between align-items-center">
+                                        <h5 class="mb-0"><i class="fas fa-compass"></i> Your Workspace</h5>
+                                        <span class="badge bg-warning text-dark" id="dashboardRoleBadge">Member</span>
+                                    </div>
+                                    <div class="card-body">
+                                        <p class="text-muted" id="dashboardRoleSummary">Officer tools will appear here after role approval.</p>
+                                        <div id="roleQuickActions" class="role-quick-actions"></div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-lg-4">
+                                <div class="card premium-dashboard-card">
+                                    <div class="card-header">
+                                        <h5 class="mb-0"><i class="fas fa-id-card"></i> Profile</h5>
+                                    </div>
+                                    <div class="card-body">
+                                        <div class="profile-meter">
+                                            <div class="profile-meter__ring"><span id="profileCompletionValue">0%</span></div>
+                                            <div>
+                                                <strong>Completion</strong>
+                                                <p class="text-muted small mb-2" id="profileCompletionText">Complete your member record.</p>
+                                                <button class="btn btn-sm btn-outline-primary" onclick="switchView('profile')">Update Profile</button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-lg-4">
+                                <div class="card premium-dashboard-card">
+                                    <div class="card-header d-flex justify-content-between align-items-center">
+                                        <h5 class="mb-0"><i class="fas fa-bell"></i> Alerts</h5>
+                                        <span class="badge bg-danger" id="dashboardAlertCount">0</span>
+                                    </div>
+                                    <div class="card-body" id="dashboardAlertsList"></div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="card premium-dashboard-card mb-4">
+                            <div class="card-header d-flex justify-content-between align-items-center">
+                                <h5 class="mb-0"><i class="fas fa-calendar-days"></i> Activity Calendar</h5>
+                                <button class="btn btn-sm btn-outline-primary" onclick="switchView('activities')">Open Activities</button>
+                            </div>
+                            <div class="card-body">
+                                <div id="dashboardActivityCalendar" class="activity-calendar"></div>
                             </div>
                         </div>
 
@@ -1167,8 +1275,124 @@
                             <h2>Announcements</h2>
                         </div>
 
+                        <div id="announcementManagerPanel" class="card d-none">
+                            <div class="card-header">
+                                <h5 class="mb-0">Create Announcement</h5>
+                            </div>
+                            <div class="card-body">
+                                <form id="announcementForm" onsubmit="saveAnnouncement(event)">
+                                    <div class="row">
+                                        <div class="col-md-8 mb-3">
+                                            <label class="form-label">Title</label>
+                                            <input type="text" class="form-control" id="announcementTitle" placeholder="Announcement title" required>
+                                        </div>
+                                        <div class="col-md-4 mb-3">
+                                            <label class="form-label">Priority</label>
+                                            <select class="form-select" id="announcementPriority">
+                                                <option value="normal">Normal</option>
+                                                <option value="high">High</option>
+                                                <option value="low">Low</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                    <div class="mb-3">
+                                        <label class="form-label">Message</label>
+                                        <textarea class="form-control" id="announcementContent" rows="3" placeholder="Write the announcement" required></textarea>
+                                    </div>
+                                    <button type="submit" class="btn btn-primary">
+                                        <i class="fas fa-paper-plane"></i> Publish
+                                    </button>
+                                </form>
+                            </div>
+                        </div>
+
                         <div id="announcementsContainer">
                             <p class="text-center text-muted">No announcements have been added yet.</p>
+                        </div>
+                    </div>
+
+                    <!-- Activities View -->
+                    <div id="activitiesView" class="view-container">
+                        <div class="page-header">
+                            <div>
+                                <h2>Activities</h2>
+                                <p class="text-muted mb-0">Track daily, weekly, and monthly Dawa'ah programmes.</p>
+                            </div>
+                        </div>
+
+                        <div id="activityManagerPanel" class="card activity-manager-panel d-none">
+                            <div class="card-header">
+                                <h5 class="mb-0">Add Activity</h5>
+                            </div>
+                            <div class="card-body">
+                                <form id="activityForm" onsubmit="saveActivity(event)">
+                                    <div class="row">
+                                        <div class="col-md-6 mb-3">
+                                            <label class="form-label">Activity Title</label>
+                                            <input type="text" class="form-control" id="activityTitle" placeholder="Activity title" required>
+                                        </div>
+                                        <div class="col-md-3 mb-3">
+                                            <label class="form-label">Period</label>
+                                            <select class="form-select" id="activityPeriod" required>
+                                                <option value="daily">Daily</option>
+                                                <option value="weekly">Weekly</option>
+                                                <option value="monthly">Monthly</option>
+                                            </select>
+                                        </div>
+                                        <div class="col-md-3 mb-3">
+                                            <label class="form-label">Date</label>
+                                            <input type="date" class="form-control" id="activityDate" required>
+                                        </div>
+                                    </div>
+                                    <div class="row">
+                                        <div class="col-md-3 mb-3">
+                                            <label class="form-label">Time</label>
+                                            <input type="time" class="form-control" id="activityTime" required>
+                                        </div>
+                                        <div class="col-md-4 mb-3">
+                                            <label class="form-label">Schedule Note</label>
+                                            <input type="text" class="form-control" id="activitySchedule" placeholder="e.g. Every Friday">
+                                        </div>
+                                        <div class="col-md-5 mb-3">
+                                            <label class="form-label">Location</label>
+                                            <input type="text" class="form-control" id="activityLocation" placeholder="Location" required>
+                                        </div>
+                                    </div>
+                                    <div class="row">
+                                        <div class="col-12 mb-3">
+                                            <label class="form-label">Description</label>
+                                            <textarea class="form-control" id="activityDescription" rows="2" placeholder="Activity description" required></textarea>
+                                        </div>
+                                    </div>
+                                    <button type="submit" class="btn btn-primary">
+                                        <i class="fas fa-plus"></i> Add Activity
+                                    </button>
+                                </form>
+                            </div>
+                        </div>
+
+                        <ul class="nav nav-pills activity-tabs mb-4" role="tablist">
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link active" id="dailyActivitiesTabBtn" data-bs-toggle="tab" data-bs-target="#dailyActivitiesTab" type="button" role="tab">Daily</button>
+                            </li>
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link" id="weeklyActivitiesTabBtn" data-bs-toggle="tab" data-bs-target="#weeklyActivitiesTab" type="button" role="tab">Weekly</button>
+                            </li>
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link" id="monthlyActivitiesTabBtn" data-bs-toggle="tab" data-bs-target="#monthlyActivitiesTab" type="button" role="tab">Monthly</button>
+                            </li>
+                        </ul>
+
+                        <div class="tab-content">
+                            <div id="dailyActivitiesTab" class="tab-pane fade show active" role="tabpanel">
+                                <div id="dailyActivitiesList" class="activity-list"></div>
+                            </div>
+                            <div id="weeklyActivitiesTab" class="tab-pane fade" role="tabpanel">
+                                <div id="weeklyActivitiesList" class="activity-list"></div>
+                            </div>
+                            <div id="monthlyActivitiesTab" class="tab-pane fade" role="tabpanel">
+                                <div id="monthlyActivitiesList" class="activity-list"></div>
+                            </div>
                         </div>
                     </div>
 
@@ -1179,6 +1403,80 @@
                         </div>
 
                         <div id="resourcesGrid"></div>
+                    </div>
+
+                    <!-- Volunteer View -->
+                    <div id="volunteerView" class="view-container">
+                        <div class="page-header">
+                            <div>
+                                <h2>Volunteer Program</h2>
+                                <p class="text-muted mb-0">Join service teams and track your volunteer commitments.</p>
+                            </div>
+                            <button class="btn btn-primary" onclick="showVolunteerModal()">
+                                <i class="fas fa-plus"></i> Sign Up
+                            </button>
+                        </div>
+
+                        <div id="volunteerManagerPanel" class="card d-none">
+                            <div class="card-header">
+                                <h5 class="mb-0">Add Volunteer Opportunity</h5>
+                            </div>
+                            <div class="card-body">
+                                <form id="volunteerOpportunityForm" onsubmit="saveVolunteerOpportunity(event)">
+                                    <div class="row">
+                                        <div class="col-md-5 mb-3">
+                                            <label class="form-label">Title</label>
+                                            <input type="text" class="form-control" id="volunteerOpportunityTitle" placeholder="Opportunity title" required>
+                                        </div>
+                                        <div class="col-md-3 mb-3">
+                                            <label class="form-label">Hours</label>
+                                            <input type="number" class="form-control" id="volunteerOpportunityHours" min="1" placeholder="Hours" required>
+                                        </div>
+                                        <div class="col-md-4 mb-3">
+                                            <label class="form-label">Schedule</label>
+                                            <input type="text" class="form-control" id="volunteerOpportunitySchedule" placeholder="e.g. Saturdays" required>
+                                        </div>
+                                    </div>
+                                    <div class="mb-3">
+                                        <label class="form-label">Description</label>
+                                        <textarea class="form-control" id="volunteerOpportunityDescription" rows="2" placeholder="What volunteers will help with" required></textarea>
+                                    </div>
+                                    <button type="submit" class="btn btn-primary">
+                                        <i class="fas fa-plus"></i> Add Opportunity
+                                    </button>
+                                </form>
+                            </div>
+                        </div>
+
+                        <div class="row" id="volunteerOpportunitiesList">
+                            <div class="col-12 text-center text-muted">Volunteer opportunities will be loaded here.</div>
+                        </div>
+
+                        <div class="card mt-4">
+                            <div class="card-header">
+                                <h5 class="mb-0">Your Volunteer Signups</h5>
+                            </div>
+                            <div class="card-body">
+                                <div class="table-responsive">
+                                    <table class="table">
+                                        <thead>
+                                            <tr>
+                                                <th>Opportunity</th>
+                                                <th>Availability</th>
+                                                <th>Skills</th>
+                                                <th>Date</th>
+                                                <th>Status</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="volunteerRecordsList">
+                                            <tr>
+                                                <td colspan="5" class="text-center text-muted">No volunteer signups yet.</td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
                     </div>
 
                     <!-- Welfare View -->
@@ -1253,6 +1551,7 @@
                                         <button class="btn btn-primary w-100" onclick="showPaymentModal()">Make Payment</button>
                                     </div>
                                 </div>
+                                <div class="card mt-3" id="mpesaReadinessPanel"></div>
                             </div>
                         </div>
 
@@ -1261,6 +1560,20 @@
                                 <h5 class="mb-0">Payment History</h5>
                             </div>
                             <div class="card-body">
+                                <div class="row g-2 mb-3" id="paymentReviewControls">
+                                    <div class="col-md-4">
+                                        <select class="form-select form-select-sm" id="paymentStatusFilter" onchange="renderPaymentHistory()">
+                                            <option value="all">All statuses</option>
+                                            <option value="pending">Needs Review</option>
+                                            <option value="completed">Completed</option>
+                                            <option value="failed">Failed/Rejected</option>
+                                            <option value="waived">Waived</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-md-8">
+                                        <input type="search" class="form-control form-control-sm" id="paymentSearchInput" placeholder="Search name, reference, method, or amount" oninput="renderPaymentHistory()">
+                                    </div>
+                                </div>
                                 <table class="table">
                                     <thead>
                                         <tr>
@@ -1298,8 +1611,8 @@
                                     </div>
                                     <div class="card-body text-center">
                                         <p class="text-muted">Obligatory Charity</p>
-                                        <p class="stat-value">$500</p>
-                                        <small class="text-muted">Total contributed</small>
+                                        <p class="stat-value">Open</p>
+                                        <small class="text-muted">Ready for contributions</small>
                                         <button class="btn btn-sm btn-primary mt-3 w-100" onclick="showDonationModal('Zakat')">Contribute</button>
                                     </div>
                                 </div>
@@ -1312,8 +1625,8 @@
                                     </div>
                                     <div class="card-body text-center">
                                         <p class="text-muted">Voluntary Charity</p>
-                                        <p class="stat-value">$250</p>
-                                        <small class="text-muted">Total contributed</small>
+                                        <p class="stat-value">Open</p>
+                                        <small class="text-muted">Ready for contributions</small>
                                         <button class="btn btn-sm btn-primary mt-3 w-100" onclick="showDonationModal('Sadaqah')">Contribute</button>
                                     </div>
                                 </div>
@@ -1326,8 +1639,8 @@
                                     </div>
                                     <div class="card-body text-center">
                                         <p class="text-muted">General Donations</p>
-                                        <p class="stat-value">$180</p>
-                                        <small class="text-muted">Total contributed</small>
+                                        <p class="stat-value">Open</p>
+                                        <small class="text-muted">Ready for contributions</small>
                                         <button class="btn btn-sm btn-primary mt-3 w-100" onclick="showDonationModal('Community Fund')">Contribute</button>
                                     </div>
                                 </div>
@@ -1339,6 +1652,19 @@
                                 <h5 class="mb-0">Donation History</h5>
                             </div>
                             <div class="card-body">
+                                <div class="row g-2 mb-3" id="donationReviewControls">
+                                    <div class="col-md-4">
+                                        <select class="form-select form-select-sm" id="donationStatusFilter" onchange="renderDonationHistory()">
+                                            <option value="all">All statuses</option>
+                                            <option value="pending">Needs Review</option>
+                                            <option value="completed">Completed</option>
+                                            <option value="failed">Failed/Rejected</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-md-8">
+                                        <input type="search" class="form-control form-control-sm" id="donationSearchInput" placeholder="Search donor, reference, method, or amount" oninput="renderDonationHistory()">
+                                    </div>
+                                </div>
                                 <table class="table">
                                     <thead>
                                         <tr>
@@ -1347,12 +1673,13 @@
                                             <th>Amount</th>
                                             <th>Purpose</th>
                                             <th>Method</th>
+                                            <th>Status</th>
                                             <th>Receipt</th>
                                         </tr>
                                     </thead>
                                     <tbody id="donationHistoryList">
                                         <tr>
-                                            <td colspan="6" class="text-center text-muted">No donations made yet.</td>
+                                            <td colspan="7" class="text-center text-muted">No donations made yet.</td>
                                         </tr>
                                     </tbody>
                                 </table>
@@ -1479,7 +1806,7 @@
                                             <i class="fas fa-users"></i>
                                         </div>
                                         <h6>Total Members</h6>
-                                        <p class="stat-value">256</p>
+                                        <p class="stat-value" id="reportTotalMembers">0</p>
                                     </div>
                                 </div>
                             </div>
@@ -1490,7 +1817,7 @@
                                             <i class="fas fa-check"></i>
                                         </div>
                                         <h6>Active Members</h6>
-                                        <p class="stat-value">240</p>
+                                        <p class="stat-value" id="reportActiveMembers">0</p>
                                     </div>
                                 </div>
                             </div>
@@ -1501,7 +1828,7 @@
                                             <i class="fas fa-money-bill"></i>
                                         </div>
                                         <h6>Total Donations</h6>
-                                        <p class="stat-value">$15,240</p>
+                                        <p class="stat-value" id="reportTotalDonations">0</p>
                                     </div>
                                 </div>
                             </div>
@@ -1512,7 +1839,7 @@
                                             <i class="fas fa-calendar"></i>
                                         </div>
                                         <h6>Events Held</h6>
-                                        <p class="stat-value">28</p>
+                                        <p class="stat-value" id="reportEventsHeld">0</p>
                                     </div>
                                 </div>
                             </div>
@@ -1585,16 +1912,16 @@
                         </div>
                     </div>
 
-                    <!-- Admin: Gallery Management View -->
+                    <!-- Officer: Gallery & Video Management View -->
                     <div id="adminGalleryView" class="view-container">
                         <div class="page-header">
-                            <h2>Gallery Management</h2>
-                            <button class="btn btn-primary" onclick="showAddGalleryModal()">Add Gallery Item</button>
+                            <h2>Gallery & Video Management</h2>
+                            <button class="btn btn-primary" onclick="showAddGalleryModal()">Add Media Item</button>
                         </div>
 
                         <div class="card">
                             <div class="card-header">
-                                <h5 class="mb-0">Current Gallery Items</h5>
+                                <h5 class="mb-0">Current Gallery & Video Items</h5>
                             </div>
                             <div class="card-body">
                                 <table class="table">
@@ -1609,7 +1936,7 @@
                                     </thead>
                                     <tbody id="galleryItemsList">
                                         <tr>
-                                            <td colspan="5" class="text-center text-muted">No gallery items yet</td>
+                                            <td colspan="5" class="text-center text-muted">No gallery or video items yet</td>
                                         </tr>
                                     </tbody>
                                 </table>
@@ -1712,6 +2039,108 @@
                                         <p id="displayHours">Monday - Friday: 10 AM - 6 PM</p>
                                     </div>
                                 </div>
+                            </div>
+                        </div>
+
+                        <div class="card mt-4">
+                            <div class="card-header">
+                                <h5 class="mb-0">Social Media Links</h5>
+                            </div>
+                            <div class="card-body">
+                                <div class="row">
+                                    <div class="col-md-6 mb-3">
+                                        <label class="form-label">WhatsApp Link or Number</label>
+                                        <input type="text" class="form-control" id="contactWhatsapp" placeholder="+23231422167 or https://wa.me/...">
+                                    </div>
+                                    <div class="col-md-6 mb-3">
+                                        <label class="form-label">Facebook URL</label>
+                                        <input type="url" class="form-control" id="contactFacebook" placeholder="https://facebook.com/...">
+                                    </div>
+                                    <div class="col-md-6 mb-3">
+                                        <label class="form-label">X / Twitter URL</label>
+                                        <input type="url" class="form-control" id="contactX" placeholder="https://x.com/...">
+                                    </div>
+                                    <div class="col-md-6 mb-3">
+                                        <label class="form-label">Instagram URL</label>
+                                        <input type="url" class="form-control" id="contactInstagram" placeholder="https://instagram.com/...">
+                                    </div>
+                                    <div class="col-md-6 mb-3">
+                                        <label class="form-label">YouTube URL</label>
+                                        <input type="url" class="form-control" id="contactYoutube" placeholder="https://youtube.com/...">
+                                    </div>
+                                    <div class="col-md-6 mb-3">
+                                        <label class="form-label">TikTok URL</label>
+                                        <input type="url" class="form-control" id="contactTiktok" placeholder="https://tiktok.com/@...">
+                                    </div>
+                                    <div class="col-md-6 mb-3">
+                                        <label class="form-label">LinkedIn URL</label>
+                                        <input type="url" class="form-control" id="contactLinkedin" placeholder="https://linkedin.com/...">
+                                    </div>
+                                </div>
+                                <button class="btn btn-primary" onclick="saveContactAndSocialInfo()">Save Contact & Social Links</button>
+                            </div>
+                        </div>
+
+                        <div class="card mt-4">
+                            <div class="card-header d-flex justify-content-between align-items-center">
+                                <h5 class="mb-0">Voice Mail Inbox</h5>
+                                <button class="btn btn-sm btn-outline-primary" onclick="loadContactVoiceMessages()">Refresh</button>
+                            </div>
+                            <div class="card-body">
+                                <div id="contactVoiceMessagesList" class="voice-inbox-list">
+                                    <p class="text-muted mb-0">No voice messages loaded yet.</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Officer: Hadith Management View -->
+                    <div id="officerHadithsView" class="view-container">
+                        <div class="page-header">
+                            <h2>Hadith Management</h2>
+                        </div>
+
+                        <div class="card mb-4">
+                            <div class="card-header">
+                                <h5 class="mb-0">Add New Hadith</h5>
+                            </div>
+                            <div class="card-body">
+                                <form id="officerHadithForm" onsubmit="saveOfficerHadith(event)">
+                                    <div class="mb-3">
+                                        <label class="form-label">Arabic Text *</label>
+                                        <textarea class="form-control" id="officerHadithArabic" rows="3" placeholder="Hadith in Arabic" dir="rtl" required></textarea>
+                                    </div>
+                                    <div class="mb-3">
+                                        <label class="form-label">English Translation *</label>
+                                        <textarea class="form-control" id="officerHadithEnglish" rows="3" placeholder="English translation of hadith" required></textarea>
+                                    </div>
+                                    <div class="mb-3">
+                                        <label class="form-label">Reference</label>
+                                        <input type="text" class="form-control" id="officerHadithReference" placeholder="e.g., Sahih Bukhari 1901 & Muslim 760">
+                                    </div>
+                                    <div class="row">
+                                        <div class="col-md-6 mb-3">
+                                            <label class="form-label">Source</label>
+                                            <input type="text" class="form-control" id="officerHadithSource" placeholder="e.g., Prophet Muhammad (Peace Be Upon Him)">
+                                        </div>
+                                        <div class="col-md-6 mb-3">
+                                            <label class="form-label">Category</label>
+                                            <input type="text" class="form-control" id="officerHadithCategory" placeholder="e.g., Spirituality, Charity, Knowledge">
+                                        </div>
+                                    </div>
+                                    <button type="submit" class="btn btn-primary">
+                                        <i class="fas fa-save"></i> Add Hadith
+                                    </button>
+                                </form>
+                            </div>
+                        </div>
+
+                        <div class="card">
+                            <div class="card-header">
+                                <h5 class="mb-0">All Hadiths</h5>
+                            </div>
+                            <div class="card-body" id="officerHadithsList">
+                                <p class="text-muted mb-0">No hadiths added yet.</p>
                             </div>
                         </div>
                     </div>
@@ -2070,6 +2499,46 @@
         </div>
     </div>
 
+    <!-- Volunteer Signup Modal -->
+    <div class="modal fade" id="volunteerModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Volunteer Signup</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="volunteerForm">
+                        <div class="mb-3">
+                            <label class="form-label">Opportunity</label>
+                            <select class="form-select" id="volunteerOpportunity" required>
+                                <option value="">Select opportunity</option>
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Skills / Experience</label>
+                            <textarea class="form-control" id="volunteerSkills" rows="3" placeholder="Skills you can contribute"></textarea>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Availability</label>
+                            <input type="text" class="form-control" id="volunteerAvailability" placeholder="e.g. Saturdays, evenings, after Jumu'ah" required>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="volunteerCommit" required>
+                            <label class="form-check-label" for="volunteerCommit">
+                                I commit to participate and communicate early if my availability changes.
+                            </label>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-primary" onclick="submitVolunteerSignup()">Submit Signup</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- Create Event Modal (Admin) -->
     <div class="modal fade" id="createEventModal" tabindex="-1">
         <div class="modal-dialog modal-lg">
@@ -2157,10 +2626,11 @@
                                 <option value="vp">Vice President</option>
                                 <option value="secretary">Secretary General</option>
                                 <option value="treasurer">Treasurer</option>
+                                <option value="media">Media/Publicity Officer</option>
+                                <option value="organizer">Organizer</option>
                                 <option value="welfare">Welfare Officer</option>
                                 <option value="religious">Religious Affairs Officer</option>
                                 <option value="sisters">Sisters' Coordinator</option>
-                                <option value="media">Media/Publicity Officer</option>
                             </select>
                         </div>
                         <div class="mb-3">
@@ -2284,18 +2754,18 @@
         <div class="modal-dialog">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h5 class="modal-title">Add Gallery Item</h5>
+                    <h5 class="modal-title">Add Gallery or Video Item</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
                 <div class="modal-body">
                     <form id="addGalleryForm">
                         <div class="mb-3">
                             <label class="form-label">Title</label>
-                            <input type="text" class="form-control" id="galleryTitle" placeholder="Gallery item title" required>
+                            <input type="text" class="form-control" id="galleryTitle" placeholder="Media item title" required>
                         </div>
                         <div class="mb-3">
                             <label class="form-label">Description</label>
-                            <textarea class="form-control" id="galleryDescription" placeholder="Gallery item description" rows="3" required></textarea>
+                            <textarea class="form-control" id="galleryDescription" placeholder="Media item description" rows="3" required></textarea>
                         </div>
                         <div class="mb-3">
                             <label class="form-label">Image or Video</label>
@@ -2311,7 +2781,7 @@
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                    <button type="button" class="btn btn-primary" onclick="saveGalleryItem()">Add Item</button>
+                    <button type="button" class="btn btn-primary" onclick="saveGalleryItem()">Add Media</button>
                 </div>
             </div>
         </div>

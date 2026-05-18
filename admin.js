@@ -161,6 +161,23 @@ function readStore(key) {
     return JSON.parse(localStorage.getItem(key)) || [];
 }
 
+function getLocalSiteSettings() {
+    return {
+        contact_location: 'UMMA University, Main Campus',
+        contact_phone: '+23231422167',
+        contact_email: 'info@dawaah.org',
+        contact_hours: 'Monday - Friday: 10 AM - 6 PM',
+        social_whatsapp: 'https://api.whatsapp.com/send?phone=23231422167&text=Assalamu%20alaikum%2C%20I%20would%20like%20to%20contact%20Dawa%27ah.',
+        social_facebook: '',
+        social_x: '',
+        social_instagram: '',
+        social_youtube: '',
+        social_tiktok: '',
+        social_linkedin: '',
+        ...(JSON.parse(localStorage.getItem('siteSettings') || '{}'))
+    };
+}
+
 function writeStore(key, data) {
     localStorage.setItem(key, JSON.stringify(data));
 }
@@ -180,6 +197,137 @@ function addStoreItem(key, item) {
 function deleteStoreItem(key, id) {
     const items = readStore(key).filter(item => Number(item.id) !== Number(id));
     writeStore(key, items);
+}
+
+function updateLocalTransaction(storeKey, id, patch) {
+    const keyNames = storeKey === 'payments'
+        ? ['id', 'dbPaymentId', 'payment_id']
+        : ['id', 'dbDonationId', 'donation_id'];
+    const items = readStore(storeKey).map(item => {
+        const matches = keyNames.some(key => String(item[key] || '') === String(id));
+        return matches ? { ...item, ...patch } : item;
+    });
+    writeStore(storeKey, items);
+}
+
+function isSpecialRole(role) {
+    return !['student', 'admin'].includes(String(role || 'student').toLowerCase());
+}
+
+function getLocalPendingRoleRequests() {
+    return readStore('allMembers')
+        .filter(member => isSpecialRole(member.role) && String(member.status || '').toLowerCase() !== 'active')
+        .map(member => ({
+            id: member.dbUserId || member.user_id || member.id || member.studentId || member.username,
+            username: member.username || member.studentId || '',
+            email: member.email || '',
+            role: member.role || 'student',
+            status: member.status || 'Pending',
+            created_at: member.created_at || member.createdAt || '',
+            first_name: member.fullName || member.name || '',
+            last_name: '',
+            student_id: member.studentId || member.username || '',
+            phone: member.phone || '',
+            course: member.course || '',
+            year_of_study: member.yearOfStudy || ''
+        }));
+}
+
+function approveLocalRoleRequest(userId) {
+    const members = readStore('allMembers');
+    const target = members.find(member => String(member.dbUserId || member.user_id || member.id || member.studentId || member.username) === String(userId));
+    if (!target || !isSpecialRole(target.role)) {
+        return { success: false, message: 'Role request not found.' };
+    }
+    const activeHolder = members.find(member =>
+        member !== target &&
+        String(member.role || '').toLowerCase() === String(target.role || '').toLowerCase() &&
+        String(member.status || '').toLowerCase() === 'active'
+    );
+    if (activeHolder) {
+        return { success: false, message: `${target.role} role is already active. Remove or deactivate the existing holder first.` };
+    }
+    writeStore('allMembers', members.map(member =>
+        member === target ? { ...member, status: 'Active' } : member
+    ));
+    logLocalAdminActivity('approveRoleRequest', { user_id: userId, role: target.role, username: target.username || target.studentId || '' });
+    return { success: true, message: 'Role request approved' };
+}
+
+function rejectLocalRoleRequest(userId) {
+    const members = readStore('allMembers');
+    const target = members.find(member => String(member.dbUserId || member.user_id || member.id || member.studentId || member.username) === String(userId));
+    if (!target || !isSpecialRole(target.role)) {
+        return { success: false, message: 'Role request not found.' };
+    }
+    writeStore('allMembers', members.map(member =>
+        member === target ? { ...member, rejectedRole: member.role, role: 'student', status: 'Suspended' } : member
+    ));
+    logLocalAdminActivity('rejectRoleRequest', { user_id: userId, role: target.role, username: target.username || target.studentId || '' });
+    return { success: true, message: 'Role request rejected' };
+}
+
+function getLocalRoleAssignableMembers() {
+    return readStore('allMembers').map(member => ({
+        id: member.dbUserId || member.user_id || member.id || member.studentId || member.username,
+        username: member.username || member.studentId || '',
+        email: member.email || '',
+        role: member.role || 'student',
+        status: member.status || 'Active',
+        first_name: member.fullName || member.name || '',
+        last_name: '',
+        student_id: member.studentId || member.username || '',
+        phone: member.phone || '',
+        course: member.course || '',
+        year_of_study: member.yearOfStudy || ''
+    }));
+}
+
+function assignLocalMemberRole(request) {
+    const userId = request.user_id;
+    const role = String(request.role || 'student').toLowerCase();
+    const status = String(request.status || 'active').toLowerCase() === 'inactive' ? 'Inactive' : 'Active';
+    const members = readStore('allMembers');
+    const target = members.find(member => String(member.dbUserId || member.user_id || member.id || member.studentId || member.username) === String(userId));
+    if (!target) {
+        return { success: false, message: 'Member not found.' };
+    }
+    if (isSpecialRole(role) && status.toLowerCase() === 'active') {
+        const activeHolder = members.find(member =>
+            member !== target &&
+            String(member.role || '').toLowerCase() === role &&
+            String(member.status || '').toLowerCase() === 'active'
+        );
+        if (activeHolder) {
+            return { success: false, message: `${role} role is already active. Remove or deactivate the existing holder first.` };
+        }
+    }
+    writeStore('allMembers', members.map(member =>
+        member === target ? { ...member, role, status } : member
+    ));
+    logLocalAdminActivity('assignMemberRole', { user_id: userId, role, status, username: target.username || target.studentId || '' });
+    return { success: true, message: 'Member role updated' };
+}
+
+function resetLocalMemberPassword(request) {
+    const userId = request.user_id;
+    const newPassword = String(request.new_password || '');
+    const members = readStore('allMembers');
+    const target = members.find(member => String(member.dbUserId || member.user_id || member.id || member.studentId || member.username) === String(userId));
+    if (!target) {
+        return { success: false, message: 'Member account not found.' };
+    }
+    if (newPassword.length < 6) {
+        return { success: false, message: 'Temporary password must be at least 6 characters.' };
+    }
+    if (members.some(member => member.password && member.password === newPassword)) {
+        return { success: false, message: 'Please choose a different temporary password. Passwords must be unique.' };
+    }
+    writeStore('allMembers', members.map(member =>
+        member === target ? { ...member, password: newPassword } : member
+    ));
+    logLocalAdminActivity('resetMemberPassword', { user_id: userId, username: target.username || target.studentId || '' });
+    return { success: true, message: 'Member password reset successfully' };
 }
 
 function logStaticContentActivity(action, method, payload, result) {
@@ -202,6 +350,8 @@ function logStaticContentActivity(action, method, payload, result) {
         'deleteResource',
         'approvePayment',
         'approveDonation',
+        'rejectPayment',
+        'rejectDonation',
         'seedSampleData'
     ];
     if (!result?.success || !trackedActions.includes(action) || !['POST', 'PUT', 'DELETE'].includes(method)) {
@@ -235,6 +385,8 @@ function shouldQueueLocalApproval(action, method) {
         'deleteResource',
         'approvePayment',
         'approveDonation',
+        'rejectPayment',
+        'rejectDonation',
         'seedSampleData'
     ].includes(action);
 }
@@ -305,6 +457,22 @@ function runApprovedLocalAction(actionName, request) {
     }
     if (actionName === 'deleteResource') {
         deleteStoreItem('adminResources', request.resource_id);
+        return { success: true };
+    }
+    if (actionName === 'approvePayment') {
+        updateLocalTransaction('payments', request.payment_id, { status: 'Completed', receiptNumber: `RCP-${request.payment_id || Date.now()}` });
+        return { success: true };
+    }
+    if (actionName === 'approveDonation') {
+        updateLocalTransaction('donations', request.donation_id, { status: 'Completed', receiptNumber: `DRT-${request.donation_id || Date.now()}` });
+        return { success: true };
+    }
+    if (actionName === 'rejectPayment') {
+        updateLocalTransaction('payments', request.payment_id, { status: 'Rejected', notes: request.notes || 'Rejected by admin/treasurer' });
+        return { success: true };
+    }
+    if (actionName === 'rejectDonation') {
+        updateLocalTransaction('donations', request.donation_id, { status: 'Rejected' });
         return { success: true };
     }
     if (actionName === 'setPrayerTimes') {
@@ -496,6 +664,9 @@ function handleStaticAdminApi(action, method, payload, params) {
             return registerLocalAdmin(payload);
         case 'loginAdmin':
             return loginLocalAdmin(payload);
+        case 'requestAdminPasswordReset':
+        case 'resetAdminPasswordWithCode':
+            return { success: false, message: 'Secure admin email reset requires the PHP backend and configured email delivery.' };
         case 'logoutAdmin':
             sessionStorage.removeItem('currentAdminUser');
             return { success: true };
@@ -508,13 +679,36 @@ function handleStaticAdminApi(action, method, payload, params) {
         case 'deleteAdminAccount':
             if (!isCurrentLocalMainAdmin()) return { success: false, message: 'Only the main admin can manage admin accounts.' };
             return deleteLocalAdminAccount(payload.admin_id);
+        case 'getPendingRoleRequests':
+            if (!isCurrentLocalMainAdmin()) return { success: false, message: 'Only the main admin can view role requests.' };
+            return { success: true, data: getLocalPendingRoleRequests() };
+        case 'getRoleAssignableMembers':
+            if (!isCurrentLocalMainAdmin()) return { success: false, message: 'Only the main admin can view members.' };
+            return { success: true, data: getLocalRoleAssignableMembers() };
+        case 'assignMemberRole':
+            if (!isCurrentLocalMainAdmin()) return { success: false, message: 'Only the main admin can assign roles.' };
+            return assignLocalMemberRole(payload);
+        case 'resetMemberPassword':
+            if (!isCurrentLocalMainAdmin()) return { success: false, message: 'Only the main admin can reset member passwords.' };
+            return resetLocalMemberPassword(payload);
+        case 'approveRoleRequest':
+            if (!isCurrentLocalMainAdmin()) return { success: false, message: 'Only the main admin can approve role requests.' };
+            return approveLocalRoleRequest(payload.user_id);
+        case 'rejectRoleRequest':
+            if (!isCurrentLocalMainAdmin()) return { success: false, message: 'Only the main admin can reject role requests.' };
+            return rejectLocalRoleRequest(payload.user_id);
         case 'changeAdminPassword':
             return changeLocalAdminPassword(payload);
         case 'resetAdminPassword':
-            return resetLocalAdminPassword(payload);
+            return { success: false, message: 'Admin password reset must be completed through the registered admin email.' };
         case 'getAdminActivityLogs':
             if (!isCurrentLocalMainAdmin()) return { success: false, message: 'Only the main admin can view admin activity.' };
-            return { success: true, data: readStore('adminActivityLogs').slice(-100).reverse() };
+            return {
+                success: true,
+                data: [...readStore('adminActivityLogs'), ...readStore('roleActivityLogs')]
+                    .sort((a, b) => new Date(b.created_at || b.id || 0) - new Date(a.created_at || a.id || 0))
+                    .slice(0, 100)
+            };
         case 'getMyAdminActivityLogs': {
             const sessionAdmin = JSON.parse(sessionStorage.getItem('currentAdminUser') || 'null');
             const logs = readStore('adminActivityLogs')
@@ -592,6 +786,11 @@ function handleStaticAdminApi(action, method, payload, params) {
         case 'deleteGalleryItem':
             deleteStoreItem('galleryItems', payload.gallery_id);
             return { success: true };
+        case 'getSiteSettings':
+            return { success: true, data: getLocalSiteSettings() };
+        case 'updateSiteSettings':
+            localStorage.setItem('siteSettings', JSON.stringify({ ...getLocalSiteSettings(), ...payload }));
+            return { success: true, message: 'Saved locally', data: getLocalSiteSettings() };
 
         case 'getHadiths':
             return { success: true, data: readStore('adminHadiths') };
@@ -616,10 +815,20 @@ function handleStaticAdminApi(action, method, payload, params) {
                     pending_welfare: readStore('welfareRequests').filter(item => item.status === 'Pending Review' || item.status === 'pending').length,
                     payments: readStore('payments').length,
                     completed_payments: readStore('payments').filter(item => item.status === 'Completed' || item.status === 'completed').length,
+                    pending_payments: readStore('payments').filter(item => ['Pending', 'pending', 'Pending Approval'].includes(item.status)).length,
+                    failed_payments: readStore('payments').filter(item => ['Failed', 'failed', 'Rejected', 'rejected'].includes(item.status)).length,
                     payment_total: readStore('payments').filter(item => item.status === 'Completed' || item.status === 'completed').reduce((sum, item) => sum + Number(item.amount || 0), 0),
+                    month_payment_total: readStore('payments').filter(item => item.status === 'Completed' || item.status === 'completed').reduce((sum, item) => sum + Number(item.amount || 0), 0),
+                    pending_payment_amount: readStore('payments').filter(item => ['Pending', 'pending', 'Pending Approval'].includes(item.status)).reduce((sum, item) => sum + Number(item.amount || 0), 0),
+                    failed_payment_amount: readStore('payments').filter(item => ['Failed', 'failed', 'Rejected', 'rejected'].includes(item.status)).reduce((sum, item) => sum + Number(item.amount || 0), 0),
                     donations: readStore('donations').length,
-                    completed_donations: readStore('donations').length,
-                    donation_total: readStore('donations').reduce((sum, item) => sum + Number(item.amount || 0), 0),
+                    completed_donations: readStore('donations').filter(item => item.status === 'Completed' || item.status === 'completed').length,
+                    pending_donations: readStore('donations').filter(item => ['Pending', 'pending', 'Pending Approval'].includes(item.status)).length,
+                    failed_donations: readStore('donations').filter(item => ['Failed', 'failed', 'Rejected', 'rejected'].includes(item.status)).length,
+                    donation_total: readStore('donations').filter(item => item.status === 'Completed' || item.status === 'completed').reduce((sum, item) => sum + Number(item.amount || 0), 0),
+                    month_donation_total: readStore('donations').filter(item => item.status === 'Completed' || item.status === 'completed').reduce((sum, item) => sum + Number(item.amount || 0), 0),
+                    pending_donation_amount: readStore('donations').filter(item => ['Pending', 'pending', 'Pending Approval'].includes(item.status)).reduce((sum, item) => sum + Number(item.amount || 0), 0),
+                    failed_donation_amount: readStore('donations').filter(item => ['Failed', 'failed', 'Rejected', 'rejected'].includes(item.status)).reduce((sum, item) => sum + Number(item.amount || 0), 0),
                     resources: readStore('adminResources').length,
                     gallery: readStore('galleryItems').length,
                     leaders: readStore('publicLeaders').length,
@@ -629,6 +838,18 @@ function handleStaticAdminApi(action, method, payload, params) {
             };
         case 'getDashboardDetail':
             return getStaticDashboardDetail(params.get('type'));
+        case 'approvePayment':
+            updateLocalTransaction('payments', payload.payment_id, { status: 'Completed', receiptNumber: `RCP-${payload.payment_id || Date.now()}` });
+            return { success: true, message: 'Approved locally' };
+        case 'approveDonation':
+            updateLocalTransaction('donations', payload.donation_id, { status: 'Completed', receiptNumber: `DRT-${payload.donation_id || Date.now()}` });
+            return { success: true, message: 'Approved locally' };
+        case 'rejectPayment':
+            updateLocalTransaction('payments', payload.payment_id, { status: 'Rejected', notes: payload.notes || 'Rejected by admin/treasurer' });
+            return { success: true, message: 'Rejected locally' };
+        case 'rejectDonation':
+            updateLocalTransaction('donations', payload.donation_id, { status: 'Rejected' });
+            return { success: true, message: 'Rejected locally' };
         case 'getWelfareRequests':
             return { success: true, data: readStore('welfareRequests') };
         case 'updateWelfareStatus': {
@@ -686,7 +907,11 @@ document.addEventListener('DOMContentLoaded', async function() {
     normalizeLocalAdminAccountsOnce();
     document.getElementById('adminLoginForm')?.addEventListener('submit', handleAdminLogin);
     document.getElementById('adminRegisterForm')?.addEventListener('submit', handleAdminRegistration);
+    document.getElementById('adminForgotPasswordForm')?.addEventListener('submit', handleAdminForgotPassword);
+    document.getElementById('adminResetWithCodeForm')?.addEventListener('submit', handleAdminResetWithCode);
     document.getElementById('adminCreateForm')?.addEventListener('submit', handleManagedAdminCreate);
+    document.getElementById('memberRoleAssignForm')?.addEventListener('submit', handleMemberRoleAssign);
+    document.getElementById('memberPasswordResetForm')?.addEventListener('submit', handleMemberPasswordReset);
     document.getElementById('adminChangePasswordForm')?.addEventListener('submit', handleAdminPasswordChange);
     await refreshAdminSetupUi();
     const isAuthenticated = await checkAdminAuth();
@@ -928,8 +1153,8 @@ async function registerLocalAdmin(payload) {
     if (!username || !email || !password) {
         return { success: false, message: 'All admin registration fields are required.' };
     }
-    if (password.length < 6) {
-        return { success: false, message: 'Password must be at least 6 characters.' };
+    if (!isStrongAdminPassword(password)) {
+        return { success: false, message: 'Admin password must be at least 12 characters and include uppercase, lowercase, number, and symbol.' };
     }
     if (accounts.length > 0) {
         return { success: false, message: 'Only the first admin can register here. Other admins must be added inside the admin panel.' };
@@ -983,8 +1208,8 @@ async function createLocalAdminByAdmin(payload) {
     if (!username || !email || !password) {
         return { success: false, message: 'All admin fields are required.' };
     }
-    if (password.length < 6) {
-        return { success: false, message: 'Password must be at least 6 characters.' };
+    if (!isStrongAdminPassword(password)) {
+        return { success: false, message: 'Admin password must be at least 12 characters and include uppercase, lowercase, number, and symbol.' };
     }
     if (accounts.length >= ADMIN_ACCOUNT_LIMIT) {
         return { success: false, message: 'This admin can only add two other admins.' };
@@ -1051,8 +1276,8 @@ async function changeLocalAdminPassword(payload) {
     if (!currentPassword || !newPassword) {
         return { success: false, message: 'Current and new password are required.' };
     }
-    if (newPassword.length < 6) {
-        return { success: false, message: 'New password must be at least 6 characters.' };
+    if (!isStrongAdminPassword(newPassword)) {
+        return { success: false, message: 'Admin password must be at least 12 characters and include uppercase, lowercase, number, and symbol.' };
     }
     if (!(await verifyLocalAdminPassword(accounts[index], currentPassword))) {
         return { success: false, message: 'Current password is incorrect.' };
@@ -1067,27 +1292,7 @@ async function changeLocalAdminPassword(payload) {
 }
 
 async function resetLocalAdminPassword(payload) {
-    const adminId = Number(payload.admin_id);
-    const newPassword = String(payload.new_password || '');
-    const accounts = getLocalAdminAccounts();
-    const index = accounts.findIndex(account => Number(account.id) === adminId);
-    if (index < 0) {
-        return { success: false, message: 'Admin account not found.' };
-    }
-    if (newPassword.length < 6) {
-        return { success: false, message: 'New password must be at least 6 characters.' };
-    }
-    const sessionAdmin = JSON.parse(sessionStorage.getItem('currentAdminUser') || 'null');
-    if (Number(sessionAdmin?.id) !== adminId && !isCurrentLocalMainAdmin()) {
-        return { success: false, message: 'Only the main admin can reset another admin password.' };
-    }
-    accounts[index] = {
-        ...accounts[index],
-        ...(await hashAdminPassword(newPassword))
-    };
-    saveLocalAdminAccounts(accounts);
-    logLocalAdminActivity('resetAdminPassword', { admin_id: adminId });
-    return { success: true, message: 'Admin password reset successfully.' };
+    return { success: false, message: 'Admin password reset must be completed through the registered admin email.' };
 }
 
 async function loginLocalAdmin(payload) {
@@ -1184,6 +1389,7 @@ function setAdminUser(user) {
     currentAdmin = {
         id: resolvedUser.id,
         username: resolvedUser.username,
+        email: resolvedUser.email || '',
         fullName: resolvedUser.fullName || resolvedUser.full_name || resolvedUser.username,
         role: resolvedUser.role,
         profile_photo: resolvedUser.profile_photo || '',
@@ -1291,12 +1497,102 @@ function clearAdminLoginFailures() {
     localStorage.removeItem(ADMIN_LOGIN_FAILURE_KEY);
 }
 
+function isStrongAdminPassword(password) {
+    return String(password || '').length >= 12
+        && /[A-Z]/.test(password)
+        && /[a-z]/.test(password)
+        && /[0-9]/.test(password)
+        && /[^A-Za-z0-9]/.test(password);
+}
+
 function startAdminSessionTimer() {
     clearTimeout(adminSessionTimeoutId);
     adminSessionTimeoutId = setTimeout(() => {
         showNotification('Admin session timed out for security. Please log in again.', 'warning');
         setTimeout(logoutAdmin, 1200);
     }, ADMIN_SESSION_TIMEOUT_MS);
+}
+
+async function handleAdminForgotPassword(event) {
+    event.preventDefault();
+    const email = document.getElementById('adminForgotEmail').value.trim();
+    const button = document.getElementById('adminForgotButton');
+    const error = document.getElementById('adminLoginError');
+
+    if (error) {
+        error.textContent = '';
+        error.classList.remove('active');
+    }
+
+    button.disabled = true;
+    button.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Sending...';
+
+    try {
+        const response = await fetch(`${API_URL}?action=requestAdminPasswordReset`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ email })
+        });
+        const result = await parseJsonResponse(response);
+        if (!result.success) {
+            showAdminLogin(result.message || 'Could not send admin reset code.');
+            bootstrap.Tab.getOrCreateInstance(document.getElementById('adminForgotTabBtn')).show();
+            return;
+        }
+        showNotification('If this email belongs to an active admin, a reset code was sent there.', 'success');
+    } catch (error) {
+        showAdminLogin('Could not send reset code. Check the server email configuration.');
+        bootstrap.Tab.getOrCreateInstance(document.getElementById('adminForgotTabBtn')).show();
+    } finally {
+        button.disabled = false;
+        button.innerHTML = '<i class="fas fa-envelope"></i> Send Reset Code';
+    }
+}
+
+async function handleAdminResetWithCode(event) {
+    event.preventDefault();
+    const email = document.getElementById('adminForgotEmail').value.trim();
+    const code = document.getElementById('adminResetCode').value.trim();
+    const password = document.getElementById('adminResetNewPassword').value;
+    const button = document.getElementById('adminResetWithCodeButton');
+
+    if (!email) {
+        showAdminLogin('Enter the registered admin email first.');
+        bootstrap.Tab.getOrCreateInstance(document.getElementById('adminForgotTabBtn')).show();
+        return;
+    }
+    if (!isStrongAdminPassword(password)) {
+        showAdminLogin('Admin password must be at least 12 characters and include uppercase, lowercase, number, and symbol.');
+        bootstrap.Tab.getOrCreateInstance(document.getElementById('adminForgotTabBtn')).show();
+        return;
+    }
+
+    button.disabled = true;
+    button.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Resetting...';
+
+    try {
+        const response = await fetch(`${API_URL}?action=resetAdminPasswordWithCode`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ email, code, password })
+        });
+        const result = await parseJsonResponse(response);
+        if (!result.success) {
+            showAdminLogin(result.message || 'Could not reset admin password.');
+            bootstrap.Tab.getOrCreateInstance(document.getElementById('adminForgotTabBtn')).show();
+            return;
+        }
+        document.getElementById('adminForgotPasswordForm')?.reset();
+        document.getElementById('adminResetWithCodeForm')?.reset();
+        showNotification('Admin password reset successfully. Login with the new password.', 'success');
+        bootstrap.Tab.getOrCreateInstance(document.getElementById('adminLoginTabBtn')).show();
+    } catch (error) {
+        showAdminLogin('Could not reset admin password. Check the code and try again.');
+        bootstrap.Tab.getOrCreateInstance(document.getElementById('adminForgotTabBtn')).show();
+    } finally {
+        button.disabled = false;
+        button.innerHTML = '<i class="fas fa-key"></i> Set New Password';
+    }
 }
 
 async function handleAdminRegistration(event) {
@@ -1314,6 +1610,10 @@ async function handleAdminRegistration(event) {
     }
     if (password !== confirmPassword) {
         showAdminLogin('Passwords do not match.');
+        return;
+    }
+    if (!isStrongAdminPassword(password)) {
+        showAdminLogin('Admin password must be at least 12 characters and include uppercase, lowercase, number, and symbol.');
         return;
     }
 
@@ -1386,6 +1686,7 @@ function switchAdminView(viewName) {
             'events': '<i class="fas fa-calendar"></i> Events',
             'leadership': '<i class="fas fa-users"></i> Leadership',
             'gallery': '<i class="fas fa-images"></i> Gallery',
+            'contactVoices': '<i class="fas fa-share-nodes"></i> Contact & Social',
             'welfare': '<i class="fas fa-hands-helping"></i> Welfare',
             'prayer': '<i class="fas fa-mosque"></i> Prayer & Religious Activities',
             'account': '<i class="fas fa-user-gear"></i> My Account',
@@ -1429,6 +1730,10 @@ function loadViewData(viewName) {
         case 'gallery':
             loadGallery();
             break;
+        case 'contactVoices':
+            loadAdminSiteSettings();
+            loadAdminContactVoiceMessages();
+            break;
         case 'hadiths':
             loadHadiths();
             break;
@@ -1458,8 +1763,375 @@ function loadAccountAdminTools() {
     if (!currentAdmin?.isMainAdmin) {
         return;
     }
+    loadPendingRoleRequests();
+    loadRoleAssignableMembers();
     loadAdminAccounts();
     loadAdminActivityLogs();
+}
+
+function loadRoleAssignableMembers() {
+    const select = document.getElementById('memberRoleUser');
+    if (!select) return;
+    select.innerHTML = '<option value="" disabled selected>Loading members...</option>';
+
+    fetch(`${API_URL}?action=getRoleAssignableMembers`)
+    .then(response => parseJsonResponse(response))
+    .then(result => {
+        if (!result.success) {
+            throw new Error(result.message || 'Could not load members');
+        }
+        renderRoleAssignableMembers(result.data || []);
+    })
+    .catch(error => {
+        select.innerHTML = `<option value="" disabled selected>${escapeAdminText(error.message || 'Could not load members')}</option>`;
+    });
+}
+
+function renderRoleAssignableMembers(members) {
+    const select = document.getElementById('memberRoleUser');
+    const passwordSelect = document.getElementById('memberPasswordUser');
+    if (!select && !passwordSelect) return;
+    if (!members.length) {
+        if (select) select.innerHTML = '<option value="" disabled selected>No registered members found</option>';
+        if (passwordSelect) passwordSelect.innerHTML = '<option value="" disabled selected>No registered members found</option>';
+        return;
+    }
+
+    const memberOptions = '<option value="" disabled selected>Select member</option>' + members.map(member => {
+        const name = [member.first_name, member.last_name].filter(Boolean).join(' ') || member.username || member.student_id || 'Member';
+        const role = formatAdminRoleName(member.role || 'student');
+        const status = member.status || 'active';
+        return `<option value="${escapeAdminText(member.id)}">${escapeAdminText(name)} - ${escapeAdminText(role)} (${escapeAdminText(status)})</option>`;
+    }).join('');
+    if (select) select.innerHTML = memberOptions;
+    if (passwordSelect) passwordSelect.innerHTML = memberOptions;
+}
+
+function formatAdminRoleName(role) {
+    const labels = {
+        executive: 'Sub Admin / Executive',
+        chairman: 'Chairman / Welfare Lead',
+        chairlady: 'Chairlady / Welfare Lead',
+        secretary: 'Secretary',
+        treasurer: 'Treasurer',
+        media: 'Media',
+        organizer: 'Organizer',
+        imam: 'Imam / Religious Lead',
+        student: 'Student Member'
+    };
+    return labels[String(role || 'student').toLowerCase()] || role;
+}
+
+function getOfficerApprovalSummary(role) {
+    const summaries = {
+        chairman: 'Approving gives access to welfare management and oversight reports.',
+        chairlady: 'Approving gives access to welfare management and oversight reports.',
+        secretary: 'Approving gives access to member records, announcements, and reports.',
+        treasurer: 'Approving gives access to dues, donations, payment confirmation, and reports.',
+        media: 'Approving gives access to gallery, videos, contact messages, and publicity tools.',
+        organizer: 'Approving gives access to events, daily/weekly/monthly activities, and volunteer tools.',
+        imam: 'Approving gives access to prayer times, hadiths, Islamic resources, lectures, and religious reminders.'
+    };
+    return summaries[String(role || '').toLowerCase()] || 'Approving gives access only to the tools assigned to this role.';
+}
+
+function handleMemberRoleAssign(event) {
+    event.preventDefault();
+    const userId = document.getElementById('memberRoleUser')?.value;
+    const role = document.getElementById('memberRoleValue')?.value;
+    const status = document.getElementById('memberRoleStatus')?.value || 'active';
+    const button = document.getElementById('memberRoleAssignButton');
+    if (!userId || !role) {
+        showNotification('Please choose a member and role.', 'warning');
+        return;
+    }
+
+    if (button) {
+        button.disabled = true;
+        button.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving...';
+    }
+
+    fetch(`${API_URL}?action=assignMemberRole`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ user_id: userId, role, status })
+    })
+    .then(response => parseJsonResponse(response))
+    .then(result => {
+        if (!result.success) throw new Error(result.message || 'Could not assign role');
+        showNotification('Member role updated.', 'success');
+        loadRoleAssignableMembers();
+        loadPendingRoleRequests();
+        loadDashboardStats();
+    })
+    .catch(error => showNotification(error.message || 'Could not assign role', 'danger'))
+    .finally(() => {
+        if (button) {
+            button.disabled = false;
+            button.innerHTML = '<i class="fas fa-save"></i> Save Role';
+        }
+    });
+}
+
+function handleMemberPasswordReset(event) {
+    event.preventDefault();
+    const userId = document.getElementById('memberPasswordUser')?.value;
+    const newPassword = document.getElementById('memberTemporaryPassword')?.value || '';
+    const button = document.getElementById('memberPasswordResetButton');
+    if (!userId || !newPassword) {
+        showNotification('Please choose a member and temporary password.', 'warning');
+        return;
+    }
+    if (newPassword.length < 6) {
+        showNotification('Temporary password must be at least 6 characters.', 'warning');
+        return;
+    }
+
+    if (button) {
+        button.disabled = true;
+        button.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Resetting...';
+    }
+
+    fetch(`${API_URL}?action=resetMemberPassword`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ user_id: userId, new_password: newPassword })
+    })
+    .then(response => parseJsonResponse(response))
+    .then(result => {
+        if (!result.success) throw new Error(result.message || 'Could not reset password');
+        document.getElementById('memberPasswordResetForm')?.reset();
+        showNotification('Member password reset successfully. Share the temporary password privately.', 'success');
+    })
+    .catch(error => showNotification(error.message || 'Could not reset password', 'danger'))
+    .finally(() => {
+        if (button) {
+            button.disabled = false;
+            button.innerHTML = '<i class="fas fa-rotate"></i> Reset';
+        }
+    });
+}
+
+function loadPendingRoleRequests() {
+    const container = document.getElementById('pendingRoleRequestsList');
+    if (!container) return;
+    container.innerHTML = '<p class="text-muted">Loading pending role requests...</p>';
+
+    fetch(`${API_URL}?action=getPendingRoleRequests`)
+    .then(response => parseJsonResponse(response))
+    .then(result => {
+        if (!result.success) {
+            throw new Error(result.message || 'Could not load role requests');
+        }
+        renderPendingRoleRequests(result.data || []);
+    })
+    .catch(error => {
+        container.innerHTML = `<p class="text-danger">${escapeAdminText(error.message || 'Could not load role requests')}</p>`;
+    });
+}
+
+function renderPendingRoleRequests(requests) {
+    const container = document.getElementById('pendingRoleRequestsList');
+    if (!container) return;
+
+    if (!requests.length) {
+        container.innerHTML = '<div class="admin-empty-state"><i class="fas fa-circle-check"></i><h5>No pending role requests</h5><p class="text-muted mb-0">Special role approvals will appear here.</p></div>';
+        return;
+    }
+
+    container.innerHTML = `
+        <div class="pending-role-grid">
+            ${requests.map(request => {
+                const name = [request.first_name, request.last_name].filter(Boolean).join(' ') || request.username || request.student_id || 'Member';
+                const userId = request.id || request.user_id || request.username || request.student_id;
+                const roleLabel = formatAdminRoleName(request.role || '-');
+                const roleSummary = getOfficerApprovalSummary(request.role);
+                return `
+                    <article class="pending-role-card">
+                        <div class="pending-role-card__icon"><i class="fas fa-user-shield"></i></div>
+                        <div class="pending-role-card__body">
+                            <div class="d-flex justify-content-between gap-2 flex-wrap">
+                                <div>
+                                    <h5>${escapeAdminText(name)}</h5>
+                                    ${request.student_id ? `<p class="text-muted mb-1">${escapeAdminText(request.student_id)}</p>` : ''}
+                                    <p class="text-muted mb-0">${escapeAdminText(request.email || '-')}</p>
+                                </div>
+                                <div class="text-end">
+                                    <span class="badge bg-primary">${escapeAdminText(roleLabel)}</span>
+                                    <span class="badge bg-warning text-dark">${escapeAdminText(request.status || 'pending')}</span>
+                                </div>
+                            </div>
+                            <p class="text-muted mt-3 mb-0">${escapeAdminText(roleSummary)}</p>
+                            <div class="pending-role-card__footer">
+                                <small class="text-muted">${request.created_at ? new Date(request.created_at).toLocaleString() : '-'}</small>
+                                <div>
+                                    <button class="btn btn-sm btn-success me-1" onclick="approveRoleRequest('${encodeURIComponent(userId)}')">
+                                        <i class="fas fa-circle-check"></i> Approve
+                                    </button>
+                                    <button class="btn btn-sm btn-outline-danger" onclick="rejectRoleRequest('${encodeURIComponent(userId)}')">
+                                        <i class="fas fa-circle-xmark"></i> Reject
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </article>
+                `;
+            }).join('')}
+        </div>
+    `;
+}
+
+function approveRoleRequest(userId) {
+    userId = decodeURIComponent(userId);
+    fetch(`${API_URL}?action=approveRoleRequest`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ user_id: userId })
+    })
+    .then(response => parseJsonResponse(response))
+    .then(result => {
+        if (!result.success) throw new Error(result.message || 'Could not approve role request');
+        showNotification('Role request approved.', 'success');
+        loadPendingRoleRequests();
+        loadDashboardStats();
+    })
+    .catch(error => showNotification(error.message || 'Could not approve role request', 'danger'));
+}
+
+function rejectRoleRequest(userId) {
+    userId = decodeURIComponent(userId);
+    if (!confirm('Reject this role request? The role will become available for another member.')) return;
+    fetch(`${API_URL}?action=rejectRoleRequest`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ user_id: userId })
+    })
+    .then(response => parseJsonResponse(response))
+    .then(result => {
+        if (!result.success) throw new Error(result.message || 'Could not reject role request');
+        showNotification('Role request rejected.', 'success');
+        loadPendingRoleRequests();
+        loadDashboardStats();
+    })
+    .catch(error => showNotification(error.message || 'Could not reject role request', 'danger'));
+}
+
+function loadAdminContactVoiceMessages() {
+    const container = document.getElementById('adminContactVoiceMessagesList');
+    if (!container) return;
+    container.innerHTML = '<p class="text-muted mb-0">Loading voice messages...</p>';
+
+    fetch(`${API_URL}?action=getContactVoiceMessages`)
+    .then(response => parseJsonResponse(response))
+    .then(result => {
+        if (!result.success) {
+            throw new Error(result.message || 'Could not load voice messages');
+        }
+        renderAdminContactVoiceMessages(result.data || []);
+    })
+    .catch(error => {
+        container.innerHTML = `<p class="text-danger mb-0">${escapeAdminText(error.message || 'Could not load voice messages')}</p>`;
+    });
+}
+
+function setAdminSettingsValue(id, value) {
+    const element = document.getElementById(id);
+    if (element) element.value = value || '';
+}
+
+function getAdminSiteSettingsPayload() {
+    return {
+        contact_location: document.getElementById('adminContactLocation')?.value.trim() || '',
+        contact_phone: document.getElementById('adminContactPhone')?.value.trim() || '',
+        contact_email: document.getElementById('adminContactEmail')?.value.trim() || '',
+        contact_hours: document.getElementById('adminContactHours')?.value.trim() || '',
+        social_whatsapp: document.getElementById('adminSocialWhatsapp')?.value.trim() || '',
+        social_facebook: document.getElementById('adminSocialFacebook')?.value.trim() || '',
+        social_x: document.getElementById('adminSocialX')?.value.trim() || '',
+        social_instagram: document.getElementById('adminSocialInstagram')?.value.trim() || '',
+        social_youtube: document.getElementById('adminSocialYoutube')?.value.trim() || '',
+        social_tiktok: document.getElementById('adminSocialTiktok')?.value.trim() || '',
+        social_linkedin: document.getElementById('adminSocialLinkedin')?.value.trim() || ''
+    };
+}
+
+function populateAdminSiteSettings(settings = {}) {
+    setAdminSettingsValue('adminContactLocation', settings.contact_location);
+    setAdminSettingsValue('adminContactPhone', settings.contact_phone);
+    setAdminSettingsValue('adminContactEmail', settings.contact_email);
+    setAdminSettingsValue('adminContactHours', settings.contact_hours);
+    setAdminSettingsValue('adminSocialWhatsapp', settings.social_whatsapp);
+    setAdminSettingsValue('adminSocialFacebook', settings.social_facebook);
+    setAdminSettingsValue('adminSocialX', settings.social_x);
+    setAdminSettingsValue('adminSocialInstagram', settings.social_instagram);
+    setAdminSettingsValue('adminSocialYoutube', settings.social_youtube);
+    setAdminSettingsValue('adminSocialTiktok', settings.social_tiktok);
+    setAdminSettingsValue('adminSocialLinkedin', settings.social_linkedin);
+}
+
+function loadAdminSiteSettings() {
+    fetch(`${API_URL}?action=getSiteSettings`)
+    .then(response => parseJsonResponse(response))
+    .then(result => {
+        if (!result.success) throw new Error(result.message || 'Could not load site settings');
+        populateAdminSiteSettings(result.data || {});
+    })
+    .catch(error => {
+        populateAdminSiteSettings(getLocalSiteSettings());
+        showNotification(error.message || 'Using local site settings.', 'warning');
+    });
+}
+
+function saveAdminSiteSettings() {
+    fetch(`${API_URL}?action=updateSiteSettings`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(getAdminSiteSettingsPayload())
+    })
+    .then(response => parseJsonResponse(response))
+    .then(result => {
+        if (!result.success) throw new Error(result.message || 'Could not save site settings');
+        populateAdminSiteSettings(result.data?.settings || result.data || {});
+        showNotification('Public contact and social links saved.', 'success');
+    })
+    .catch(error => showNotification(error.message || 'Could not save public links', 'danger'));
+}
+
+function renderAdminContactVoiceMessages(messages) {
+    const container = document.getElementById('adminContactVoiceMessagesList');
+    if (!container) return;
+    if (!messages.length) {
+        container.innerHTML = '<p class="text-muted mb-0">No voice messages yet.</p>';
+        return;
+    }
+
+    container.innerHTML = messages.map(message => `
+        <div class="content-card" style="box-shadow:none; border:1px solid #e5e7eb; margin-bottom:12px;">
+            <div class="d-flex justify-content-between align-items-start gap-3">
+                <div>
+                    <h5 class="mb-1">${escapeAdminText(message.subject)}</h5>
+                    <p class="text-muted mb-1">${escapeAdminText(message.name)} &lt;${escapeAdminText(message.email)}&gt;</p>
+                    <p class="text-muted mb-0">${message.created_at ? new Date(message.created_at).toLocaleString() : ''}</p>
+                </div>
+                <span class="badge bg-${message.status === 'read' ? 'success' : 'warning'}">${message.status === 'read' ? 'Listened' : 'New'}</span>
+            </div>
+            ${message.message ? `<p class="mt-2">${escapeAdminText(message.message)}</p>` : ''}
+            <audio class="w-100 admin-contact-voice-audio" controls data-message-id="${Number(message.id)}" src="${resolveAdminUrl(message.audio_path)}"></audio>
+        </div>
+    `).join('');
+
+    container.querySelectorAll('.admin-contact-voice-audio').forEach(audio => {
+        audio.addEventListener('play', () => markAdminContactVoiceMessageRead(audio.dataset.messageId));
+    });
+}
+
+function markAdminContactVoiceMessageRead(messageId) {
+    if (!messageId) return;
+    fetch(`${API_URL}?action=markContactVoiceMessageRead`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ message_id: Number(messageId) })
+    }).catch(() => {});
 }
 
 function loadMyAdminActivityLogs() {
@@ -1484,6 +2156,56 @@ function escapeAdminText(value) {
     const div = document.createElement('div');
     div.textContent = value ?? '';
     return div.innerHTML;
+}
+
+function encodeAdminLeaderDetails(leader) {
+    return encodeURIComponent(JSON.stringify({
+        id: leader.id || '',
+        name: leader.name || '',
+        position: leader.position || '',
+        course: leader.course || '',
+        year_of_study: leader.year_of_study || leader.yearOfStudy || '',
+        bio: leader.bio || '',
+        description: leader.description || '',
+        email: leader.email || '',
+        phone: leader.phone || '',
+        photo_url: leader.photo_url || leader.photoData || '',
+        created_at: leader.created_at || leader.createdAt || ''
+    })).replace(/'/g, '%27');
+}
+
+function showAdminLeaderDetails(encodedLeader) {
+    const leader = typeof encodedLeader === 'string' ? JSON.parse(decodeURIComponent(encodedLeader)) : encodedLeader;
+    const photoUrl = leader.photo_url || leader.photoData || '';
+
+    document.getElementById('adminLeaderModalTitle').textContent = `${leader.name || 'Leader'} - ${leader.position || 'Details'}`;
+    document.getElementById('adminLeaderName').textContent = leader.name || 'N/A';
+    document.getElementById('adminLeaderPosition').textContent = leader.position || 'N/A';
+    document.getElementById('adminLeaderCourse').textContent = leader.course || 'N/A';
+    document.getElementById('adminLeaderYearOfStudy').textContent = leader.year_of_study || leader.yearOfStudy || 'N/A';
+    document.getElementById('adminLeaderBio').textContent = leader.bio || 'N/A';
+    document.getElementById('adminLeaderDescription').textContent = leader.description || 'N/A';
+    document.getElementById('adminLeaderEmail').textContent = leader.email || 'N/A';
+    document.getElementById('adminLeaderPhone').textContent = leader.phone || 'N/A';
+    document.getElementById('adminLeaderAddedAt').textContent = leader.created_at ? new Date(leader.created_at).toLocaleString() : 'N/A';
+
+    const image = document.getElementById('adminLeaderPhotoImage');
+    const icon = document.getElementById('adminLeaderPhotoIcon');
+    if (photoUrl && image) {
+        image.src = resolveAdminUrl(photoUrl);
+        image.alt = leader.name ? `${leader.name} profile photo` : 'Leader profile photo';
+        image.classList.remove('d-none');
+        icon?.classList.add('d-none');
+        image.onerror = function() {
+            image.classList.add('d-none');
+            icon?.classList.remove('d-none');
+        };
+    } else {
+        image?.classList.add('d-none');
+        icon?.classList.remove('d-none');
+    }
+
+    bootstrap.Modal.getOrCreateInstance(document.getElementById('adminLeaderDetailsModal')).show();
 }
 
 function loadAdminAccounts() {
@@ -1582,7 +2304,8 @@ function renderActivityLogTable(containerId, logs, options = {}) {
                 <table class="table table-striped table-sm align-middle">
                     <thead>
                         <tr>
-                            <th>Admin Who Did It</th>
+                            <th>Who Did It</th>
+                            <th>Source</th>
                             <th>Action</th>
                             <th>Details</th>
                             <th>IP</th>
@@ -1595,6 +2318,7 @@ function renderActivityLogTable(containerId, logs, options = {}) {
                         ${logs.map(log => `
                             <tr>
                                 <td>${escapeAdminText(log.username || 'Unknown')}</td>
+                                <td><span class="badge bg-${log.source === 'member_dashboard' ? 'info' : 'dark'}">${escapeAdminText(formatActivitySource(log.source))}</span></td>
                                 <td><span class="badge bg-secondary">${escapeAdminText(formatAdminAction(log.action))}</span></td>
                                 <td>${escapeAdminText(formatAdminActivityDetails(log.details))}</td>
                                 <td>${escapeAdminText(log.ip_address || '-')}</td>
@@ -1739,7 +2463,7 @@ function formatAdminAction(actionName) {
         registerAdmin: 'Registered first admin',
         createAdminAccount: 'Added admin',
         deleteAdminAccount: 'Removed admin',
-        resetAdminPassword: 'Reset password',
+        resetAdminPassword: 'Sent admin reset email',
         changeAdminPassword: 'Changed own password',
         createAnnouncement: 'Created announcement',
         deleteAnnouncement: 'Deleted announcement',
@@ -1759,6 +2483,20 @@ function formatAdminAction(actionName) {
         deleteResource: 'Deleted resource',
         approvePayment: 'Approved payment',
         approveDonation: 'Approved donation',
+        recordPayment: 'Recorded payment',
+        updatePaymentStatus: 'Updated payment status',
+        recordDonation: 'Recorded donation',
+        updateDonationStatus: 'Updated donation status',
+        submitWelfare: 'Submitted welfare request',
+        approveWelfare: 'Approved welfare request',
+        updateStudentStatus: 'Updated member status',
+        updateStudent: 'Updated student profile',
+        deleteStudent: 'Deleted student',
+        registerEvent: 'Registered for event',
+        registerVolunteer: 'Registered volunteer',
+        createVolunteerOp: 'Created volunteer opportunity',
+        saveActivity: 'Added activity',
+        deleteActivity: 'Removed activity',
         seedSampleData: 'Added sample data',
         pendingAdminApproval: 'Pending main admin approval',
         approvePendingAdminActivity: 'Approved pending action',
@@ -1768,6 +2506,12 @@ function formatAdminAction(actionName) {
         undoMyAdminActivityItem: 'Undid own action'
     };
     return labels[actionName] || actionName || 'Action';
+}
+
+function formatActivitySource(source) {
+    if (source === 'member_dashboard') return 'Role dashboard';
+    if (source === 'admin_panel') return 'Admin panel';
+    return source || 'System';
 }
 
 function formatAdminActivityDetails(details) {
@@ -1785,6 +2529,7 @@ function formatAdminActivityDetails(details) {
         'position',
         'category',
         'resource_type',
+        'role',
         'type',
         'location',
         'event_date',
@@ -1828,6 +2573,11 @@ async function handleManagedAdminCreate(event) {
     const password = document.getElementById('managedAdminPassword').value;
     const button = document.getElementById('managedAdminCreateButton');
 
+    if (!isStrongAdminPassword(password)) {
+        showNotification('Admin password must be at least 12 characters and include uppercase, lowercase, number, and symbol.', 'warning');
+        return;
+    }
+
     button.disabled = true;
     button.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Adding...';
     try {
@@ -1868,32 +2618,28 @@ function removeManagedAdmin(adminId) {
 }
 
 function resetManagedAdminPassword(adminId) {
-    const newPassword = prompt('Enter a new password for this admin. Minimum 6 characters.');
-    if (newPassword === null) return;
-    if (newPassword.length < 6) {
-        showNotification('New password must be at least 6 characters', 'warning');
-        return;
-    }
+    if (!confirm('Send a password reset code to this admin registered email? The new password can only be created from that inbox.')) return;
 
     fetch(`${API_URL}?action=resetAdminPassword`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ admin_id: adminId, new_password: newPassword })
+        body: JSON.stringify({ admin_id: adminId })
     })
     .then(response => parseJsonResponse(response))
     .then(result => {
-        if (!result.success) throw new Error(result.message || 'Could not reset password');
-        showNotification('Admin password reset successfully', 'success');
+        if (!result.success) throw new Error(result.message || 'Could not send password reset email');
+        showNotification('Password reset code sent to the admin registered email.', 'success');
     })
-    .catch(error => showNotification(error.message || 'Could not reset password', 'danger'));
+    .catch(error => showNotification(error.message || 'Could not send password reset email', 'danger'));
 }
 
 function resetMyAdminPassword() {
-    if (!currentAdmin?.id) {
-        showNotification('Current admin account not found', 'danger');
-        return;
+    showAdminLogin('');
+    const emailInput = document.getElementById('adminForgotEmail');
+    if (emailInput && currentAdmin?.email) {
+        emailInput.value = currentAdmin.email;
     }
-    resetManagedAdminPassword(currentAdmin.id);
+    bootstrap.Tab.getOrCreateInstance(document.getElementById('adminForgotTabBtn')).show();
 }
 
 async function handleAdminPasswordChange(event) {
@@ -1905,6 +2651,10 @@ async function handleAdminPasswordChange(event) {
 
     if (newPassword !== confirmPassword) {
         showNotification('New passwords do not match', 'warning');
+        return;
+    }
+    if (!isStrongAdminPassword(newPassword)) {
+        showNotification('Admin password must be at least 12 characters and include uppercase, lowercase, number, and symbol.', 'warning');
         return;
     }
 
@@ -1939,8 +2689,16 @@ function loadDashboardStats() {
         setText('studentCount', stats.students || 0);
         setText('donationTotal', formatMoney(stats.donation_total || 0));
         setText('donationCount', stats.donations || 0);
+        setText('pendingDonationCount', stats.pending_donations || 0);
+        setText('failedDonationCount', stats.failed_donations || 0);
+        setText('pendingDonationAmount', formatMoney(stats.pending_donation_amount || 0));
+        setText('monthDonationTotal', formatMoney(stats.month_donation_total || 0));
         setText('paymentTotal', formatMoney(stats.payment_total || 0));
         setText('paymentCount', stats.payments || 0);
+        setText('pendingPaymentCount', stats.pending_payments || 0);
+        setText('failedPaymentCount', stats.failed_payments || 0);
+        setText('pendingPaymentAmount', formatMoney(stats.pending_payment_amount || 0));
+        setText('monthPaymentTotal', formatMoney(stats.month_payment_total || 0));
         setText('welfareCount', stats.welfare_requests || 0);
         setText('pendingWelfareCount', stats.pending_welfare || 0);
         setText('eventCount', stats.events || 0);
@@ -2040,16 +2798,64 @@ function renderApprovalAction(type, row) {
     if (status === 'completed') {
         return '<span class="badge bg-success">Approved</span>';
     }
+    if (status === 'rejected' || status === 'failed') {
+        return `<span class="badge bg-danger">${status === 'failed' ? 'Failed' : 'Rejected'}</span>`;
+    }
 
     if (type === 'payments') {
-        return `<button class="btn btn-sm btn-success" onclick="approvePaymentRecord(${row.id})">Approve</button>`;
+        return `
+            <div class="btn-group btn-group-sm">
+                <button class="btn btn-success" onclick="approvePaymentRecord(${row.id})">Approve</button>
+                <button class="btn btn-outline-danger" onclick="rejectPaymentRecord(${row.id})">Reject</button>
+            </div>
+        `;
     }
 
     if (type === 'donations') {
-        return `<button class="btn btn-sm btn-success" onclick="approveDonationRecord(${row.id})">Approve</button>`;
+        return `
+            <div class="btn-group btn-group-sm">
+                <button class="btn btn-success" onclick="approveDonationRecord(${row.id})">Approve</button>
+                <button class="btn btn-outline-danger" onclick="rejectDonationRecord(${row.id})">Reject</button>
+            </div>
+        `;
     }
 
     return '-';
+}
+
+function rejectPaymentRecord(paymentId) {
+    const notes = prompt('Reason for rejecting this payment:', 'Could not verify received funds.');
+    if (notes === null) return;
+    fetch(`${API_URL}?action=rejectPayment`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ payment_id: paymentId, notes })
+    })
+    .then(response => parseJsonResponse(response))
+    .then(result => {
+        if (!result.success) throw new Error(result.message || 'Could not reject payment');
+        showNotification('Payment rejected.', 'success');
+        loadDashboardStats();
+        loadDashboardDetail('payments');
+    })
+    .catch(error => showNotification(error.message, 'danger'));
+}
+
+function rejectDonationRecord(donationId) {
+    if (!confirm('Reject this donation?')) return;
+    fetch(`${API_URL}?action=rejectDonation`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ donation_id: donationId })
+    })
+    .then(response => parseJsonResponse(response))
+    .then(result => {
+        if (!result.success) throw new Error(result.message || 'Could not reject donation');
+        showNotification('Donation rejected.', 'success');
+        loadDashboardStats();
+        loadDashboardDetail('donations');
+    })
+    .catch(error => showNotification(error.message, 'danger'));
 }
 
 function approvePaymentRecord(paymentId) {
@@ -2117,7 +2923,38 @@ function getStaticDashboardDetail(type) {
         hadiths: readStore('adminHadiths'),
         prayer: localStorage.getItem('adminPrayerTimes') ? [JSON.parse(localStorage.getItem('adminPrayerTimes'))] : []
     };
-    return { success: true, data: { type: type, rows: stores[type] || [] } };
+    const rows = (stores[type] || []).map(item => {
+        if (type === 'payments') {
+            return {
+                id: item.id || item.dbPaymentId || item.payment_id || '',
+                payment_type: item.type || item.payment_type || '',
+                amount: item.amount || 0,
+                status: item.status || 'Pending',
+                payment_method: item.paymentMethod || item.payment_method || '',
+                transaction_id: item.transactionRef || item.transaction_id || '',
+                receipt_number: item.receiptNumber || item.receipt_number || '',
+                notes: item.notes || '',
+                created_at: item.date || item.created_at || ''
+            };
+        }
+        if (type === 'donations') {
+            return {
+                id: item.id || item.dbDonationId || item.donation_id || '',
+                donor_name: item.donor || item.donor_name || '',
+                donor_email: item.email || item.donor_email || '',
+                amount: item.amount || 0,
+                donation_type: item.type || item.donation_type || '',
+                purpose: item.purpose || '',
+                payment_method: item.paymentMethod || item.payment_method || '',
+                transaction_id: item.transactionRef || item.transaction_id || '',
+                receipt_number: item.receiptNumber || item.receipt_number || '',
+                status: item.status || 'Pending',
+                created_at: item.date || item.created_at || ''
+            };
+        }
+        return item;
+    });
+    return { success: true, data: { type: type, rows } };
 }
 
 // ============================================
@@ -2424,6 +3261,11 @@ function loadEventCount() {
 // ============================================
 
 function addLeader() {
+    if (!isCurrentLocalMainAdmin() && useStaticAdminApi) {
+        showNotification('Only the main admin can manage leadership.', 'warning');
+        return;
+    }
+
     const name = document.getElementById('leaderName').value.trim();
     const position = document.getElementById('leaderPosition').value.trim();
     const course = document.getElementById('leaderCourse').value.trim();
@@ -2496,14 +3338,17 @@ function loadLeadership() {
         
         container.innerHTML = result.data.map(leader => `
             <div class="item-card">
-                <div class="item-info flex-grow-1">
-                    <h5>${leader.name}</h5>
-                    <p><strong>Position:</strong> ${leader.position}</p>
-                    <p><strong>Course:</strong> ${leader.course || 'N/A'}</p>
-                    <p><strong>Year of Study:</strong> ${leader.year_of_study || 'N/A'}</p>
-                    <p><strong>Email:</strong> ${leader.email || 'N/A'}</p>
-                    <p><strong>Phone:</strong> ${leader.phone || 'N/A'}</p>
-                    <p>${leader.bio}</p>
+                <div class="item-info flex-grow-1" role="button" tabindex="0" onclick="showAdminLeaderDetails('${encodeAdminLeaderDetails(leader)}')" onkeydown="if(event.key === 'Enter' || event.key === ' ') { event.preventDefault(); showAdminLeaderDetails('${encodeAdminLeaderDetails(leader)}'); }">
+                    <h5>${escapeAdminText(leader.name)}</h5>
+                    <p><strong>Position:</strong> ${escapeAdminText(leader.position)}</p>
+                    <p><strong>Course:</strong> ${escapeAdminText(leader.course || 'N/A')}</p>
+                    <p><strong>Year of Study:</strong> ${escapeAdminText(leader.year_of_study || 'N/A')}</p>
+                    <p><strong>Email:</strong> ${escapeAdminText(leader.email || 'N/A')}</p>
+                    <p><strong>Phone:</strong> ${escapeAdminText(leader.phone || 'N/A')}</p>
+                    <p>${escapeAdminText(leader.bio || '')}</p>
+                    <button class="btn btn-sm btn-outline-primary" type="button" onclick="event.stopPropagation(); showAdminLeaderDetails('${encodeAdminLeaderDetails(leader)}')">
+                        <i class="fas fa-eye"></i> Details
+                    </button>
                 </div>
                 <div class="item-actions">
                     <button class="btn btn-sm btn-outline-danger" onclick="deleteLeaderItem(${leader.id})">
@@ -2520,6 +3365,11 @@ function loadLeadership() {
 }
 
 function deleteLeaderItem(leaderId) {
+    if (!isCurrentLocalMainAdmin() && useStaticAdminApi) {
+        showNotification('Only the main admin can manage leadership.', 'warning');
+        return;
+    }
+
     if (!confirm('Delete this leadership member?')) return;
     
     fetch(`${API_URL}?action=deleteLeader`, {

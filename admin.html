@@ -9,14 +9,28 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         :root {
-            --primary-color: #2c5aa0;
-            --secondary-color: #16a34a;
-            --link-color: #dc3545;
-            --link-hover-color: #a71d2a;
+            --primary-color: #0f5132;
+            --secondary-color: #0b3d2a;
+            --link-color: #0f5132;
+            --link-hover-color: #0b3d2a;
+            --admin-black: #083523;
+            --admin-ink: #14251d;
+            --admin-panel: #ffffff;
+            --admin-panel-soft: #fffaf0;
+            --admin-gold: #d4af37;
+            --admin-gold-light: #f5d76e;
+            --admin-gold-dark: #8f6515;
+            --admin-text: #1f2f27;
+            --admin-muted: #64746b;
+            --admin-border: rgba(212, 175, 55, 0.28);
+            --admin-shadow: 0 18px 42px rgba(15, 81, 50, 0.12);
         }
         
         body {
-            background-color: #f5f5f5;
+            background:
+                radial-gradient(circle at top left, rgba(212, 175, 55, 0.12), transparent 28%),
+                linear-gradient(180deg, #fffdf6 0%, #f5f0df 100%);
+            color: var(--admin-text);
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
         }
 
@@ -38,6 +52,7 @@
             color: #fff !important;
             background-color: var(--link-color) !important;
             border-color: var(--link-color) !important;
+            box-shadow: 0 10px 24px rgba(212, 175, 55, 0.22);
         }
 
         .admin-login-screen {
@@ -46,15 +61,20 @@
             align-items: center;
             justify-content: center;
             padding: 24px;
-            background: linear-gradient(135deg, #1e3a8a 0%, #2c5aa0 48%, #111827 100%);
+            background:
+                radial-gradient(circle at 20% 16%, rgba(245, 215, 110, 0.26), transparent 24%),
+                radial-gradient(circle at 82% 80%, rgba(212, 175, 55, 0.16), transparent 30%),
+                linear-gradient(135deg, #030303 0%, #141414 48%, #2b2108 100%);
         }
 
         .admin-login-card {
             width: min(100%, 430px);
-            background: #fff;
-            border-radius: 10px;
+            background: linear-gradient(180deg, rgba(34,34,34,0.96), rgba(12,12,12,0.98));
+            color: var(--admin-text);
+            border: 1px solid var(--admin-border);
+            border-radius: 16px;
             padding: 30px;
-            box-shadow: 0 24px 60px rgba(17,24,39,0.3);
+            box-shadow: var(--admin-shadow);
         }
 
         .admin-login-card .logo-icon {
@@ -64,8 +84,9 @@
             display: inline-flex;
             align-items: center;
             justify-content: center;
-            background: #e8f0ff;
+            background: rgba(212, 175, 55, 0.12);
             color: var(--primary-color);
+            border: 1px solid var(--admin-border);
             font-size: 28px;
             margin-bottom: 14px;
         }
@@ -79,7 +100,7 @@
             background: #fff;
             border-radius: 8px;
             padding: 6px 10px;
-            box-shadow: 0 8px 24px rgba(17,24,39,0.12);
+            box-shadow: 0 12px 28px rgba(0,0,0,0.28);
         }
 
         .admin-login-card h1 {
@@ -100,11 +121,12 @@
         .admin-auth-tabs .nav-link {
             color: var(--primary-color);
             font-weight: 700;
+            border-color: transparent;
         }
 
         .admin-auth-tabs .nav-link.active {
-            color: #fff;
-            background: var(--primary-color);
+            color: #111;
+            background: linear-gradient(135deg, var(--admin-gold-light), var(--admin-gold));
             border-color: var(--primary-color);
         }
 
@@ -115,28 +137,37 @@
         .admin-container {
             min-height: 100vh;
             display: flex;
+            background:
+                radial-gradient(circle at 100% 0%, rgba(212,175,55,0.08), transparent 24%),
+                #0b0b0b;
         }
         
         .sidebar {
-            background: linear-gradient(135deg, var(--primary-color) 0%, #1a3a5c 100%);
+            background:
+                linear-gradient(180deg, rgba(245, 215, 110, 0.08), transparent 24%),
+                linear-gradient(135deg, #050505 0%, #151515 58%, #2a1f07 100%);
             color: white;
             width: 250px;
             padding: 20px 0;
             position: fixed;
             height: 100vh;
             overflow-y: auto;
+            border-right: 1px solid var(--admin-border);
+            box-shadow: 14px 0 34px rgba(0,0,0,0.28);
         }
         
         .sidebar-header {
             padding: 20px;
             text-align: center;
-            border-bottom: 1px solid rgba(255,255,255,0.1);
+            border-bottom: 1px solid var(--admin-border);
             margin-bottom: 20px;
         }
         
         .sidebar-header h3 {
             margin: 0;
             font-size: 18px;
+            color: var(--admin-gold-light);
+            font-weight: 800;
         }
 
         .sidebar-logo {
@@ -161,19 +192,20 @@
         
         .nav-menu a {
             display: block;
-            color: #ccc;
+            color: #d8d1bd;
             padding: 12px 20px;
             text-decoration: none;
-            transition: background-color 0.25s ease, color 0.25s ease, border-color 0.25s ease, transform 0.25s ease;
+            transition: background-color 0.25s ease, color 0.25s ease, border-color 0.25s ease, transform 0.25s ease, box-shadow 0.25s ease;
             border-left: 3px solid transparent;
         }
         
         .nav-menu a:hover,
         .nav-menu a.active {
-            background: rgba(255,255,255,0.1);
-            color: white;
-            border-left-color: var(--secondary-color);
+            background: rgba(212, 175, 55, 0.12);
+            color: var(--admin-gold-light);
+            border-left-color: var(--admin-gold);
             transform: translateX(3px);
+            box-shadow: inset 0 0 0 1px rgba(212, 175, 55, 0.08);
         }
         
         .main-content {
@@ -183,11 +215,13 @@
         }
         
         .admin-header {
-            background: white;
+            background: linear-gradient(135deg, rgba(34,34,34,0.96), rgba(15,15,15,0.98));
+            color: var(--admin-text);
             padding: 20px;
-            border-radius: 10px;
+            border-radius: 14px;
             margin-bottom: 20px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            box-shadow: 0 18px 36px rgba(0,0,0,0.2);
+            border: 1px solid var(--admin-border);
             display: flex;
             justify-content: space-between;
             align-items: center;
@@ -196,6 +230,7 @@
         .admin-header h2 {
             margin: 0;
             color: var(--primary-color);
+            font-weight: 800;
         }
 
         .admin-user-chip {
@@ -210,7 +245,7 @@
             height: 42px;
             border-radius: 50%;
             object-fit: cover;
-            border: 2px solid rgba(0, 128, 0, 0.18);
+            border: 2px solid var(--admin-border);
             background: #fff;
         }
 
@@ -227,33 +262,71 @@
         .admin-content.active {
             display: block;
         }
+
+        .admin-content h3,
+        .admin-content h4,
+        .admin-content h5,
+        .content-card h3,
+        .content-card h4,
+        .content-card h5 {
+            color: var(--admin-gold-light);
+        }
+
+        .text-muted {
+            color: var(--admin-muted) !important;
+        }
+
+        .form-control,
+        .form-select {
+            background-color: rgba(255,255,255,0.92);
+            border: 1px solid rgba(212,175,55,0.26);
+            border-radius: 10px;
+            transition: border-color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
+        }
+
+        .form-control:focus,
+        .form-select:focus {
+            border-color: var(--admin-gold);
+            box-shadow: 0 0 0 0.2rem rgba(212,175,55,0.2);
+            transform: translateY(-1px);
+        }
         
         .content-card {
-            background: white;
+            background: linear-gradient(180deg, rgba(31,31,31,0.96), rgba(18,18,18,0.98));
+            color: var(--admin-text);
             padding: 25px;
-            border-radius: 10px;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            border-radius: 14px;
+            box-shadow: 0 18px 38px rgba(0,0,0,0.22);
             margin-bottom: 20px;
             transition: transform 0.25s ease, box-shadow 0.25s ease, border-color 0.25s ease, background-color 0.25s ease;
-            border: 1px solid transparent;
+            border: 1px solid rgba(212, 175, 55, 0.18);
         }
 
         .dashboard-stat-card:hover {
             transform: translateY(-4px);
-            box-shadow: 0 12px 24px rgba(44,90,160,0.16);
-            border-color: rgba(44,90,160,0.25);
+            box-shadow: 0 18px 34px rgba(212,175,55,0.16);
+            border-color: rgba(212,175,55,0.42);
         }
 
         .dashboard-stat-card:active,
         .dashboard-stat-card.active {
             transform: translateY(-1px);
-            background: #f0f7ff;
+            background: linear-gradient(180deg, rgba(53,43,15,0.95), rgba(21,21,21,0.98));
             border-color: var(--primary-color);
-            box-shadow: 0 8px 18px rgba(44,90,160,0.18);
+            box-shadow: 0 12px 26px rgba(212,175,55,0.2);
         }
 
         .dashboard-stat-card small {
-            color: #64748b;
+            color: var(--admin-muted);
+        }
+
+        .dashboard-stat-card h2 {
+            color: var(--admin-gold-light) !important;
+            text-shadow: 0 0 18px rgba(212,175,55,0.14);
+        }
+
+        .dashboard-stat-card i {
+            color: var(--admin-gold) !important;
         }
 
         #dashboardDetailTable {
@@ -262,13 +335,14 @@
 
         .admin-welcome-banner {
             background:
-                radial-gradient(circle at 10% 20%, rgba(255,255,255,0.22), transparent 24%),
-                linear-gradient(135deg, #1e3a8a 0%, #2c5aa0 46%, #111827 100%);
-            color: white;
+                radial-gradient(circle at 10% 20%, rgba(245,215,110,0.24), transparent 24%),
+                linear-gradient(135deg, #060606 0%, #161616 46%, #3b2b09 100%);
+            color: var(--admin-text);
             padding: 28px;
-            border-radius: 10px;
+            border-radius: 16px;
             margin-bottom: 20px;
-            box-shadow: 0 14px 28px rgba(17,24,39,0.18);
+            box-shadow: var(--admin-shadow);
+            border: 1px solid var(--admin-border);
             overflow: hidden;
         }
 
@@ -284,9 +358,10 @@
             align-items: center;
             gap: 7px;
             padding: 6px 10px;
-            border: 1px solid rgba(255,255,255,0.22);
+            border: 1px solid rgba(212,175,55,0.32);
             border-radius: 999px;
-            background: rgba(255,255,255,0.1);
+            background: rgba(212,175,55,0.12);
+            color: var(--admin-gold-light);
             font-size: 12px;
             font-weight: 700;
         }
@@ -310,6 +385,7 @@
             font-size: 30px;
             font-weight: 800;
             letter-spacing: 0;
+            color: var(--admin-gold-light);
         }
 
         .admin-welcome-subtext {
@@ -327,11 +403,11 @@
         }
         
         .form-section {
-            background: #f9f9f9;
+            background: rgba(255, 255, 255, 0.04);
             padding: 20px;
-            border-radius: 8px;
+            border-radius: 12px;
             margin-bottom: 30px;
-            border: 1px solid #e0e0e0;
+            border: 1px solid rgba(212, 175, 55, 0.18);
         }
         
         .form-section h4 {
@@ -343,35 +419,41 @@
         }
         
         .btn-primary {
-            background: var(--primary-color);
+            background: linear-gradient(135deg, var(--admin-gold-light), var(--admin-gold));
             border-color: var(--primary-color);
+            color: #111;
+            font-weight: 800;
             transition: transform 0.2s ease, box-shadow 0.2s ease, background-color 0.2s ease, border-color 0.2s ease;
         }
         
         .btn-primary:hover {
-            background: #1f4080;
-            border-color: #1f4080;
+            background: linear-gradient(135deg, #ffe38a, #c8941f);
+            border-color: var(--admin-gold-light);
+            color: #111;
             transform: translateY(-1px);
-            box-shadow: 0 6px 14px rgba(44,90,160,0.22);
+            box-shadow: 0 10px 22px rgba(212,175,55,0.24);
         }
         
         .btn-success {
-            background: var(--secondary-color);
+            background: linear-gradient(135deg, #d4af37, #9b7319);
             border-color: var(--secondary-color);
+            color: #111;
+            font-weight: 800;
             transition: transform 0.2s ease, box-shadow 0.2s ease, background-color 0.2s ease;
         }
         
         .btn-success:hover {
-            background: #15803d;
+            background: linear-gradient(135deg, #f5d76e, #b88917);
+            color: #111;
             transform: translateY(-1px);
-            box-shadow: 0 6px 14px rgba(22,163,74,0.2);
+            box-shadow: 0 10px 22px rgba(212,175,55,0.22);
         }
         
         .item-card {
-            background: #f9f9f9;
-            border: 1px solid #e0e0e0;
+            background: rgba(255, 255, 255, 0.045);
+            border: 1px solid rgba(212, 175, 55, 0.16);
             padding: 15px;
-            border-radius: 8px;
+            border-radius: 12px;
             margin-bottom: 12px;
             display: flex;
             justify-content: space-between;
@@ -381,8 +463,65 @@
 
         .item-card:hover {
             transform: translateY(-2px);
-            border-color: rgba(44,90,160,0.25);
-            box-shadow: 0 8px 16px rgba(15,23,42,0.08);
+            border-color: rgba(212,175,55,0.38);
+            box-shadow: 0 12px 24px rgba(0,0,0,0.18);
+        }
+
+        .pending-role-grid {
+            display: grid;
+            gap: 14px;
+        }
+
+        .pending-role-card,
+        .admin-empty-state {
+            border: 1px solid rgba(212, 175, 55, 0.2);
+            border-radius: 14px;
+            background: rgba(255, 255, 255, 0.045);
+            padding: 16px;
+        }
+
+        .pending-role-card {
+            display: flex;
+            gap: 14px;
+        }
+
+        .pending-role-card__icon {
+            width: 48px;
+            height: 48px;
+            border-radius: 50%;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            background: linear-gradient(135deg, var(--admin-gold-light), var(--admin-gold));
+            color: #111;
+            flex: 0 0 auto;
+        }
+
+        .pending-role-card__body {
+            flex: 1;
+        }
+
+        .pending-role-card__body h5 {
+            margin-bottom: 4px;
+        }
+
+        .pending-role-card__footer {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 10px;
+            margin-top: 14px;
+            flex-wrap: wrap;
+        }
+
+        .admin-empty-state {
+            text-align: center;
+        }
+
+        .admin-empty-state i {
+            color: var(--admin-gold-light);
+            font-size: 32px;
+            margin-bottom: 10px;
         }
         
         .item-info h5 {
@@ -393,7 +532,7 @@
         .item-info p {
             margin: 3px 0;
             font-size: 14px;
-            color: #666;
+            color: var(--admin-muted);
         }
         
         .item-actions {
@@ -413,21 +552,85 @@
         .table-responsive {
             border-radius: 8px;
             overflow: hidden;
+            border: 1px solid rgba(212,175,55,0.16);
+        }
+
+        .table {
+            color: var(--admin-text);
+            --bs-table-bg: transparent;
+            --bs-table-color: var(--admin-text);
+            --bs-table-border-color: rgba(212,175,55,0.14);
+            margin-bottom: 0;
+        }
+
+        .table tbody tr:hover {
+            --bs-table-bg: rgba(212,175,55,0.08);
         }
         
         table thead {
-            background: var(--primary-color);
-            color: white;
+            background: linear-gradient(135deg, #151515, #3b2b09);
+            color: var(--admin-gold-light);
         }
         
         @media (max-width: 768px) {
+            .admin-container {
+                display: block;
+            }
+
             .sidebar {
-                width: 200px;
+                position: relative;
+                width: 100%;
+                height: auto;
+                max-height: none;
+                padding: 12px 0;
+                border-right: 0;
+                border-bottom: 1px solid var(--admin-border);
+            }
+
+            .sidebar-header {
+                padding: 14px;
+                margin-bottom: 10px;
+            }
+
+            .sidebar-logo {
+                width: 150px;
+            }
+
+            .nav-menu {
+                display: grid;
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+                gap: 8px;
+                padding: 0 12px 12px;
+            }
+
+            .nav-menu a {
+                border-left: 0;
+                border-radius: 12px;
+                min-height: 48px;
+                padding: 10px;
+                background: rgba(255,255,255,0.04);
+                border: 1px solid rgba(212,175,55,0.12);
+                display: flex;
+                align-items: center;
+                gap: 8px;
+                line-height: 1.25;
+            }
+
+            .nav-menu a:hover,
+            .nav-menu a.active {
+                transform: none;
+                border-color: rgba(212,175,55,0.38);
             }
             
             .main-content {
-                margin-left: 200px;
+                margin-left: 0;
                 padding: 15px;
+            }
+
+            .admin-header {
+                align-items: flex-start;
+                flex-direction: column;
+                gap: 12px;
             }
 
             .admin-welcome-banner {
@@ -436,6 +639,386 @@
 
             .admin-welcome-track span {
                 font-size: 22px;
+            }
+        }
+
+        @media (max-width: 420px) {
+            .admin-login-card,
+            .content-card,
+            .admin-header,
+            .admin-welcome-banner {
+                border-radius: 12px;
+            }
+
+            .nav-menu {
+                grid-template-columns: 1fr;
+            }
+
+            .item-card {
+                flex-direction: column;
+                gap: 12px;
+            }
+
+            .item-actions {
+                width: 100%;
+                flex-wrap: wrap;
+            }
+
+            .item-actions .btn {
+                flex: 1 1 auto;
+            }
+        }
+        /* Green/gold premium refresh */
+        .admin-login-screen {
+            background:
+                linear-gradient(rgba(7, 31, 21, 0.78), rgba(15, 81, 50, 0.82)),
+                repeating-linear-gradient(135deg, rgba(245, 215, 110, 0.14) 0 1px, transparent 1px 24px),
+                linear-gradient(135deg, #0b3d2a 0%, #0f5132 58%, #fff8dc 140%);
+        }
+
+        .admin-login-card,
+        .content-card,
+        .admin-header {
+            background: linear-gradient(180deg, #ffffff, #fffaf0);
+            color: var(--admin-text);
+            border-color: rgba(212, 175, 55, 0.3);
+            box-shadow: var(--admin-shadow);
+        }
+
+        .admin-login-card .logo-icon,
+        .pending-role-card__icon {
+            background: linear-gradient(135deg, var(--primary-color), var(--admin-gold));
+            color: #fff;
+        }
+
+        .admin-login-card h1,
+        .admin-header h2,
+        .admin-content h3,
+        .admin-content h4,
+        .admin-content h5,
+        .content-card h3,
+        .content-card h4,
+        .content-card h5,
+        .item-info h5 {
+            color: var(--primary-color);
+        }
+
+        .admin-container {
+            background:
+                radial-gradient(circle at 100% 0%, rgba(212,175,55,0.12), transparent 24%),
+                linear-gradient(180deg, #fffdf6, #f5f0df);
+        }
+
+        .sidebar {
+            background:
+                linear-gradient(180deg, rgba(245, 215, 110, 0.08), transparent 24%),
+                linear-gradient(135deg, #07301f 0%, #0f5132 62%, #2f2508 100%);
+        }
+
+        .sidebar-header h3,
+        .admin-welcome-track span,
+        .admin-welcome-kicker span {
+            color: var(--admin-gold-light);
+        }
+
+        .nav-menu a {
+            color: rgba(255, 255, 255, 0.84);
+        }
+
+        .nav-menu a:hover,
+        .nav-menu a.active {
+            background: rgba(245, 215, 110, 0.16);
+            color: #fff;
+            border-left-color: var(--admin-gold);
+        }
+
+        .admin-welcome-banner {
+            background:
+                linear-gradient(rgba(7, 31, 21, 0.84), rgba(7, 31, 21, 0.88)),
+                repeating-linear-gradient(135deg, rgba(245, 215, 110, 0.13) 0 1px, transparent 1px 24px),
+                linear-gradient(135deg, #0b3d2a 0%, #0f5132 58%, #6b5212 100%);
+            color: #fff;
+        }
+
+        .form-section,
+        .item-card,
+        .pending-role-card,
+        .admin-empty-state {
+            background: rgba(255, 255, 255, 0.72);
+            border-color: rgba(212, 175, 55, 0.24);
+        }
+
+        .dashboard-stat-card h2 {
+            color: var(--primary-color) !important;
+            text-shadow: none;
+        }
+
+        .dashboard-stat-card i {
+            color: var(--admin-gold) !important;
+        }
+
+        .dashboard-stat-card:hover,
+        .dashboard-stat-card.active {
+            background: linear-gradient(180deg, #ffffff, #fff8dc);
+            border-color: rgba(15, 81, 50, 0.25);
+            box-shadow: 0 16px 34px rgba(15, 81, 50, 0.14);
+        }
+
+        .btn-primary,
+        .btn-success {
+            background: linear-gradient(135deg, var(--primary-color), #147a4f);
+            border-color: var(--primary-color);
+            color: #fff;
+        }
+
+        .btn-primary:hover,
+        .btn-success:hover {
+            background: linear-gradient(135deg, #0b3d2a, var(--primary-color));
+            color: #fff;
+            box-shadow: 0 12px 24px rgba(15, 81, 50, 0.22);
+        }
+
+        .table {
+            color: var(--admin-text);
+            --bs-table-color: var(--admin-text);
+            --bs-table-border-color: rgba(15,81,50,0.12);
+        }
+
+        table thead {
+            background: linear-gradient(135deg, #0b3d2a, #0f5132);
+            color: #fff8dc;
+        }
+
+        /* Admin panel contrast restore: black/gold/white */
+        :root {
+            --primary-color: #d4af37;
+            --secondary-color: #b88917;
+            --link-color: #d4af37;
+            --link-hover-color: #f5d76e;
+            --admin-black: #080808;
+            --admin-ink: #111111;
+            --admin-panel: #171717;
+            --admin-panel-soft: #222222;
+            --admin-text: #f7f1dd;
+            --admin-muted: #b9b3a6;
+            --admin-border: rgba(212, 175, 55, 0.32);
+            --admin-shadow: 0 22px 55px rgba(0, 0, 0, 0.34);
+        }
+
+        body {
+            background:
+                radial-gradient(circle at top left, rgba(212, 175, 55, 0.14), transparent 28%),
+                linear-gradient(135deg, #050505 0%, #111111 48%, #1d1605 100%);
+            color: var(--admin-text);
+        }
+
+        .admin-login-screen {
+            background:
+                radial-gradient(circle at 20% 16%, rgba(245, 215, 110, 0.26), transparent 24%),
+                radial-gradient(circle at 82% 80%, rgba(212, 175, 55, 0.16), transparent 30%),
+                linear-gradient(135deg, #030303 0%, #141414 48%, #2b2108 100%);
+        }
+
+        .admin-login-card,
+        .content-card,
+        .admin-header {
+            background: linear-gradient(180deg, rgba(34,34,34,0.96), rgba(12,12,12,0.98));
+            color: var(--admin-text);
+            border-color: var(--admin-border);
+            box-shadow: var(--admin-shadow);
+        }
+
+        .admin-login-card h1,
+        .admin-header h2,
+        .admin-content h3,
+        .admin-content h4,
+        .admin-content h5,
+        .content-card h3,
+        .content-card h4,
+        .content-card h5 {
+            color: var(--admin-gold-light);
+        }
+
+        .admin-container {
+            background:
+                radial-gradient(circle at 100% 0%, rgba(212,175,55,0.08), transparent 24%),
+                #0b0b0b;
+        }
+
+        .sidebar {
+            background:
+                linear-gradient(180deg, rgba(245, 215, 110, 0.08), transparent 24%),
+                linear-gradient(135deg, #050505 0%, #151515 58%, #2a1f07 100%);
+            border-right: 1px solid var(--admin-border);
+        }
+
+        .nav-menu a {
+            color: #f2ead4;
+            background: transparent;
+        }
+
+        .nav-menu a i {
+            color: var(--admin-gold-light);
+        }
+
+        .nav-menu a:hover,
+        .nav-menu a.active {
+            background: rgba(212, 175, 55, 0.18);
+            color: #ffffff;
+            border-left-color: var(--admin-gold);
+            box-shadow: inset 0 0 0 1px rgba(212, 175, 55, 0.12);
+        }
+
+        .admin-welcome-banner {
+            background:
+                radial-gradient(circle at 10% 20%, rgba(245,215,110,0.24), transparent 24%),
+                linear-gradient(135deg, #060606 0%, #161616 46%, #3b2b09 100%);
+            color: #fff;
+        }
+
+        .form-section,
+        .item-card,
+        .pending-role-card,
+        .admin-empty-state {
+            background: rgba(255, 255, 255, 0.045);
+            border-color: rgba(212, 175, 55, 0.22);
+            color: var(--admin-text);
+        }
+
+        .item-info h5 {
+            color: var(--admin-gold-light);
+        }
+
+        .dashboard-stat-card h2 {
+            color: var(--admin-gold-light) !important;
+            text-shadow: 0 0 18px rgba(212,175,55,0.14);
+        }
+
+        .dashboard-stat-card:hover,
+        .dashboard-stat-card.active {
+            background: linear-gradient(180deg, rgba(53,43,15,0.95), rgba(21,21,21,0.98));
+            border-color: rgba(212, 175, 55, 0.42);
+            box-shadow: 0 18px 34px rgba(212,175,55,0.16);
+        }
+
+        .btn-primary,
+        .btn-success {
+            background: linear-gradient(135deg, var(--admin-gold-light), var(--admin-gold));
+            border-color: var(--admin-gold);
+            color: #111;
+        }
+
+        .btn-primary:hover,
+        .btn-success:hover {
+            background: linear-gradient(135deg, #ffe38a, #c8941f);
+            color: #111;
+            box-shadow: 0 10px 22px rgba(212,175,55,0.24);
+        }
+
+        .table {
+            color: var(--admin-text);
+            --bs-table-color: var(--admin-text);
+            --bs-table-border-color: rgba(212,175,55,0.14);
+        }
+
+        table thead {
+            background: linear-gradient(135deg, #151515, #3b2b09);
+            color: var(--admin-gold-light);
+        }
+
+        @media (max-width: 768px) {
+            .nav-menu a {
+                background: rgba(255,255,255,0.045);
+                border: 1px solid rgba(212,175,55,0.16);
+            }
+        }
+
+        .admin-report-grid {
+            display: grid;
+            grid-template-columns: repeat(6, minmax(0, 1fr));
+            gap: 10px;
+            margin-bottom: 14px;
+        }
+
+        .admin-report-cell {
+            min-width: 0;
+        }
+
+        #dashboardView .admin-welcome-banner {
+            padding: 16px 18px;
+            margin-bottom: 12px;
+        }
+
+        #dashboardView .admin-welcome-kicker {
+            margin-bottom: 10px;
+        }
+
+        #dashboardView .admin-welcome-kicker span {
+            padding: 4px 8px;
+            font-size: 11px;
+        }
+
+        #dashboardView .admin-welcome-track span {
+            font-size: 20px;
+        }
+
+        #dashboardView .admin-welcome-subtext {
+            margin-top: 8px;
+            font-size: 13px;
+        }
+
+        .dashboard-stat-card {
+            min-height: 94px;
+            height: 100%;
+            padding: 12px 10px;
+            margin-bottom: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 4px;
+        }
+
+        .dashboard-stat-card h5 {
+            margin: 0;
+            font-size: 13px;
+            line-height: 1.2;
+        }
+
+        .dashboard-stat-card h2 {
+            margin: 0;
+            font-size: 25px;
+            line-height: 1;
+        }
+
+        .dashboard-stat-card small {
+            font-size: 11px;
+            line-height: 1.2;
+        }
+
+        #dashboardView > .content-card {
+            margin-bottom: 14px;
+        }
+
+        @media (max-width: 1200px) {
+            .admin-report-grid {
+                grid-template-columns: repeat(4, minmax(0, 1fr));
+            }
+        }
+
+        @media (max-width: 768px) {
+            .admin-report-grid {
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+            }
+
+            .dashboard-stat-card {
+                min-height: 86px;
+            }
+        }
+
+        @media (max-width: 420px) {
+            .admin-report-grid {
+                grid-template-columns: 1fr;
             }
         }
     </style>
@@ -456,6 +1039,9 @@
                 </li>
                 <li class="nav-item" id="adminRegisterTabItem" role="presentation">
                     <button class="nav-link" id="adminRegisterTabBtn" data-bs-toggle="tab" data-bs-target="#adminRegisterTab" type="button" role="tab">Register Admin</button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="adminForgotTabBtn" data-bs-toggle="tab" data-bs-target="#adminForgotTab" type="button" role="tab">Forgot Password</button>
                 </li>
             </ul>
             <div class="tab-content">
@@ -492,7 +1078,7 @@
                         <div class="mb-3">
                             <label class="form-label">Password</label>
                             <div class="input-group">
-                                <input type="password" class="form-control" id="adminRegisterPassword" autocomplete="new-password" minlength="6" required>
+                                <input type="password" class="form-control" id="adminRegisterPassword" autocomplete="new-password" minlength="12" required>
                                 <button class="btn btn-outline-secondary" type="button" onclick="togglePasswordVisibility('adminRegisterPassword', this)" aria-label="Show password">
                                     <i class="fas fa-eye"></i>
                                 </button>
@@ -501,7 +1087,7 @@
                         <div class="mb-3">
                             <label class="form-label">Confirm Password</label>
                             <div class="input-group">
-                                <input type="password" class="form-control" id="adminRegisterConfirmPassword" autocomplete="new-password" minlength="6" required>
+                                <input type="password" class="form-control" id="adminRegisterConfirmPassword" autocomplete="new-password" minlength="12" required>
                                 <button class="btn btn-outline-secondary" type="button" onclick="togglePasswordVisibility('adminRegisterConfirmPassword', this)" aria-label="Show password">
                                     <i class="fas fa-eye"></i>
                                 </button>
@@ -512,6 +1098,38 @@
                         </button>
                         <p class="text-muted small mt-2 mb-0">Only the first admin can register here. Other admins are added inside the panel.</p>
                     </form>
+                </div>
+                <div id="adminForgotTab" class="tab-pane fade" role="tabpanel">
+                    <form id="adminForgotPasswordForm">
+                        <div class="mb-3">
+                            <label class="form-label">Registered Admin Email</label>
+                            <input type="email" class="form-control" id="adminForgotEmail" autocomplete="email" required>
+                        </div>
+                        <button type="submit" id="adminForgotButton" class="btn btn-outline-primary w-100">
+                            <i class="fas fa-envelope"></i> Send Reset Code
+                        </button>
+                    </form>
+                    <hr>
+                    <form id="adminResetWithCodeForm">
+                        <div class="mb-3">
+                            <label class="form-label">6-Digit Email Code</label>
+                            <input type="text" class="form-control" id="adminResetCode" inputmode="numeric" pattern="[0-9]{6}" maxlength="6" autocomplete="one-time-code" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">New Strong Password</label>
+                            <div class="input-group">
+                                <input type="password" class="form-control" id="adminResetNewPassword" autocomplete="new-password" minlength="12" required>
+                                <button class="btn btn-outline-secondary" type="button" onclick="togglePasswordVisibility('adminResetNewPassword', this)" aria-label="Show password">
+                                    <i class="fas fa-eye"></i>
+                                </button>
+                            </div>
+                            <small class="text-muted">Use at least 12 characters with uppercase, lowercase, number, and symbol.</small>
+                        </div>
+                        <button type="submit" id="adminResetWithCodeButton" class="btn btn-primary w-100">
+                            <i class="fas fa-key"></i> Set New Password
+                        </button>
+                    </form>
+                    <p class="text-muted small mt-2 mb-0">Admin passwords can only be reset through the email address registered on the admin account.</p>
                 </div>
             </div>
             <div class="text-center mt-3">
@@ -535,6 +1153,7 @@
                 <li><a href="#" onclick="switchAdminView('events')"><i class="fas fa-calendar"></i> Events</a></li>
                 <li><a href="#" onclick="switchAdminView('leadership')"><i class="fas fa-users"></i> Leadership</a></li>
                 <li><a href="#" onclick="switchAdminView('gallery')"><i class="fas fa-images"></i> Gallery</a></li>
+                <li><a href="#" onclick="switchAdminView('contactVoices')"><i class="fas fa-share-nodes"></i> Contact & Social</a></li>
                 <li><a href="#" onclick="switchAdminView('welfare')"><i class="fas fa-triangle-exclamation"></i> Welfare Warnings</a></li>
                 <li><a href="#" onclick="switchAdminView('prayer')"><i class="fas fa-mosque"></i> Prayer & Religious Activities</a></li>
                 <li><a href="#" onclick="showReligiousAdminSection('jummahAdminSection')"><i class="fas fa-bell"></i> Jumu'ah Reminders</a></li>
@@ -579,77 +1198,81 @@
                     </div>
                     <p class="admin-welcome-subtext">Manage members, reports, resources, and community updates from one focused workspace.</p>
                 </div>
-                <div class="row">
-                    <div class="col-md-3 mb-3">
+                <div class="admin-report-grid" aria-label="Admin report summary">
+                    <div class="admin-report-cell">
                         <div class="content-card text-center dashboard-stat-card" style="cursor:pointer;" onclick="loadDashboardDetail('members')">
                             <h5><i class="fas fa-users"></i> Members</h5>
                             <h2 id="memberCount" style="color: var(--primary-color);">0</h2>
                         </div>
                     </div>
-                    <div class="col-md-3 mb-3">
+                    <div class="admin-report-cell">
                         <div class="content-card text-center dashboard-stat-card" style="cursor:pointer;" onclick="loadDashboardDetail('students')">
                             <h5><i class="fas fa-user-graduate"></i> Students</h5>
                             <h2 id="studentCount" style="color: var(--secondary-color);">0</h2>
                         </div>
                     </div>
-                    <div class="col-md-3 mb-3">
+                    <div class="admin-report-cell">
                         <div class="content-card text-center dashboard-stat-card" style="cursor:pointer;" onclick="loadDashboardDetail('donations')">
                             <h5><i class="fas fa-circle-check"></i> Total Donations</h5>
                             <h2 id="donationTotal" style="color: #16a34a;">$0</h2>
-                            <small><span id="donationCount">0</span> donation records</small>
+                            <small><span id="donationCount">0</span> records | <span id="pendingDonationCount">0</span> pending | <span id="failedDonationCount">0</span> rejected</small>
+                            <small>Pending value: <span id="pendingDonationAmount">$0</span></small>
+                            <small>This month: <span id="monthDonationTotal">$0</span></small>
                         </div>
                     </div>
-                    <div class="col-md-3 mb-3">
+                    <div class="admin-report-cell">
                         <div class="content-card text-center dashboard-stat-card" style="cursor:pointer;" onclick="loadDashboardDetail('payments')">
                             <h5>Total Payments</h5>
                             <h2 id="paymentTotal" style="color: #0ea5e9;">$0</h2>
-                            <small><span id="paymentCount">0</span> payment records</small>
+                            <small><span id="paymentCount">0</span> records | <span id="pendingPaymentCount">0</span> pending | <span id="failedPaymentCount">0</span> rejected</small>
+                            <small>Pending value: <span id="pendingPaymentAmount">$0</span></small>
+                            <small>This month: <span id="monthPaymentTotal">$0</span></small>
                         </div>
                     </div>
-                    <div class="col-md-3 mb-3">
+                    <div class="admin-report-cell">
                         <div class="content-card text-center dashboard-stat-card" style="cursor:pointer;" onclick="loadDashboardDetail('welfare')">
                             <h5>Welfare Requests</h5>
                             <h2 id="welfareCount" style="color: #f59e0b;">0</h2>
                             <small><span id="pendingWelfareCount">0</span> pending</small>
                         </div>
                     </div>
-                    <div class="col-md-3 mb-3">
+                    <div class="admin-report-cell">
                         <div class="content-card text-center dashboard-stat-card" style="cursor:pointer;" onclick="loadDashboardDetail('events')">
                             <h5>Events</h5>
                             <h2 id="eventCount" style="color: #ef4444;">0</h2>
                         </div>
                     </div>
-                    <div class="col-md-3 mb-3">
+                    <div class="admin-report-cell">
                         <div class="content-card text-center dashboard-stat-card" style="cursor:pointer;" onclick="loadDashboardDetail('announcements')">
                             <h5>Announcements</h5>
                             <h2 id="announcementCount" style="color: #6366f1;">0</h2>
                         </div>
                     </div>
-                    <div class="col-md-3 mb-3">
+                    <div class="admin-report-cell">
                         <div class="content-card text-center dashboard-stat-card" style="cursor:pointer;" onclick="loadDashboardDetail('resources')">
                             <h5>Resources</h5>
                             <h2 id="resourceCount" style="color: #14b8a6;">0</h2>
                         </div>
                     </div>
-                    <div class="col-md-3 mb-3">
+                    <div class="admin-report-cell">
                         <div class="content-card text-center dashboard-stat-card" style="cursor:pointer;" onclick="loadDashboardDetail('gallery')">
                             <h5>Gallery Items</h5>
                             <h2 id="galleryCount" style="color: #8b5cf6;">0</h2>
                         </div>
                     </div>
-                    <div class="col-md-3 mb-3">
+                    <div class="admin-report-cell">
                         <div class="content-card text-center dashboard-stat-card" style="cursor:pointer;" onclick="loadDashboardDetail('leadership')">
                             <h5>Leadership</h5>
                             <h2 id="leaderCount" style="color: #f97316;">0</h2>
                         </div>
                     </div>
-                    <div class="col-md-3 mb-3">
+                    <div class="admin-report-cell">
                         <div class="content-card text-center dashboard-stat-card" style="cursor:pointer;" onclick="loadDashboardDetail('hadiths')">
                             <h5>Hadiths</h5>
                             <h2 id="hadithCount" style="color: #64748b;">0</h2>
                         </div>
                     </div>
-                    <div class="col-md-3 mb-3">
+                    <div class="admin-report-cell">
                         <div class="content-card text-center dashboard-stat-card" style="cursor:pointer;" onclick="loadDashboardDetail('prayer')">
                             <h5>Prayer Days</h5>
                             <h2 id="prayerCount" style="color: #22c55e;">0</h2>
@@ -661,7 +1284,7 @@
                     <p>Welcome to Dawa'ah Admin Panel. This dashboard shows live database totals for members, payments, donations, welfare, content, and resources.</p>
                     <p>All changes you make here will be immediately reflected to regular users on the system.</p>
                     <button type="button" class="btn btn-primary btn-sm" onclick="seedSampleDatabaseData()">
-                        <i class="fas fa-database"></i> Add Sample Database Records
+                        <i class="fas fa-database"></i> Add Starter Database Records
                     </button>
                 </div>
                 <div class="content-card">
@@ -998,7 +1621,7 @@
                                 <div class="col-md-4 mb-3">
                                     <label>New Password *</label>
                                     <div class="input-group">
-                                        <input type="password" class="form-control" id="adminNewPassword" minlength="6" autocomplete="new-password" required>
+                                        <input type="password" class="form-control" id="adminNewPassword" minlength="12" autocomplete="new-password" required>
                                         <button class="btn btn-outline-secondary" type="button" onclick="togglePasswordVisibility('adminNewPassword', this)" aria-label="Show password">
                                             <i class="fas fa-eye"></i>
                                         </button>
@@ -1007,7 +1630,7 @@
                                 <div class="col-md-4 mb-3">
                                     <label>Confirm New Password *</label>
                                     <div class="input-group">
-                                        <input type="password" class="form-control" id="adminConfirmNewPassword" minlength="6" autocomplete="new-password" required>
+                                        <input type="password" class="form-control" id="adminConfirmNewPassword" minlength="12" autocomplete="new-password" required>
                                         <button class="btn btn-outline-secondary" type="button" onclick="togglePasswordVisibility('adminConfirmNewPassword', this)" aria-label="Show password">
                                             <i class="fas fa-eye"></i>
                                         </button>
@@ -1032,6 +1655,115 @@
                         <p class="text-muted">Only the main admin can add the two other admins, remove them, reset their passwords, and view their activity.</p>
 
                         <div class="form-section">
+                            <h4><i class="fas fa-clipboard-list"></i> Role Responsibilities</h4>
+                            <div class="table-responsive">
+                                <table class="table">
+                                    <thead>
+                                        <tr>
+                                            <th>Role</th>
+                                            <th>Responsibilities</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr>
+                                            <td><span class="badge bg-primary">Chairman / Chairlady</span></td>
+                                            <td>Welfare requests, member support, and oversight reports.</td>
+                                        </tr>
+                                        <tr>
+                                            <td><span class="badge bg-primary">Secretary</span></td>
+                                            <td>Member records, announcements, and reports.</td>
+                                        </tr>
+                                        <tr>
+                                            <td><span class="badge bg-primary">Treasurer</span></td>
+                                            <td>Dues, donations, payment confirmation, and financial reports.</td>
+                                        </tr>
+                                        <tr>
+                                            <td><span class="badge bg-primary">Media</span></td>
+                                            <td>Gallery, videos, contact messages, and publicity tools.</td>
+                                        </tr>
+                                        <tr>
+                                            <td><span class="badge bg-primary">Organizer</span></td>
+                                            <td>Events, daily/weekly/monthly activities, and volunteer coordination.</td>
+                                        </tr>
+                                        <tr>
+                                            <td><span class="badge bg-primary">Imam / Religious Lead</span></td>
+                                            <td>Prayer times, Hadiths, Islamic resources, lectures, and religious reminders.</td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+
+                        <div class="form-section">
+                            <h4><i class="fas fa-user-check"></i> Pending Role Requests</h4>
+                            <p class="text-muted">Officer accounts stay inactive until the main admin approves them. Each role can have only one active holder, and approval unlocks only that role's tools.</p>
+                            <div id="pendingRoleRequestsList"></div>
+                        </div>
+
+                        <div class="form-section">
+                            <h4><i class="fas fa-id-badge"></i> Assign Member Role</h4>
+                            <p class="text-muted">Choose a registered member and assign their office role from the admin panel.</p>
+                            <form id="memberRoleAssignForm">
+                                <div class="row">
+                                    <div class="col-md-5 mb-3">
+                                        <label>Member *</label>
+                                        <select class="form-select" id="memberRoleUser" required>
+                                            <option value="" disabled selected>Loading members...</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-md-4 mb-3">
+                                        <label>Role *</label>
+                                        <select class="form-select" id="memberRoleValue" required>
+                                            <option value="student">Student Member</option>
+                                            <option value="chairman">Chairman / Welfare Lead</option>
+                                            <option value="chairlady">Chairlady / Welfare Lead</option>
+                                            <option value="secretary">Secretary</option>
+                                            <option value="treasurer">Treasurer</option>
+                                            <option value="media">Media</option>
+                                            <option value="organizer">Organizer</option>
+                                            <option value="imam">Imam / Religious Lead</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-md-3 mb-3">
+                                        <label>Status *</label>
+                                        <select class="form-select" id="memberRoleStatus" required>
+                                            <option value="active">Active</option>
+                                            <option value="inactive">Pending approval</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                <button class="btn btn-success" id="memberRoleAssignButton" type="submit"><i class="fas fa-save"></i> Save Role</button>
+                            </form>
+                        </div>
+
+                        <div class="form-section">
+                            <h4><i class="fas fa-key"></i> Reset Member Password</h4>
+                            <p class="text-muted">Set a temporary password for a student or officer account without viewing their old password.</p>
+                            <form id="memberPasswordResetForm">
+                                <div class="row">
+                                    <div class="col-md-5 mb-3">
+                                        <label>Member *</label>
+                                        <select class="form-select" id="memberPasswordUser" required>
+                                            <option value="" disabled selected>Loading members...</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-md-4 mb-3">
+                                        <label>Temporary Password *</label>
+                                        <div class="input-group">
+                                            <input type="password" class="form-control" id="memberTemporaryPassword" minlength="6" autocomplete="new-password" required>
+                                            <button class="btn btn-outline-secondary" type="button" onclick="togglePasswordVisibility('memberTemporaryPassword', this)" aria-label="Show password">
+                                                <i class="fas fa-eye"></i>
+                                            </button>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-3 mb-3 d-flex align-items-end">
+                                        <button class="btn btn-outline-primary w-100" id="memberPasswordResetButton" type="submit"><i class="fas fa-rotate"></i> Reset</button>
+                                    </div>
+                                </div>
+                            </form>
+                        </div>
+
+                        <div class="form-section">
                             <h4><i class="fas fa-user-plus"></i> Add Admin</h4>
                             <form id="adminCreateForm">
                                 <div class="row">
@@ -1046,7 +1778,7 @@
                                     <div class="col-md-4 mb-3">
                                         <label>Password *</label>
                                         <div class="input-group">
-                                            <input type="password" class="form-control" id="managedAdminPassword" minlength="6" autocomplete="new-password" required>
+                                            <input type="password" class="form-control" id="managedAdminPassword" minlength="12" autocomplete="new-password" required>
                                             <button class="btn btn-outline-secondary" type="button" onclick="togglePasswordVisibility('managedAdminPassword', this)" aria-label="Show password">
                                                 <i class="fas fa-eye"></i>
                                             </button>
@@ -1103,6 +1835,109 @@
                     
                     <h4 style="margin-top: 30px;"><i class="fas fa-list"></i> All Hadiths</h4>
                     <div id="hadithsList"></div>
+                </div>
+            </div>
+
+            <div id="contactVoicesView" class="admin-content">
+                <div class="content-card">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h4 class="mb-0"><i class="fas fa-share-nodes"></i> Public Contact & Social Links</h4>
+                        <button class="btn btn-outline-primary btn-sm" onclick="loadAdminSiteSettings()">
+                            <i class="fas fa-rotate"></i> Reload
+                        </button>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Location</label>
+                            <input type="text" class="form-control" id="adminContactLocation" placeholder="UMMA University, Main Campus">
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Phone</label>
+                            <input type="tel" class="form-control" id="adminContactPhone" placeholder="+23231422167">
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Email</label>
+                            <input type="email" class="form-control" id="adminContactEmail" placeholder="info@dawaah.org">
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Office Hours</label>
+                            <input type="text" class="form-control" id="adminContactHours" placeholder="Monday - Friday: 10 AM - 6 PM">
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">WhatsApp Link or Number</label>
+                            <input type="text" class="form-control" id="adminSocialWhatsapp" placeholder="+23231422167 or https://wa.me/...">
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Facebook URL</label>
+                            <input type="url" class="form-control" id="adminSocialFacebook" placeholder="https://facebook.com/...">
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">X / Twitter URL</label>
+                            <input type="url" class="form-control" id="adminSocialX" placeholder="https://x.com/...">
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Instagram URL</label>
+                            <input type="url" class="form-control" id="adminSocialInstagram" placeholder="https://instagram.com/...">
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">YouTube URL</label>
+                            <input type="url" class="form-control" id="adminSocialYoutube" placeholder="https://youtube.com/...">
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">TikTok URL</label>
+                            <input type="url" class="form-control" id="adminSocialTiktok" placeholder="https://tiktok.com/@...">
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">LinkedIn URL</label>
+                            <input type="url" class="form-control" id="adminSocialLinkedin" placeholder="https://linkedin.com/...">
+                        </div>
+                    </div>
+                    <button class="btn btn-success" onclick="saveAdminSiteSettings()">
+                        <i class="fas fa-save"></i> Save Public Links
+                    </button>
+                </div>
+
+                <div class="content-card">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h4 class="mb-0"><i class="fas fa-voicemail"></i> Contact Voice Mail</h4>
+                        <button class="btn btn-primary btn-sm" onclick="loadAdminContactVoiceMessages()">
+                            <i class="fas fa-rotate"></i> Refresh
+                        </button>
+                    </div>
+                    <div id="adminContactVoiceMessagesList">
+                        <p class="text-muted mb-0">No voice messages loaded yet.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal fade" id="adminLeaderDetailsModal" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="adminLeaderModalTitle">Leader Details</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="row">
+                        <div class="col-md-4 text-center mb-3 mb-md-0">
+                            <img id="adminLeaderPhotoImage" src="" alt="" class="img-fluid d-none" style="max-height:220px; object-fit:cover; border-radius:8px;">
+                            <i id="adminLeaderPhotoIcon" class="fas fa-user-circle fa-6x text-primary"></i>
+                        </div>
+                        <div class="col-md-8">
+                            <h4 id="adminLeaderName">Name</h4>
+                            <h5 class="text-primary" id="adminLeaderPosition">Position</h5>
+                            <p><strong>Course:</strong> <span id="adminLeaderCourse"></span></p>
+                            <p><strong>Year of Study:</strong> <span id="adminLeaderYearOfStudy"></span></p>
+                            <p><strong>Bio:</strong> <span id="adminLeaderBio"></span></p>
+                            <hr>
+                            <p><strong>Description:</strong> <span id="adminLeaderDescription"></span></p>
+                            <p><strong>Email:</strong> <span id="adminLeaderEmail"></span></p>
+                            <p><strong>Phone:</strong> <span id="adminLeaderPhone"></span></p>
+                            <p><strong>Added:</strong> <span id="adminLeaderAddedAt"></span></p>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>

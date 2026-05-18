@@ -194,6 +194,42 @@ function logAdminActivity($admin_id, $action_name, $details = []) {
     }
 }
 
+function ensureAdminLoginAttemptsTable() {
+    $conn = getDBConnection();
+    $conn->query("CREATE TABLE IF NOT EXISTS admin_login_attempts (
+        id INT PRIMARY KEY AUTO_INCREMENT,
+        username VARCHAR(150) NOT NULL,
+        ip_address VARCHAR(45) NOT NULL,
+        success TINYINT(1) DEFAULT 0,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        INDEX idx_admin_login_guard (username, ip_address, created_at)
+    )");
+}
+
+function adminLoginIsLocked($username, $ip_address) {
+    ensureAdminLoginAttemptsTable();
+    $conn = getDBConnection();
+    $stmt = $conn->prepare("SELECT COUNT(*) AS failures FROM admin_login_attempts WHERE username = ? AND ip_address = ? AND success = 0 AND created_at > DATE_SUB(NOW(), INTERVAL 15 MINUTE)");
+    $stmt->bind_param("ss", $username, $ip_address);
+    $stmt->execute();
+    $row = $stmt->get_result()->fetch_assoc();
+    return intval($row['failures'] ?? 0) >= 5;
+}
+
+function recordAdminLoginAttempt($username, $ip_address, $success) {
+    ensureAdminLoginAttemptsTable();
+    $conn = getDBConnection();
+    $success_int = $success ? 1 : 0;
+    $stmt = $conn->prepare("INSERT INTO admin_login_attempts (username, ip_address, success) VALUES (?, ?, ?)");
+    $stmt->bind_param("ssi", $username, $ip_address, $success_int);
+    $stmt->execute();
+    if ($success) {
+        $cleanup = $conn->prepare("DELETE FROM admin_login_attempts WHERE username = ? AND ip_address = ? AND success = 0");
+        $cleanup->bind_param("ss", $username, $ip_address);
+        $cleanup->execute();
+    }
+}
+
 function maybeLogSuccessfulAdminAction($success, $message, $response_data) {
     global $action, $method, $data, $skip_auto_audit;
     if ($skip_auto_audit || !$success || empty($_SESSION['admin_user']) || !in_array($method, ['POST', 'PUT', 'DELETE'], true)) {
@@ -216,8 +252,6 @@ function approvalRequiredActions() {
         'deleteAnnouncement',
         'createEvent',
         'deleteEvent',
-        'addLeader',
-        'deleteLeader',
         'addGalleryItem',
         'deleteGalleryItem',
         'addHadith',
@@ -228,6 +262,8 @@ function approvalRequiredActions() {
         'deleteResource',
         'approvePayment',
         'approveDonation',
+        'rejectPayment',
+        'rejectDonation',
         'seedSampleData'
     ];
 }
@@ -283,25 +319,58 @@ function listManagedAdmins() {
 if ($action === 'loginAdmin' && $method === 'POST') {
     $username = isset($data['username']) ? trim($data['username']) : '';
     $password = isset($data['password']) ? $data['password'] : '';
+    $ip_address = $_SERVER['REMOTE_ADDR'] ?? '';
 
     if ($username === '' || $password === '') {
         respond(false, 'Admin username and password required');
     }
+    if (adminLoginIsLocked(strtolower($username), $ip_address)) {
+        respond(false, 'Too many failed admin login attempts. Try again after 15 minutes.');
+    }
 
     $result = loginUser($username, $password);
     if (!$result['success'] || empty($result['user'])) {
+        recordAdminLoginAttempt(strtolower($username), $ip_address, false);
         respond(false, 'Invalid admin username or password');
     }
 
     $user = $result['user'];
     if (!in_array($user['role'], ['admin', 'executive'], true)) {
+        recordAdminLoginAttempt(strtolower($username), $ip_address, false);
         respond(false, 'This account is not allowed to access the admin panel');
     }
 
     $fresh_user = getAdminUserForSession(intval($user['id']));
     $_SESSION['admin_user'] = adminUserPayload($fresh_user ?: $user);
+    recordAdminLoginAttempt(strtolower($username), $ip_address, true);
     logAdminActivity($_SESSION['admin_user']['id'], 'loginAdmin', ['message' => 'Admin logged in']);
     respond(true, 'Admin login successful', $_SESSION['admin_user']);
+}
+
+if ($action === 'requestAdminPasswordReset' && $method === 'POST') {
+    $email = isset($data['email']) ? trim($data['email']) : '';
+    $result = requestAdminPasswordReset(
+        $email,
+        $_SERVER['REMOTE_ADDR'] ?? '',
+        $_SERVER['HTTP_USER_AGENT'] ?? ''
+    );
+    if (!$result['success']) {
+        respond(false, $result['error']);
+    }
+    respond(true, 'If this is an active admin email, a reset code has been sent to that inbox.', $result);
+}
+
+if ($action === 'resetAdminPasswordWithCode' && $method === 'POST') {
+    $result = resetAdminPasswordWithCode(
+        isset($data['email']) ? $data['email'] : '',
+        isset($data['code']) ? $data['code'] : '',
+        isset($data['password']) ? $data['password'] : ''
+    );
+    if (!$result['success']) {
+        respond(false, $result['error']);
+    }
+    logAdminActivity(intval($result['user_id'] ?? 0), 'resetAdminPasswordWithCode', ['message' => 'Admin password reset by email code']);
+    respond(true, 'Admin password reset successfully. Login with your new password.');
 }
 
 if ($action === 'getAdminSetupStatus' && $method === 'GET') {
@@ -321,8 +390,8 @@ if ($action === 'registerAdmin' && $method === 'POST') {
     if ($username === '' || $email === '' || $password === '') {
         respond(false, 'All admin registration fields are required');
     }
-    if (strlen($password) < 6) {
-        respond(false, 'Password must be at least 6 characters');
+    if (!isStrongAdminPassword($password)) {
+        respond(false, 'Admin password must be at least 12 characters and include uppercase, lowercase, number, and symbol.');
     }
 
     $conn = getDBConnection();
@@ -386,14 +455,36 @@ $publicActions = [
     'getGallery',
     'getPrayerTimes',
     'getResources',
-    'getHadiths'
+    'getHadiths',
+    'getSiteSettings'
 ];
 
 if (!in_array($action, $publicActions, true)) {
     requireAdminSession();
 }
 
+if ($action === 'getContactVoiceMessages' && $method === 'GET') {
+    respond(true, 'Voice messages loaded', getContactVoiceMessages());
+}
+
+if ($action === 'markContactVoiceMessageRead' && $method === 'POST') {
+    $listener_id = !empty($_SESSION['admin_user']['id']) ? intval($_SESSION['admin_user']['id']) : 0;
+    $result = markContactVoiceMessageRead(intval($data['message_id'] ?? 0), $listener_id);
+    respond($result['success'], $result['success'] ? 'Voice message marked as listened' : $result['error'], $result);
+}
+
+if ($action === 'getSiteSettings' && $method === 'GET') {
+    respond(true, 'Site settings loaded', getSiteSettings());
+}
+
+if ($action === 'updateSiteSettings' && $method === 'POST') {
+    $updated_by = !empty($_SESSION['admin_user']['id']) ? intval($_SESSION['admin_user']['id']) : 0;
+    $result = saveSiteSettings($data, $updated_by);
+    respond($result['success'], $result['success'] ? 'Site settings updated' : $result['error'], $result);
+}
+
 function executeApprovedAdminAction($requested_action, $request) {
+    $admin_id = intval($_SESSION['admin_user']['id'] ?? 0);
     if ($requested_action === 'createAnnouncement') {
         return createAnnouncement(
             $request['title'] ?? '',
@@ -478,8 +569,10 @@ function executeApprovedAdminAction($requested_action, $request) {
     }
     if ($requested_action === 'addResource') return addResource($request);
     if ($requested_action === 'deleteResource') return deleteResource(intval($request['resource_id'] ?? 0));
-    if ($requested_action === 'approvePayment') return completePayment(intval($request['payment_id'] ?? 0), 'ADMIN-PAY-' . intval($request['payment_id'] ?? 0) . '-' . time());
-    if ($requested_action === 'approveDonation') return completeDonation(intval($request['donation_id'] ?? 0), 'ADMIN-DON-' . intval($request['donation_id'] ?? 0) . '-' . time());
+    if ($requested_action === 'approvePayment') return completePayment(intval($request['payment_id'] ?? 0), 'ADMIN-PAY-' . intval($request['payment_id'] ?? 0) . '-' . time(), intval($_SESSION['admin_user']['id'] ?? 0));
+    if ($requested_action === 'approveDonation') return completeDonation(intval($request['donation_id'] ?? 0), 'ADMIN-DON-' . intval($request['donation_id'] ?? 0) . '-' . time(), intval($_SESSION['admin_user']['id'] ?? 0));
+    if ($requested_action === 'rejectPayment') return updatePaymentStatus(intval($request['payment_id'] ?? 0), 'rejected', null, $request['notes'] ?? 'Rejected by admin/treasurer', $admin_id);
+    if ($requested_action === 'rejectDonation') return updateDonationStatus(intval($request['donation_id'] ?? 0), 'rejected', null, $admin_id);
     if ($requested_action === 'seedSampleData') return seedAdminSampleData();
     return ['success' => false, 'error' => 'Unsupported approval action'];
 }
@@ -507,8 +600,8 @@ if ($action === 'createAdminAccount' && $method === 'POST') {
     if ($username === '' || $email === '' || $password === '') {
         respond(false, 'All admin fields are required');
     }
-    if (strlen($password) < 6) {
-        respond(false, 'Password must be at least 6 characters');
+    if (!isStrongAdminPassword($password)) {
+        respond(false, 'Admin password must be at least 12 characters and include uppercase, lowercase, number, and symbol.');
     }
     if (countManagedAdmins() >= ADMIN_ACCOUNT_LIMIT) {
         respond(false, 'This admin can only add two other admins');
@@ -594,6 +687,47 @@ if ($action === 'deleteAdminAccount' && $method === 'DELETE') {
     respond(true, 'Admin account removed');
 }
 
+if ($action === 'getPendingRoleRequests' && $method === 'GET') {
+    requireMainAdminRole();
+    respond(true, 'Pending role requests retrieved', getPendingRoleRequests());
+}
+
+if ($action === 'getRoleAssignableMembers' && $method === 'GET') {
+    requireMainAdminRole();
+    respond(true, 'Members retrieved', getRoleAssignableMembers());
+}
+
+if ($action === 'assignMemberRole' && $method === 'POST') {
+    requireMainAdminRole();
+    $user_id = isset($data['user_id']) ? intval($data['user_id']) : 0;
+    $role = isset($data['role']) ? $data['role'] : 'student';
+    $status = isset($data['status']) ? $data['status'] : 'active';
+    $result = assignMemberRole($user_id, $role, $status);
+    respond($result['success'], $result['success'] ? 'Member role updated' : $result['error'], $result);
+}
+
+if ($action === 'resetMemberPassword' && $method === 'POST') {
+    requireMainAdminRole();
+    $user_id = isset($data['user_id']) ? intval($data['user_id']) : 0;
+    $new_password = isset($data['new_password']) ? $data['new_password'] : '';
+    $result = resetMemberPassword($user_id, $new_password);
+    respond($result['success'], $result['success'] ? 'Member password reset successfully' : $result['error'], $result);
+}
+
+if ($action === 'approveRoleRequest' && $method === 'POST') {
+    requireMainAdminRole();
+    $user_id = isset($data['user_id']) ? intval($data['user_id']) : 0;
+    $result = approveRoleRequest($user_id);
+    respond($result['success'], $result['success'] ? 'Role request approved' : $result['error'], $result);
+}
+
+if ($action === 'rejectRoleRequest' && $method === 'POST') {
+    requireMainAdminRole();
+    $user_id = isset($data['user_id']) ? intval($data['user_id']) : 0;
+    $result = rejectRoleRequest($user_id);
+    respond($result['success'], $result['success'] ? 'Role request rejected' : $result['error'], $result);
+}
+
 if ($action === 'changeAdminPassword' && $method === 'POST') {
     requireAdminSession();
     $current_password = isset($data['current_password']) ? $data['current_password'] : '';
@@ -601,8 +735,8 @@ if ($action === 'changeAdminPassword' && $method === 'POST') {
     if ($current_password === '' || $new_password === '') {
         respond(false, 'Current and new password are required');
     }
-    if (strlen($new_password) < 6) {
-        respond(false, 'New password must be at least 6 characters');
+    if (!isStrongAdminPassword($new_password)) {
+        respond(false, 'Admin password must be at least 12 characters and include uppercase, lowercase, number, and symbol.');
     }
 
     $conn = getDBConnection();
@@ -627,33 +761,32 @@ if ($action === 'changeAdminPassword' && $method === 'POST') {
 if ($action === 'resetAdminPassword' && $method === 'POST') {
     requireAdminSession();
     $admin_id = isset($data['admin_id']) ? intval($data['admin_id']) : 0;
-    $new_password = isset($data['new_password']) ? $data['new_password'] : '';
-    if ($admin_id <= 0 || $new_password === '') {
-        respond(false, 'Admin and new password are required');
-    }
-    if (strlen($new_password) < 6) {
-        respond(false, 'New password must be at least 6 characters');
+    if ($admin_id <= 0) {
+        respond(false, 'Admin is required');
     }
     $current_id = intval($_SESSION['admin_user']['id']);
-    if ($admin_id !== $current_id && !isMainAdminId($current_id)) {
-        respond(false, 'Only the main admin can reset another admin password');
+    if ($admin_id === $current_id) {
+        respond(false, 'Use Forgot Password or Change Password for your own account');
+    }
+    if (!isMainAdminId($current_id)) {
+        respond(false, 'Only the main admin can send another admin password reset email');
     }
 
     $conn = getDBConnection();
-    $stmt_check = $conn->prepare("SELECT id FROM users WHERE id = ? AND role = 'admin' LIMIT 1");
+    $stmt_check = $conn->prepare("SELECT id, email FROM users WHERE id = ? AND role = 'admin' AND status = 'active' LIMIT 1");
     $stmt_check->bind_param("i", $admin_id);
     $stmt_check->execute();
-    if ($stmt_check->get_result()->num_rows < 1) {
+    $target = $stmt_check->get_result()->fetch_assoc();
+    if (!$target) {
         respond(false, 'Admin account not found');
     }
 
-    $hashed_password = password_hash($new_password, PASSWORD_BCRYPT);
-    $stmt_update = $conn->prepare("UPDATE users SET password = ? WHERE id = ?");
-    $stmt_update->bind_param("si", $hashed_password, $admin_id);
-    if (!$stmt_update->execute()) {
-        respond(false, 'Could not reset password');
+    $result = requestAdminPasswordReset($target['email'], $_SERVER['REMOTE_ADDR'] ?? '', $_SERVER['HTTP_USER_AGENT'] ?? '');
+    if (!$result['success']) {
+        respond(false, $result['error']);
     }
-    respond(true, 'Admin password reset successfully');
+    logAdminActivity($current_id, 'sendAdminPasswordResetEmail', ['admin_id' => $admin_id, 'email' => $target['email']]);
+    respond(true, 'Password reset code sent to that admin email.');
 }
 
 if ($action === 'getAdminActivityLogs' && $method === 'GET') {
@@ -661,10 +794,10 @@ if ($action === 'getAdminActivityLogs' && $method === 'GET') {
     $conn = getDBConnection();
     $logs = [];
     $result = $conn->query(
-        "SELECT a.id, a.user_id, u.username, u.email, a.action, a.new_values, a.ip_address, a.created_at
+        "SELECT a.id, a.user_id, u.username, u.email, a.action, a.table_name, a.new_values, a.ip_address, a.created_at
          FROM audit_log a
          LEFT JOIN users u ON a.user_id = u.id
-         WHERE a.table_name = 'admin_panel' AND (u.username IS NULL OR u.username <> 'system_admin')
+         WHERE a.table_name IN ('admin_panel', 'member_dashboard') AND (u.username IS NULL OR u.username <> 'system_admin')
          ORDER BY a.created_at DESC
          LIMIT 100"
     );
@@ -677,6 +810,7 @@ if ($action === 'getAdminActivityLogs' && $method === 'GET') {
                 'username' => $row['username'],
                 'email' => $row['email'],
                 'action' => $row['action'],
+                'source' => $row['table_name'],
                 'details' => is_array($details) ? $details : [],
                 'ip_address' => $row['ip_address'],
                 'created_at' => $row['created_at']
@@ -692,10 +826,10 @@ if ($action === 'getMyAdminActivityLogs' && $method === 'GET') {
     $admin_id = intval($_SESSION['admin_user']['id']);
     $logs = [];
     $stmt = $conn->prepare(
-        "SELECT a.id, a.user_id, u.username, u.email, a.action, a.new_values, a.ip_address, a.created_at
+        "SELECT a.id, a.user_id, u.username, u.email, a.action, a.table_name, a.new_values, a.ip_address, a.created_at
          FROM audit_log a
          LEFT JOIN users u ON a.user_id = u.id
-         WHERE a.table_name = 'admin_panel' AND a.user_id = ?
+         WHERE a.table_name IN ('admin_panel', 'member_dashboard') AND a.user_id = ?
          ORDER BY a.created_at DESC
          LIMIT 50"
     );
@@ -711,6 +845,7 @@ if ($action === 'getMyAdminActivityLogs' && $method === 'GET') {
                 'username' => $row['username'],
                 'email' => $row['email'],
                 'action' => $row['action'],
+                'source' => $row['table_name'],
                 'details' => is_array($details) ? $details : [],
                 'ip_address' => $row['ip_address'],
                 'created_at' => $row['created_at']
@@ -722,7 +857,7 @@ if ($action === 'getMyAdminActivityLogs' && $method === 'GET') {
 
 function getAdminActivityLog($log_id) {
     $conn = getDBConnection();
-    $stmt = $conn->prepare("SELECT a.*, u.username FROM audit_log a LEFT JOIN users u ON a.user_id = u.id WHERE a.id = ? AND a.table_name = 'admin_panel' LIMIT 1");
+    $stmt = $conn->prepare("SELECT a.*, u.username FROM audit_log a LEFT JOIN users u ON a.user_id = u.id WHERE a.id = ? AND a.table_name IN ('admin_panel', 'member_dashboard') LIMIT 1");
     $stmt->bind_param("i", $log_id);
     $stmt->execute();
     $result = $stmt->get_result();
@@ -927,7 +1062,7 @@ if ($action === 'approvePayment' && $method === 'POST') {
         respond(false, 'Payment ID required');
     }
     $transaction_id = 'ADMIN-PAY-' . $payment_id . '-' . time();
-    $result = completePayment($payment_id, $transaction_id);
+    $result = completePayment($payment_id, $transaction_id, intval($_SESSION['admin_user']['id'] ?? 0));
     respond($result['success'], $result['success'] ? 'Payment approved' : $result['error'], $result);
 }
 
@@ -937,8 +1072,26 @@ if ($action === 'approveDonation' && $method === 'POST') {
         respond(false, 'Donation ID required');
     }
     $transaction_id = 'ADMIN-DON-' . $donation_id . '-' . time();
-    $result = completeDonation($donation_id, $transaction_id);
+    $result = completeDonation($donation_id, $transaction_id, intval($_SESSION['admin_user']['id'] ?? 0));
     respond($result['success'], $result['success'] ? 'Donation approved' : $result['error'], $result);
+}
+
+if ($action === 'rejectPayment' && $method === 'POST') {
+    $payment_id = isset($data['payment_id']) ? intval($data['payment_id']) : 0;
+    if ($payment_id === 0) {
+        respond(false, 'Payment ID required');
+    }
+    $result = updatePaymentStatus($payment_id, 'rejected', null, $data['notes'] ?? 'Rejected by admin/treasurer', intval($_SESSION['admin_user']['id'] ?? 0));
+    respond($result['success'], $result['success'] ? 'Payment rejected' : $result['error'], $result);
+}
+
+if ($action === 'rejectDonation' && $method === 'POST') {
+    $donation_id = isset($data['donation_id']) ? intval($data['donation_id']) : 0;
+    if ($donation_id === 0) {
+        respond(false, 'Donation ID required');
+    }
+    $result = updateDonationStatus($donation_id, 'rejected', null, intval($_SESSION['admin_user']['id'] ?? 0));
+    respond($result['success'], $result['success'] ? 'Donation rejected' : $result['error'], $result);
 }
 
 if ($action === 'seedSampleData' && $method === 'POST') {
@@ -1035,6 +1188,7 @@ if ($action === 'deleteEvent' && $method === 'DELETE') {
 // ============================================
 
 if ($action === 'addLeader' && $method === 'POST') {
+    requireMainAdminRole();
     $photo_upload = uploadAdminImage('leader_passport_photo', 'leader_photos');
     if (!$photo_upload['success']) {
         respond(false, $photo_upload['error']);
@@ -1076,6 +1230,7 @@ if ($action === 'getLeaders' && $method === 'GET') {
 }
 
 if ($action === 'deleteLeader' && $method === 'DELETE') {
+    requireMainAdminRole();
     $leader_id = isset($data['leader_id']) ? intval($data['leader_id']) : 0;
     
     if ($leader_id === 0) {
@@ -1335,6 +1490,7 @@ if ($action === 'deleteResource' && $method === 'DELETE') {
 // ============================================
 
 if ($action === 'addHadith' && $method === 'POST') {
+    requireAdminSession();
     $arabic = isset($data['arabic']) ? $data['arabic'] : '';
     $english = isset($data['english']) ? $data['english'] : '';
     $reference = isset($data['reference']) ? $data['reference'] : '';
@@ -1389,6 +1545,7 @@ if ($action === 'getHadithById' && $method === 'GET') {
 }
 
 if ($action === 'updateHadith' && $method === 'PUT') {
+    requireAdminSession();
     $hadith_id = isset($data['hadith_id']) ? intval($data['hadith_id']) : 0;
     $arabic = isset($data['arabic']) ? $data['arabic'] : '';
     $english = isset($data['english']) ? $data['english'] : '';
@@ -1413,6 +1570,7 @@ if ($action === 'updateHadith' && $method === 'PUT') {
 }
 
 if ($action === 'deleteHadith' && $method === 'DELETE') {
+    requireAdminSession();
     $hadith_id = isset($data['hadith_id']) ? intval($data['hadith_id']) : 0;
     
     if ($hadith_id === 0) {

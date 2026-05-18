@@ -11,24 +11,34 @@ define('DAWAAH_ADMIN_USERNAME', getenv('DAWAAH_ADMIN_USERNAME') ?: 'admin');
 define('DAWAAH_ADMIN_EMAIL', getenv('DAWAAH_ADMIN_EMAIL') ?: 'dawaah.admin@dawaah.local');
 define('DAWAAH_ADMIN_PASSWORD', getenv('DAWAAH_ADMIN_PASSWORD') ?: 'DawaahAdmin@2026');
 
-// Create connection
-$conn = new mysqli(DB_HOST, DB_USER, DB_PASSWORD);
+// Create connection. On shared hosting the database is usually created from
+// the control panel, so try connecting directly to it first.
+$conn = new mysqli(DB_HOST, DB_USER, DB_PASSWORD, DB_NAME);
 
 // Check connection
 if ($conn->connect_error) {
-    die("Connection failed: " . $conn->connect_error);
-}
-
-// Create database if it doesn't exist
-$createDB = "CREATE DATABASE IF NOT EXISTS " . DB_NAME;
-if ($conn->query($createDB) === TRUE) {
-    // Database created or already exists
+    $initial_connect_error = $conn->connect_error;
 } else {
-    die("Error creating database: " . $conn->error);
+    $initial_connect_error = '';
 }
 
-// Select the database
-$conn->select_db(DB_NAME);
+// Local XAMPP can create the database automatically when needed. Most shared
+// hosts cannot, so set DAWAAH_SKIP_CREATE_DB=1 there and create it in cPanel.
+if ($conn->connect_errno === 1049 && getenv('DAWAAH_SKIP_CREATE_DB') !== '1') {
+    $conn = new mysqli(DB_HOST, DB_USER, DB_PASSWORD);
+    if ($conn->connect_error) {
+        die("Connection failed: " . $conn->connect_error);
+    }
+    $createDB = "CREATE DATABASE IF NOT EXISTS `" . str_replace("`", "``", DB_NAME) . "`";
+    if (!$conn->query($createDB)) {
+        die("Error creating database: " . $conn->error);
+    }
+    $conn->select_db(DB_NAME);
+}
+
+if ($conn->connect_error) {
+    die("Connection failed: " . ($initial_connect_error ?: $conn->connect_error));
+}
 
 // Set charset to utf8
 $conn->set_charset("utf8");
@@ -39,7 +49,7 @@ $sql_users = "CREATE TABLE IF NOT EXISTS users (
     username VARCHAR(50) UNIQUE NOT NULL,
     email VARCHAR(100) UNIQUE NOT NULL,
     password VARCHAR(255) NOT NULL,
-    role ENUM('student', 'executive', 'chairman', 'chairlady', 'secretary', 'treasurer', 'imam', 'admin') DEFAULT 'student',
+    role ENUM('student', 'executive', 'chairman', 'chairlady', 'secretary', 'treasurer', 'media', 'organizer', 'imam', 'admin') DEFAULT 'student',
     status ENUM('active', 'inactive', 'suspended') DEFAULT 'active',
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
@@ -163,13 +173,16 @@ $sql_payments = "CREATE TABLE IF NOT EXISTS payments (
     amount DECIMAL(10, 2) NOT NULL,
     due_date DATE,
     paid_date DATE NULL,
-    status ENUM('pending', 'completed', 'late', 'waived') DEFAULT 'pending',
+    status ENUM('pending', 'completed', 'failed', 'rejected', 'late', 'waived') DEFAULT 'pending',
     payment_method VARCHAR(50),
     transaction_id VARCHAR(100),
+    receipt_number VARCHAR(100),
+    approved_by INT NULL,
     notes TEXT,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    FOREIGN KEY (student_id) REFERENCES students(id) ON DELETE CASCADE
+    FOREIGN KEY (student_id) REFERENCES students(id) ON DELETE CASCADE,
+    FOREIGN KEY (approved_by) REFERENCES users(id) ON DELETE SET NULL
 )";
 
 // DONATIONS TABLE
@@ -183,11 +196,14 @@ $sql_donations = "CREATE TABLE IF NOT EXISTS donations (
     purpose TEXT,
     payment_method VARCHAR(50),
     transaction_id VARCHAR(100),
-    status ENUM('pending', 'completed', 'failed') DEFAULT 'pending',
+    status ENUM('pending', 'completed', 'failed', 'rejected') DEFAULT 'pending',
     receipt_issued BOOLEAN DEFAULT FALSE,
+    receipt_number VARCHAR(100),
+    approved_by INT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    FOREIGN KEY (donor_id) REFERENCES users(id) ON DELETE SET NULL
+    FOREIGN KEY (donor_id) REFERENCES users(id) ON DELETE SET NULL,
+    FOREIGN KEY (approved_by) REFERENCES users(id) ON DELETE SET NULL
 )";
 
 // MPESA TRANSACTIONS TABLE
@@ -274,11 +290,30 @@ $sql_volunteer = "CREATE TABLE IF NOT EXISTS volunteer_opportunities (
     FOREIGN KEY (created_by) REFERENCES users(id) ON DELETE SET NULL
 )";
 
+// ACTIVITIES TABLE - Daily, weekly, and monthly programmes managed by Organizer/Admin
+$sql_activities = "CREATE TABLE IF NOT EXISTS activities (
+    id INT PRIMARY KEY AUTO_INCREMENT,
+    title VARCHAR(255) NOT NULL,
+    period ENUM('daily', 'weekly', 'monthly') NOT NULL,
+    activity_date DATE NOT NULL,
+    activity_time TIME NOT NULL,
+    schedule_note VARCHAR(255),
+    location VARCHAR(255) NOT NULL,
+    description TEXT NOT NULL,
+    created_by INT,
+    status ENUM('active', 'inactive') DEFAULT 'active',
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    FOREIGN KEY (created_by) REFERENCES users(id) ON DELETE SET NULL
+)";
+
 // VOLUNTEER_REGISTRATIONS TABLE
 $sql_volunteer_reg = "CREATE TABLE IF NOT EXISTS volunteer_registrations (
     id INT PRIMARY KEY AUTO_INCREMENT,
     volunteer_opportunity_id INT NOT NULL,
     student_id INT NOT NULL,
+    skills TEXT,
+    availability VARCHAR(255),
     hours_completed INT DEFAULT 0,
     status ENUM('registered', 'in-progress', 'completed') DEFAULT 'registered',
     registered_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
@@ -330,6 +365,49 @@ $sql_messages = "CREATE TABLE IF NOT EXISTS messages (
     FOREIGN KEY (recipient_id) REFERENCES users(id) ON DELETE CASCADE
 )";
 
+// CONTACT VOICE MESSAGES TABLE
+$sql_contact_voice_messages = "CREATE TABLE IF NOT EXISTS contact_voice_messages (
+    id INT PRIMARY KEY AUTO_INCREMENT,
+    name VARCHAR(100) NOT NULL,
+    email VARCHAR(150) NOT NULL,
+    subject VARCHAR(255) NOT NULL,
+    message TEXT,
+    audio_path VARCHAR(255) NOT NULL,
+    audio_mime VARCHAR(100) NOT NULL,
+    audio_size INT DEFAULT 0,
+    status ENUM('new', 'read') DEFAULT 'new',
+    listened_by INT NULL,
+    listened_at TIMESTAMP NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (listened_by) REFERENCES users(id) ON DELETE SET NULL
+)";
+
+// PASSWORD_RESET_REQUESTS TABLE - records safe reset requests when email is unavailable/limited
+$sql_password_reset_requests = "CREATE TABLE IF NOT EXISTS password_reset_requests (
+    id INT PRIMARY KEY AUTO_INCREMENT,
+    user_id INT NULL,
+    email VARCHAR(150) NOT NULL,
+    token_hash VARCHAR(255) NULL,
+    attempts INT DEFAULT 0,
+    last_attempt_at TIMESTAMP NULL,
+    status ENUM('pending', 'used', 'expired') DEFAULT 'pending',
+    requested_ip VARCHAR(45),
+    user_agent VARCHAR(500),
+    expires_at TIMESTAMP NULL,
+    processed_at TIMESTAMP NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE SET NULL
+)";
+
+// SITE SETTINGS TABLE - public contact and social media links
+$sql_site_settings = "CREATE TABLE IF NOT EXISTS site_settings (
+    setting_key VARCHAR(100) PRIMARY KEY,
+    setting_value TEXT,
+    updated_by INT NULL,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    FOREIGN KEY (updated_by) REFERENCES users(id) ON DELETE SET NULL
+)";
+
 // AUDIT_LOG TABLE
 $sql_audit = "CREATE TABLE IF NOT EXISTS audit_log (
     id INT PRIMARY KEY AUTO_INCREMENT,
@@ -361,10 +439,14 @@ $tables = array(
     "leadership_profiles" => $sql_leadership_profiles,
     "hadiths" => $sql_hadiths,
     "volunteer_opportunities" => $sql_volunteer,
+    "activities" => $sql_activities,
     "volunteer_registrations" => $sql_volunteer_reg,
     "resources" => $sql_resources,
     "islamic_calendar" => $sql_islamic_calendar,
     "messages" => $sql_messages,
+    "contact_voice_messages" => $sql_contact_voice_messages,
+    "password_reset_requests" => $sql_password_reset_requests,
+    "site_settings" => $sql_site_settings,
     "audit_log" => $sql_audit
 );
 
