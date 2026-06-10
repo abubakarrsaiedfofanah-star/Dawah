@@ -1,0 +1,15 @@
+name = "umma-dawaah-groq-ai"
+main = "src/index.js"
+compatibility_date = "2026-05-22"
+account_id = "4d43e50e0969e85df8daec1d78ef940e"
+workers_dev = true
+
+[vars]
+ALLOWED_ORIGIN = "https://umma-university-da-awah-team.web.app,https://umma-university-da-awah-team.firebaseapp.com,https://66ghz.com,https://www.66ghz.com"
+GROQ_CHAT_MODEL = "llama-3.1-8b-instant"
+GROQ_TRANSCRIBE_MODEL = "whisper-large-v3-turbo"
+DAILY_AI_LIMIT = "0"
+
+[[kv_namespaces]]
+binding = "AI_RATE_LIMIT"
+id = "b72d69731cf64addae139f31e4e136bb"

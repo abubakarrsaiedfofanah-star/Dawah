@@ -1,0 +1,23 @@
+/* Runtime slice from daawah.css: TABLES. */
+/* TABLES */
+.table {
+    margin-bottom: 0;
+}
+
+.table thead {
+    background-color: rgba(15, 81, 50, 0.1);
+}
+
+.table thead th {
+    color: var(--primary-color);
+    font-weight: 700;
+    border-bottom: 2px solid var(--border-color);
+}
+
+.table tbody tr:hover {
+    background-color: rgba(15, 81, 50, 0.05);
+}
+
+.table-hover tbody tr:hover {
+    color: inherit;
+}

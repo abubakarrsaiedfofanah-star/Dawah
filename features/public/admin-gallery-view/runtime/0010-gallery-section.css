@@ -1,0 +1,65 @@
+/* Runtime slice from daawah.css: GALLERY SECTION. */
+/* GALLERY SECTION */
+.gallery-item {
+    background: linear-gradient(180deg, #ffffff, #fffaf0);
+    border: 1px solid rgba(212, 175, 55, 0.28);
+    border-radius: 12px;
+    padding: 40px 20px;
+    text-align: center;
+    transition: all 0.3s ease;
+    height: 100%;
+    cursor: pointer;
+    overflow: hidden;
+}
+
+.gallery-item:hover {
+    transform: translateY(-10px);
+    border-color: var(--primary-color);
+    box-shadow: var(--shadow-lg);
+}
+
+.gallery-item:active {
+    transform: translateY(-5px) scale(0.99);
+}
+
+.gallery-image {
+    color: var(--gold-color);
+    margin-bottom: 20px;
+    opacity: 0.7;
+    transition: all 0.3s ease;
+    min-height: 150px;
+    border-radius: 12px;
+    overflow: hidden;
+    background: linear-gradient(135deg, rgba(15, 81, 50, 0.08), rgba(212, 175, 55, 0.14));
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.gallery-image img,
+.gallery-image video {
+    border-radius: 12px !important;
+    transition: transform var(--transition-smooth);
+}
+
+.gallery-item:hover .gallery-image img,
+.gallery-item:hover .gallery-image video {
+    transform: scale(1.04);
+}
+
+.gallery-item:hover .gallery-image {
+    opacity: 1;
+    transform: scale(1.1);
+}
+
+.gallery-item h6 {
+    color: var(--primary-color);
+    font-weight: 700;
+    margin-bottom: 10px;
+    font-size: 18px;
+}
+
+.gallery-item p {
+    color: #999;
+    font-size: 14px;
+}

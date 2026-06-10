@@ -1,0 +1,11 @@
+/* Runtime slice from daawah.css: AUTHENTICATION. */
+/* AUTHENTICATION */
+.landing-page {
+    display: none;
+    min-height: 100vh;
+}
+
+.landing-page.active {
+    display: block !important;
+    background: #fffdf6;
+}

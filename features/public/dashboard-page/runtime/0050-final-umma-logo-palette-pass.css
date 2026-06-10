@@ -1,0 +1,46 @@
+/* Runtime slice from daawah.css: Final UMMA logo palette pass. */
+/* Final UMMA logo palette pass */
+:root {
+    --primary-color: #003040;
+    --secondary-color: #0060b0;
+    --accent-color: #40b050;
+    --gold-color: #40b050;
+    --gold-light: #78d986;
+    --cream-bg: #f3fbf7;
+    --light-bg: #eef7f4;
+    --border-color: #b9d8d2;
+    --surface-cream: #f3fbf7;
+    --surface-green-soft: #eaf7ee;
+    --ink-soft: #35545c;
+}
+
+.landing-hero,
+.dashboard-header,
+.sidebar,
+.premium-navbar,
+.navbar.premium-navbar,
+.footer,
+.role-workspace-banner,
+.hero-section {
+    background: linear-gradient(135deg, #003040 0%, #004e70 52%, #40b050 118%) !important;
+}
+
+.btn-primary,
+.btn-success,
+.nav-tabs .nav-link.active,
+.nav-pills .nav-link.active,
+.hero-buttons .btn-primary {
+    background: linear-gradient(135deg, #40b050, #0060b0) !important;
+    border-color: #40b050 !important;
+    color: #ffffff !important;
+}
+
+.btn-outline-primary {
+    color: #003040 !important;
+    border-color: #40b050 !important;
+}
+
+.btn-outline-primary:hover {
+    background: #003040 !important;
+    color: #ffffff !important;
+}

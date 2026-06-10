@@ -1,0 +1,67 @@
+/* Runtime slice from daawah.css: TOGGLE/COLLAPSE SECTIONS. */
+/* TOGGLE/COLLAPSE SECTIONS */
+.toggle-btn {
+    background: none;
+    border: 1px solid #dee2e6;
+    color: #6c757d;
+    cursor: pointer;
+    padding: 6px 12px;
+    border-radius: 4px;
+    transition: all 0.3s ease;
+    font-size: 14px;
+}
+
+.toggle-btn:hover {
+    background-color: #f8f9fa;
+    border-color: var(--primary-color);
+    color: var(--primary-color);
+}
+
+.toggle-btn i {
+    transition: transform 0.3s ease;
+}
+
+.hidden-section {
+    display: none;
+}
+
+.shown-section {
+    display: block;
+    animation: slideDown 0.3s ease-out;
+}
+
+@keyframes slideDown {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.collapsible-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    cursor: pointer;
+    user-select: none;
+}
+
+.collapsible-header:hover {
+    opacity: 0.8;
+}
+
+.event-date {
+    font-size: 24px;
+    font-weight: 700;
+    color: var(--primary-color);
+    margin-bottom: 8px;
+}
+
+.event-calendar-item h6 {
+    color: var(--dark-text);
+    font-weight: 700;
+    margin-bottom: 8px;
+}

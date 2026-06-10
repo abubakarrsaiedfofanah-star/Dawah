@@ -1,0 +1,17 @@
+/* Runtime slice from daawah.css: BENEFITS. */
+/* BENEFITS */
+.benefits-list {
+    list-style: none;
+    padding: 0;
+}
+
+.benefits-list li {
+    padding: 8px 0;
+    color: var(--dark-text);
+}
+
+.benefits-list i {
+    color: var(--success-color);
+    margin-right: 10px;
+    font-weight: 700;
+}

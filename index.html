@@ -3,11 +3,63 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dawa'ah - UMMA University Muslim Students Registration System</title>
-    <link rel="icon" type="image/png" href="assets/umma-university-logo-color.png">
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <link rel="stylesheet" href="dawaah.css?v=photo-academic-20260509">
+    <meta name="referrer" content="strict-origin-when-cross-origin">
+    <meta http-equiv="Cache-Control" content="no-store, no-cache, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; base-uri 'self'; object-src 'none'; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://www.google.com https://www.google.com/recaptcha/ https://www.google.com/recaptcha/enterprise.js https://www.gstatic.com https://www.gstatic.com/recaptcha/; style-src 'self' 'unsafe-inline'; font-src 'self' data:; img-src 'self' data: blob: https:; media-src 'self' data: blob:; manifest-src 'self'; connect-src 'self' https://*.supabase.co https://identitytoolkit.googleapis.com https://firestore.googleapis.com https://firebaseappcheck.googleapis.com https://www.google.com https://www.google.com/recaptcha/ https://umma-dawaah-groq-ai.abubakarrsaiedfofanah.workers.dev; frame-src https://www.google.com https://www.google.com/recaptcha/ https://recaptcha.google.com/recaptcha/; form-action 'self'; upgrade-insecure-requests">
+    <script src="canonical_redirect.js?v=20260527-one-link"></script>
+    <script>
+        if (window.top !== window.self) {
+            window.top.location = window.self.location;
+        }
+        (function() {
+            window.__dawaahDeferredInstallPrompt = null;
+            window.__dawaahPendingInstallClick = false;
+            window.__dawaahEnsureManifest = function() {
+                if (document.querySelector('link[rel="manifest"]')) return;
+                var link = document.createElement('link');
+                link.rel = 'manifest';
+                var meta = document.querySelector('meta[name="app-manifest-url"]');
+                link.href = meta && meta.content ? meta.content : 'manifest.webmanifest';
+                document.head.appendChild(link);
+            };
+            window.addEventListener('beforeinstallprompt', function(event) {
+                event.preventDefault();
+                window.__dawaahDeferredInstallPrompt = event;
+                if (window.__dawaahPendingInstallClick && typeof window.installDawaahApp === 'function') {
+                    window.__dawaahPendingInstallClick = false;
+                    setTimeout(window.installDawaahApp, 100);
+                }
+            });
+            window.__dawaahEnsureManifest();
+        })();
+        try {
+            if (JSON.parse(localStorage.getItem('currentUser') || 'null')) {
+                document.documentElement.classList.add('pending-auth-route');
+                window.setTimeout(function() {
+                    document.documentElement.classList.remove('pending-auth-route');
+                }, 5000);
+            }
+        } catch (error) {}
+    </script>
+    <title>UMMA University Da'awah Team - Muslim Students Registration System</title>
+    <meta name="google-site-verification" content="EAx-119s3ZeqtlXp8CPrrwvrsH4lVozqwF31SI8u2Z8" />
+    <meta name="description" content="UMMA University Da'awah Team app for Muslim student registration, activities, welfare support, events, leadership, gallery, and community updates.">
+    <meta name="robots" content="index, follow">
+    <link rel="canonical" href="https://umma-university-da-awah-team.web.app/">
+    <meta property="og:title" content="UMMA University Da'awah Team">
+    <meta property="og:description" content="Registration and community system for UMMA University Da'awah Team.">
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://umma-university-da-awah-team.web.app/">
+    <meta property="og:image" content="https://umma-university-da-awah-team.web.app/assets/umma-university-logo-color.png">
+    <link rel="icon" type="image/png" href="assets/umma-university-logo-color.png?v=20260522-logo2">
+    <meta name="app-manifest-url" content="manifest.webmanifest?v=20260523-install-direct5">
+    <meta name="theme-color" content="#003040">
+    <link href="vendor/bootstrap/css/bootstrap.min.css?v=local-20260523" rel="stylesheet">
+    <link rel="stylesheet" href="vendor/fontawesome/css/all.min.css?v=local-20260523">
+    <link rel="stylesheet" href="daawah.css?v=portal-lock-admin-login-20260604-4">
+    <link rel="stylesheet" href="ai_assistant_widget.css?v=login-only-20260522">
 </head>
 <body>
     <!-- Landing Page -->
@@ -17,9 +69,8 @@
         <nav class="navbar navbar-expand-lg navbar-dark bg-dark sticky-top">
             <div class="container-fluid">
                 <a class="navbar-brand brand-logo" href="#" onclick="showLanding()">
-                    <img src="assets/umma-university-logo-color.png" alt="UMMA University logo" class="brand-logo__image">
-                    <i class="fas fa-mosque brand-logo__icon" aria-hidden="true"></i>
-                    <span>Dawa'ah</span>
+                    <img src="assets/umma-university-logo-color.png?v=20260522-logo2" alt="UMMA University logo" class="brand-logo__image">
+                    <span>UMMA University Da'awah Team</span>
                 </a>
                 <button class="navbar-toggler premium-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#landingNavbarNav" aria-controls="landingNavbarNav" aria-expanded="false" aria-label="Toggle navigation">
                     <span class="premium-toggler__label" aria-hidden="true">
@@ -35,28 +86,25 @@
                 <div class="collapse navbar-collapse" id="landingNavbarNav">
                     <ul class="navbar-nav ms-auto nav nav-tabs" role="tablist">
                         <li class="nav-item">
-                            <a class="nav-link" href="#home" onclick="showLanding(); scrollToSection('home')"><i class="fas fa-home"></i> Home</a>
+                            <a class="nav-link" href="#home" onclick="return showPublicSection('home', this)"><i class="fas fa-home"></i> Home</a>
                         </li>
                         <li class="nav-item">
-                            <a class="nav-link" href="#about" onclick="showLanding(); scrollToSection('about')"><i class="fas fa-circle-info"></i> About Us</a>
+                            <a class="nav-link" href="#about" onclick="return showPublicSection('about', this)"><i class="fas fa-circle-info"></i> About Us</a>
                         </li>
                         <li class="nav-item">
-                            <a class="nav-link" href="#mission" onclick="showLanding(); scrollToSection('mission')"><i class="fas fa-hand-holding-heart"></i> What We Do</a>
+                            <a class="nav-link" href="#mission" onclick="return showPublicSection('mission', this)"><i class="fas fa-hand-holding-heart"></i> What We Do</a>
                         </li>
                         <li class="nav-item">
-                            <a class="nav-link" href="#activities" onclick="showLanding(); scrollToSection('activities')"><i class="fas fa-calendar-days"></i> Activities</a>
+                            <a class="nav-link" href="#activities" onclick="return showPublicSection('activities', this)"><i class="fas fa-calendar-days"></i> Activities</a>
                         </li>
                         <li class="nav-item">
-                            <a class="nav-link" href="#leadership" onclick="showLanding(); scrollToSection('leadership')"><i class="fas fa-users"></i> Our Leadership</a>
+                            <a class="nav-link" href="#leadership" onclick="return showPublicSection('leadership', this)"><i class="fas fa-users"></i> Our Leadership</a>
                         </li>
                         <li class="nav-item">
-                            <a class="nav-link" href="#gallery" onclick="showLanding(); scrollToSection('gallery')"><i class="fas fa-images"></i> Gallery</a>
+                            <a class="nav-link" href="#gallery" onclick="return showPublicSection('gallery', this)"><i class="fas fa-images"></i> Gallery</a>
                         </li>
                         <li class="nav-item">
-                            <a class="nav-link" href="#contact" onclick="showLanding(); scrollToSection('contact')"><i class="fas fa-bell"></i> Contact Us</a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link" href="javascript:void(0)" onclick="activateAuthTab('login')"><i class="fas fa-user-shield"></i> Login</a>
+                            <a class="nav-link" href="#contact" onclick="return showPublicSection('contact', this)"><i class="fas fa-bell"></i> Contact Us</a>
                         </li>
                     </ul>
                 </div>
@@ -67,42 +115,77 @@
         <div class="landing-hero">
             <div class="hero-content">
                 <h1 class="hero-title">
-                    <img src="assets/umma-university-logo-color.png" alt="UMMA University logo" class="hero-logo">
-                    <i class="fas fa-mosque hero-title__icon" aria-hidden="true"></i>
-                    <span>Dawa'ah</span>
+                    <img src="assets/umma-university-logo-color.png?v=20260522-logo2" alt="UMMA University logo" class="hero-logo">
+                    <span>UMMA University Da'awah Team</span>
                 </h1>
-                <p class="hero-subtitle">UMMA University Muslim Jamaat</p>
                 <p class="hero-description">Building a compassionate community of Muslim healthcare professionals</p>
-                <div class="hero-highlights" aria-label="Dawa'ah highlights">
+                <div class="hero-highlights" aria-label="UMMA University Da'awah Team highlights">
                     <span><i class="fas fa-mosque"></i> Prayer & Guidance</span>
                     <span><i class="fas fa-hands-helping"></i> Welfare & Service</span>
                     <span><i class="fas fa-photo-film"></i> Events & Media</span>
                 </div>
                 <div class="hero-buttons">
-                    <button class="btn btn-primary btn-lg" onclick="activateAuthTab('register')"><i class="fas fa-user-plus"></i> Join/Register</button>
-                    <button class="btn btn-outline-light btn-lg" onclick="activateAuthTab('login')"><i class="fas fa-right-to-bracket"></i> Login</button>
-                    <a href="#activities" onclick="showLanding(); scrollToSection('activities')" class="btn btn-light btn-lg visit-dawaah-link" title="View Dawa'ah activities">
+                    <a href="#portals" onclick="return showPublicSection('portals', this)" class="btn btn-primary btn-lg"><i class="fas fa-door-open"></i> Open Portals</a>
+                    <a href="#activities" onclick="return showPublicSection('activities', this)" class="btn btn-light btn-lg visit-dawaah-link" title="View UMMA University Da'awah Team activities">
                         <i class="fas fa-calendar-days"></i> View Activities
                     </a>
                 </div>
             </div>
         </div>
 
+        <!-- Portals Section -->
+        <section id="portals" class="landing-section portal-section bg-light">
+            <div class="container">
+                <div class="portal-section-header">
+                    <a class="btn btn-outline-primary portal-back-link" href="#home" onclick="return showPublicSection('home', this)">
+                        <i class="fas fa-arrow-left"></i> Back to Site
+                    </a>
+                </div>
+                <div class="portal-grid">
+                    <article class="portal-card portal-card-student">
+                        <div class="portal-card-brand">UMMA University Da'awah Team</div>
+                        <div class="portal-icon"><img src="assets/umma-university-logo-color.png?v=20260522-logo2" alt="UMMA University logo"></div>
+                        <h3>Student Portal</h3>
+                        <div class="portal-actions">
+                            <button class="btn btn-primary" onclick="activateAuthTab('login')"><i class="fas fa-right-to-bracket"></i> Student Login</button>
+                            <button class="btn btn-outline-primary" onclick="activateAuthTab('register')"><i class="fas fa-user-plus"></i> Student Register</button>
+                        </div>
+                    </article>
+                    <article class="portal-card portal-card-officer">
+                        <div class="portal-card-brand">UMMA University Da'awah Team</div>
+                        <div class="portal-icon"><img src="assets/umma-university-logo-color.png?v=20260522-logo2" alt="UMMA University logo"></div>
+                        <h3>Officer Portal</h3>
+                        <div class="portal-actions">
+                            <a class="btn btn-success" href="officer.html" onclick="rememberPortalAudience('officer')"><i class="fas fa-right-to-bracket"></i> Officer Access</a>
+                        </div>
+                    </article>
+                    <article class="portal-card portal-card-admin" data-admin-portal-card>
+                        <div class="portal-card-brand">UMMA University Da'awah Team</div>
+                        <div class="portal-icon"><img src="assets/umma-university-logo-color.png?v=20260522-logo2" alt="UMMA University logo"></div>
+                        <h3>Admin Portal</h3>
+                        <div class="portal-actions">
+                            <a class="btn btn-dark" href="admin.html"><i class="fas fa-lock"></i> Admin Login</a>
+                        </div>
+                    </article>
+                </div>
+            </div>
+        </section>
+
         <!-- About Us Section -->
         <section id="about" class="landing-section">
             <div class="container">
-                <h2 class="section-title">About Us</h2>
+                <h2 class="section-title" id="publicAboutTitle">About Us</h2>
                 <div class="row">
                     <div class="col-md-6">
                         <div class="about-content">
-                            <h4>Who We Are</h4>
-                            <p>Dawa'ah (UMMA University Muslim Jamaat) is a community organization dedicated to serving Muslim students and staff at UMMA University. We are committed to fostering spiritual growth, academic excellence, and community support.</p>
-                            <p>Our association brings together students from various medical disciplines including Medicine, Pharmacy, Nursing, and Public Health, creating a united platform for Islamic practice and mutual support.</p>
+                            <h4 id="publicAboutHeading">Who We Are</h4>
+                            <p id="publicAboutParagraph1">UMMA University Da'awah Team is a community organization dedicated to serving Muslim students and staff at UMMA University. We are committed to fostering spiritual growth, academic excellence, and community support.</p>
+                            <p id="publicAboutParagraph2">Our association brings together students from various disciplines, creating a united platform for Islamic practice and mutual support.</p>
                             <ul class="about-features">
-                                <li><i class="fas fa-check-circle"></i> Supporting faith-based student life</li>
-                                <li><i class="fas fa-check-circle"></i> Organizing religious events and activities</li>
-                                <li><i class="fas fa-check-circle"></i> Providing welfare and counseling services</li>
-                                <li><i class="fas fa-check-circle"></i> Bridging academic excellence with Islamic values</li>
+                                <li><i class="fas fa-check-circle"></i> <span id="publicAboutFeature1">Supporting faith-based student life</span></li>
+                                <li><i class="fas fa-check-circle"></i> <span id="publicAboutFeature2">Organizing religious events and activities</span></li>
+                                <li><i class="fas fa-check-circle"></i> <span id="publicAboutFeature3">Providing welfare and counseling services</span></li>
+                                <li><i class="fas fa-check-circle"></i> <span id="publicAboutFeature4">Bridging academic excellence with Islamic values</span></li>
                             </ul>
                         </div>
                     </div>
@@ -118,48 +201,48 @@
         <!-- Mission & Vision Section -->
         <section id="mission" class="landing-section bg-light">
             <div class="container">
-                <h2 class="section-title">What We Do</h2>
+                <h2 class="section-title" id="publicWhatWeDoTitle">What We Do</h2>
                 <div class="row">
                     <div class="col-md-4 mb-4">
                         <div class="mission-card">
                             <i class="fas fa-prayer"></i>
-                            <h5>Spiritual Support</h5>
-                            <p>Regular prayer gatherings, Jumu'ah services, and Islamic lectures to strengthen faith and spiritual growth among members.</p>
+                            <h5 id="publicWhatWeDo1Title">Spiritual Support</h5>
+                            <p id="publicWhatWeDo1Text">Regular prayer gatherings, Jumu'ah services, and Islamic lectures to strengthen faith and spiritual growth among members.</p>
                         </div>
                     </div>
                     <div class="col-md-4 mb-4">
                         <div class="mission-card">
                             <i class="fas fa-calendar-alt"></i>
-                            <h5>Events & Activities</h5>
-                            <p>Organize seminars, workshops, social gatherings, and educational events that promote Islamic knowledge and community bonding.</p>
+                            <h5 id="publicWhatWeDo2Title">Events & Activities</h5>
+                            <p id="publicWhatWeDo2Text">Organize seminars, workshops, social gatherings, and educational events that promote Islamic knowledge and community bonding.</p>
                         </div>
                     </div>
                     <div class="col-md-4 mb-4">
                         <div class="mission-card">
                             <i class="fas fa-hands-helping"></i>
-                            <h5>Welfare Support</h5>
-                            <p>Provide financial assistance, counseling, and support services to members facing hardship or personal challenges.</p>
+                            <h5 id="publicWhatWeDo3Title">Welfare Support</h5>
+                            <p id="publicWhatWeDo3Text">Provide financial assistance, counseling, and support services to members facing hardship or personal challenges.</p>
                         </div>
                     </div>
                     <div class="col-md-4 mb-4">
                         <div class="mission-card">
                             <i class="fas fa-graduation-cap"></i>
-                            <h5>Education</h5>
-                            <p>Offer resources for Islamic learning, including Quran study circles, Islamic history seminars, and knowledge-sharing sessions.</p>
+                            <h5 id="publicWhatWeDo4Title">Education</h5>
+                            <p id="publicWhatWeDo4Text">Offer resources for Islamic learning, including Quran study circles, Islamic history seminars, and knowledge-sharing sessions.</p>
                         </div>
                     </div>
                     <div class="col-md-4 mb-4">
                         <div class="mission-card">
                             <i class="fas fa-heart"></i>
-                            <h5>Community Service</h5>
-                            <p>Engage in volunteering and community outreach programs to benefit society and reflect Islamic values of compassion.</p>
+                            <h5 id="publicWhatWeDo5Title">Community Service</h5>
+                            <p id="publicWhatWeDo5Text">Engage in volunteering and community outreach programs to benefit society and reflect Islamic values of compassion.</p>
                         </div>
                     </div>
                     <div class="col-md-4 mb-4">
                         <div class="mission-card">
                             <i class="fas fa-user-tie"></i>
-                            <h5>Leadership</h5>
-                            <p>Develop leadership skills and prepare members for roles in guiding and inspiring the Muslim student community.</p>
+                            <h5 id="publicWhatWeDo6Title">Leadership</h5>
+                            <p id="publicWhatWeDo6Text">Develop leadership skills and prepare members for roles in guiding and inspiring the Muslim student community.</p>
                         </div>
                     </div>
                 </div>
@@ -181,7 +264,7 @@
             <div class="container">
                 <h2 class="section-title">Activities</h2>
                 <div class="activity-public-intro">
-                    <p>Daily, weekly, and monthly programmes that keep the Dawa'ah community connected, learning, and serving.</p>
+                    <p>Daily, weekly, and monthly programmes that keep the UMMA University Da'awah Team community connected, learning, and serving.</p>
                 </div>
                 <div id="publicActivitiesPreview" class="activity-public-grid">
                     <div class="text-center text-muted">Activities will be updated soon.</div>
@@ -218,21 +301,21 @@
                                 <i class="fas fa-phone"></i>
                                 <div>
                                     <h6>Phone</h6>
-                                    <p id="publicContactPhone">+23231422167</p>
+                                    <p><a id="publicContactPhone" href="tel:+23231422167">+23231422167</a></p>
                                 </div>
                             </div>
                             <div class="contact-item">
                                 <i class="fab fa-whatsapp"></i>
                                 <div>
                                     <h6>WhatsApp</h6>
-                                    <p><a id="publicContactWhatsapp" href="https://api.whatsapp.com/send?phone=23231422167&text=Assalamu%20alaikum%2C%20I%20would%20like%20to%20contact%20Dawa'ah." target="_blank" rel="noopener">+23231422167</a></p>
+                                    <p><a id="publicContactWhatsapp" href="https://api.whatsapp.com/send?phone=23231422167&text=Assalamu%20alaikum%2C%20I%20would%20like%20to%20contact%20Da%27awah%20Team." target="_blank" rel="noopener">+23231422167</a></p>
                                 </div>
                             </div>
                             <div class="contact-item">
                                 <i class="fas fa-envelope"></i>
                                 <div>
                                     <h6>Email</h6>
-                                    <p id="publicContactEmail">info@dawaah.org</p>
+                                    <p><a id="publicContactEmail" href="mailto:info@dawaah.org">info@dawaah.org</a></p>
                                 </div>
                             </div>
                             <div class="contact-item">
@@ -292,33 +375,44 @@
         <footer class="landing-footer">
             <div class="container">
                 <div class="row">
-                    <div class="col-md-4">
-                        <h6 class="footer-brand">
-                            <img src="assets/umma-university-logo-color.png" alt="UMMA University logo" class="footer-brand__image">
-                            <i class="fas fa-mosque" aria-hidden="true"></i>
-                            <span>Dawa'ah</span>
-                        </h6>
-                        <p>UMMA University Muslim Jamaat - Serving our community with compassion and integrity.</p>
+                    <div class="col-lg-4 col-md-6 footer-brand-column">
+                        <div class="footer-brand-lockup brand-logo" aria-label="UMMA University Da'awah Team">
+                            <img src="assets/umma-university-logo-color.png" alt="UMMA University logo" class="footer-brand__image brand-logo__image">
+                            <div class="footer-brand-copy">
+                                <span class="footer-brand-kicker">UMMA University logo</span>
+                                <h6 class="footer-brand-title">UMMA University Da'awah Team</h6>
+                            </div>
+                        </div>
                     </div>
-                    <div class="col-md-4">
+                    <div class="col-lg-2 col-md-6 footer-quick-column">
                         <h6>Quick Links</h6>
-                        <ul>
-                            <li><a href="#about" onclick="scrollToSection('about')">About Us</a></li>
-                            <li><a href="#mission" onclick="scrollToSection('mission')">What We Do</a></li>
-                            <li><a href="#leadership" onclick="scrollToSection('leadership')">Leadership</a></li>
-                            <li><a href="#contact" onclick="scrollToSection('contact')">Contact</a></li>
+                        <ul class="footer-quick-links">
+                            <li><a class="footer-link-about" href="#about" onclick="return showPublicSection('about', this)">About Us</a></li>
+                            <li><a class="footer-link-mission" href="#mission" onclick="return showPublicSection('mission', this)">What We Do</a></li>
+                            <li><a class="footer-link-leadership" href="#leadership" onclick="return showPublicSection('leadership', this)">Leadership</a></li>
+                            <li><a class="footer-link-contact" href="#contact" onclick="return showPublicSection('contact', this)">Contact</a></li>
                         </ul>
                     </div>
-                    <div class="col-md-4">
+                    <div class="col-lg-3 col-md-6">
+                        <h6>Get in Touch</h6>
+                        <ul class="footer-contact-list">
+                            <li><strong>Location</strong><span id="footerContactLocation">UMMA University, Main Campus</span></li>
+                            <li><strong>Phone</strong><a id="footerContactPhone" href="tel:+23231422167">+23231422167</a></li>
+                            <li><strong>WhatsApp</strong><a id="footerContactWhatsapp" href="https://api.whatsapp.com/send?phone=23231422167&text=Assalamu%20alaikum%2C%20I%20would%20like%20to%20contact%20Da%27awah%20Team." target="_blank" rel="noopener">+23231422167</a></li>
+                            <li><strong>Email</strong><a id="footerContactEmail" href="mailto:info@dawaah.org">info@dawaah.org</a></li>
+                            <li><strong>Office Hours</strong><span id="footerContactHours">Monday - Friday: 10 AM - 6 PM</span></li>
+                        </ul>
+                    </div>
+                    <div class="col-lg-3 col-md-6">
                         <h6>Connect With Us</h6>
                         <div class="social-links" id="publicSocialLinks">
-                            <a href="https://api.whatsapp.com/send?phone=23231422167&text=Assalamu%20alaikum%2C%20I%20would%20like%20to%20contact%20Dawa'ah." target="_blank" rel="noopener" aria-label="WhatsApp"><i class="fab fa-whatsapp"></i></a>
+                            <a href="https://api.whatsapp.com/send?phone=23231422167&text=Assalamu%20alaikum%2C%20I%20would%20like%20to%20contact%20Da%27awah%20Team." target="_blank" rel="noopener" aria-label="WhatsApp"><i class="fab fa-whatsapp"></i></a>
                         </div>
                     </div>
                 </div>
                 <hr>
                 <div class="text-center">
-                    <p>&copy; 2026 Dawa'ah. All rights reserved.</p>
+                    <p>&copy; 2026 UMMA University Da'awah Team. All rights reserved.</p>
                 </div>
             </div>
         </footer>
@@ -332,17 +426,16 @@
                     <button class="btn btn-link" onclick="showLanding()" style="text-decoration: none;">
                         <i class="fas fa-arrow-left"></i> Back to Home
                     </button>
-                    <img src="assets/umma-university-logo-color.png" alt="UMMA University logo" class="auth-logo">
+                    <img src="assets/umma-university-logo-color.png?v=20260522-logo2" alt="UMMA University logo" class="auth-logo">
                     <div class="logo-icon">
                         <i class="fas fa-mosque"></i>
                     </div>
-                    <h1 class="brand-title">Dawa'ah</h1>
-                    <p class="text-muted">UMMA University Muslim Jamaat</p>
+                    <h1 class="brand-title">UMMA University Da'awah Team</h1>
                 </div>
                     <div class="alert alert-info text-start">
-                        <strong>Public info available:</strong> Explore About Us, What We Do, Leadership, Gallery and Contact details without registering. <a href="#" onclick="showLanding()">View public pages</a> or <a href="#about" onclick="showLanding(); scrollToSection('about')">visit Dawa'ah</a>.
+                        <strong>Public info available:</strong> Explore About Us, What We Do, Leadership, Gallery and Contact details without registering. <a href="#" onclick="showLanding()">View public pages</a> or <a href="#portals" onclick="return showPublicSection('portals', this)">return to Portals</a>.
                         <div class="mt-2">
-                            <a href="#about" onclick="showLanding(); scrollToSection('about')" class="btn btn-sm btn-outline-danger visit-dawaah-link">Visit Dawa'ah</a>
+                            <a href="#portals" onclick="return showPublicSection('portals', this)" class="btn btn-sm btn-outline-danger visit-dawaah-link">Back to Portals</a>
                         </div>
                     </div>
                 <div class="auth-tabs">
@@ -359,13 +452,13 @@
                     <div id="loginTab" class="tab-pane fade show active">
                         <form id="loginForm">
                             <div class="mb-3">
-                                <label class="form-label">Email or Student ID</label>
-                                <input type="text" class="form-control" id="loginUsername" placeholder="Enter email or student ID" required>
+                                <label class="form-label">Email</label>
+                                <input type="email" class="form-control" id="loginUsername" placeholder="Enter registered email" autocomplete="email" required>
                             </div>
                             <div class="mb-3">
                                 <label class="form-label">Password</label>
                                 <div class="input-group">
-                                    <input type="password" class="form-control" id="loginPassword" placeholder="Enter password" required>
+                                    <input type="password" class="form-control" id="loginPassword" placeholder="Enter password" autocomplete="current-password" required>
                                     <button class="btn btn-outline-secondary" type="button" id="togglePassword">
                                         <i class="fas fa-eye"></i>
                                     </button>
@@ -382,12 +475,21 @@
                             <div class="row">
                                 <div class="col-md-6 mb-3">
                                     <label class="form-label">Full Name</label>
-                                    <input type="text" class="form-control" id="fullName" placeholder="Enter full name" required>
+                                    <input type="text" class="form-control" id="fullName" placeholder="Enter full name" autocomplete="name" required>
                                 </div>
                                 <div class="col-md-6 mb-3">
                                     <label class="form-label">Student ID</label>
-                                    <input type="text" class="form-control" id="studentId" placeholder="Student ID" required>
+                                    <input type="text" class="form-control" id="studentId" placeholder="e.g. BSCS/2025/53736" autocomplete="username" pattern="[A-Za-z]{2,10}/[0-9]{4}/[0-9]{3,8}" title="Use format like BSCS/2025/53736" required>
+                                    <div class="form-text">Use your official student ID, for example BSCS/2025/53736.</div>
                                 </div>
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="form-label">Register As</label>
+                                <select class="form-select" id="registrationRole" required>
+                                    <option value="student" selected>Student</option>
+                                </select>
+                                <div class="form-text">Official accounts are registered from the official website.</div>
                             </div>
 
                             <div class="mb-3">
@@ -521,16 +623,26 @@
 
                             <div class="mb-3">
                                 <label class="form-label">Password</label>
-                                <input type="password" class="form-control" id="regPassword" placeholder="Enter password" required>
+                                <div class="input-group">
+                                    <input type="password" class="form-control" id="regPassword" placeholder="Enter password" required>
+                                    <button class="btn btn-outline-secondary" type="button" id="toggleRegPassword" aria-label="Show registration password">
+                                        <i class="fas fa-eye"></i>
+                                    </button>
+                                </div>
                                 <div class="password-strength mt-2" aria-live="polite">
                                     <div class="password-strength__bar"><span id="passwordStrengthBar"></span></div>
-                                    <small id="passwordStrengthText" class="text-muted">Use 8+ characters with letters, numbers, and a symbol.</small>
+                                    <small id="passwordStrengthText" class="text-muted">Use 8+ characters with uppercase, lowercase, number, and symbol.</small>
                                 </div>
                             </div>
 
                             <div class="mb-3">
                                 <label class="form-label">Confirm Password</label>
-                                <input type="password" class="form-control" id="confirmPassword" placeholder="Confirm password" required>
+                                <div class="input-group">
+                                    <input type="password" class="form-control" id="confirmPassword" placeholder="Confirm password" required>
+                                    <button class="btn btn-outline-secondary" type="button" id="toggleConfirmPassword" aria-label="Show confirm password">
+                                        <i class="fas fa-eye"></i>
+                                    </button>
+                                </div>
                             </div>
 
                             <div class="mb-3">
@@ -545,7 +657,7 @@
 
                             <div class="mb-3">
                                 <label class="form-label">Passport Photo</label>
-                                <input type="file" class="form-control" id="passportPhoto" accept="image/*" required>
+                                <input type="file" class="form-control" id="passportPhoto" accept="image/*" capture="environment">
                             </div>
 
                             <button type="submit" class="btn btn-success w-100">Register</button>
@@ -662,9 +774,8 @@
         <nav class="navbar navbar-expand-lg navbar-dark bg-dark sticky-top">
             <div class="container-fluid">
                 <a class="navbar-brand brand-logo" href="#">
-                    <img src="assets/umma-university-logo-color.png" alt="UMMA University logo" class="brand-logo__image">
-                    <i class="fas fa-mosque brand-logo__icon" aria-hidden="true"></i>
-                    <span>Dawa'ah</span>
+                    <img src="assets/umma-university-logo-color.png?v=20260522-logo2" alt="UMMA University logo" class="brand-logo__image">
+                    <span>UMMA University Da'awah Team</span>
                 </a>
                 <button class="navbar-toggler premium-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#dashboardNavbarNav" aria-controls="dashboardNavbarNav" aria-expanded="false" aria-label="Toggle navigation">
                     <span class="premium-toggler__label" aria-hidden="true">
@@ -683,6 +794,26 @@
                             <span class="navbar-text me-3">
                                 Welcome, <span id="userNameDisplay">User</span>
                             </span>
+                        </li>
+                        <li class="nav-item">
+                            <button class="btn btn-outline-light me-2" onclick="switchView('settings')">
+                                <i class="fas fa-gear"></i> Settings
+                            </button>
+                        </li>
+                        <li class="nav-item dropdown">
+                            <button class="btn btn-outline-light me-2 dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                <i class="fas fa-door-open"></i> Portals
+                            </button>
+                            <ul class="dropdown-menu dropdown-menu-end">
+                                <li><button class="dropdown-item" type="button" onclick="rememberPortalAudience('student'); showNotification('Student portal selected.', 'success')"><i class="fas fa-user-graduate"></i> Student Portal</button></li>
+                                <li><a class="dropdown-item" href="officer.html" onclick="localStorage.setItem('dawaahPortalAudience', 'officer')"><i class="fas fa-user-tie"></i> Officer Portal</a></li>
+                                <li><a class="dropdown-item" href="admin.html" onclick="localStorage.setItem('dawaahPortalAudience', 'admin')"><i class="fas fa-user-shield"></i> Admin Portal</a></li>
+                            </ul>
+                        </li>
+                        <li class="nav-item">
+                            <button class="btn btn-outline-light me-2" onclick="switchView('research')">
+                                <i class="fas fa-magnifying-glass-chart"></i> Research AI
+                            </button>
                         </li>
                         <li class="nav-item">
                             <button class="btn btn-outline-light" onclick="logout()">
@@ -706,6 +837,9 @@
                             </a>
                             <a href="#" class="nav-link" onclick="switchView('profile')">
                                 <i class="fas fa-user-circle"></i> Profile
+                            </a>
+                            <a href="#" class="nav-link" onclick="switchView('settings')">
+                                <i class="fas fa-gear"></i> Settings
                             </a>
                         </nav>
                     </div>
@@ -734,6 +868,9 @@
                             <a href="#" class="nav-link" onclick="switchView('resources')">
                                 <i class="fas fa-book"></i> Resources
                             </a>
+                            <button type="button" class="nav-link install-app-sidebar-link app-install-trigger text-start w-100 border-0 bg-transparent" onclick="installDawaahApp()">
+                                <i class="fas fa-mobile-screen-button"></i> Install App
+                            </button>
                         </nav>
                     </div>
 
@@ -756,7 +893,7 @@
                         <h6 class="menu-title">OFFICER TOOLS</h6>
                         <nav class="nav flex-column">
                             <a href="#" class="nav-link role-tool-link" data-permission="manage_members" onclick="switchView('memberDatabase')">
-                                <i class="fas fa-users-cog"></i> Member Database
+                                <i class="fas fa-user-graduate"></i> Student Database
                             </a>
                             <a href="#" class="nav-link role-tool-link" data-permission="manage_events" onclick="switchView('adminEvents')">
                                 <i class="fas fa-calendar-check"></i> Manage Events
@@ -798,11 +935,11 @@
                                 <span><i class="fas fa-users"></i> Users</span>
                                 <span><i class="fas fa-user-shield"></i> Admins</span>
                             </div>
-                            <div class="welcome-marquee" aria-label="Welcome to Dawa'ah UMMA University">
+                            <div class="welcome-marquee" aria-label="Welcome to UMMA University Da'awah Team">
                                 <div class="welcome-marquee__track">
-                                    <span><i class="fas fa-star"></i> Welcome to Dawa'ah, UMMA University</span>
+                                    <span><i class="fas fa-star"></i> Welcome to UMMA University Da'awah Team</span>
                                     <span><i class="fas fa-mosque"></i> Muslim Jamaat Association</span>
-                                    <span><i class="fas fa-star"></i> Welcome to Dawa'ah, UMMA University</span>
+                                    <span><i class="fas fa-star"></i> Welcome to UMMA University Da'awah Team</span>
                                     <span><i class="fas fa-mosque"></i> Muslim Jamaat Association</span>
                                 </div>
                             </div>
@@ -835,7 +972,7 @@
 
                         <div class="page-header">
                             <h2>Dashboard</h2>
-                            <p class="text-muted">Welcome back to Dawa'ah, <span id="userNameDisplay">User</span></p>
+                            <p class="text-muted">Welcome back to UMMA University Da'awah Team, <span id="userNameDisplay">User</span></p>
                         </div>
 
                         <div class="row mb-4">
@@ -854,7 +991,7 @@
                                             <i class="fas fa-users"></i>
                                         </div>
                                         <h6 class="card-title">Membership Status</h6>
-                                        <p class="stat-value" id="membershipStatusValue">Active</p>
+                                        <p class="stat-value" id="membershipStatusValue">Not member</p>
                                     </div>
                                 </div>
                             </div>
@@ -898,11 +1035,12 @@
                                 <div class="card premium-dashboard-card">
                                     <div class="card-header d-flex justify-content-between align-items-center">
                                         <h5 class="mb-0"><i class="fas fa-compass"></i> Your Workspace</h5>
-                                        <span class="badge bg-warning text-dark" id="dashboardRoleBadge">Member</span>
+                                        <span class="badge bg-warning text-dark" id="dashboardRoleBadge">Student</span>
                                     </div>
                                     <div class="card-body">
                                         <p class="text-muted" id="dashboardRoleSummary">Officer tools will appear here after role approval.</p>
                                         <div id="roleQuickActions" class="role-quick-actions"></div>
+                                        <div id="roleResponsibilities" class="role-responsibilities mt-3"></div>
                                     </div>
                                 </div>
                             </div>
@@ -929,7 +1067,12 @@
                                         <h5 class="mb-0"><i class="fas fa-bell"></i> Alerts</h5>
                                         <span class="badge bg-danger" id="dashboardAlertCount">0</span>
                                     </div>
-                                    <div class="card-body" id="dashboardAlertsList"></div>
+                                    <div class="card-body">
+                                        <button class="btn btn-sm btn-outline-primary mb-2" type="button" onclick="enableBrowserNotifications()">
+                                            <i class="fas fa-bell"></i> Enable Alerts
+                                        </button>
+                                        <div id="dashboardAlertsList"></div>
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -941,6 +1084,22 @@
                             </div>
                             <div class="card-body">
                                 <div id="dashboardActivityCalendar" class="activity-calendar"></div>
+                            </div>
+                        </div>
+
+                        <div class="card mb-4">
+                            <div class="card-header">
+                                <h5 class="mb-0">Printable Reports</h5>
+                            </div>
+                            <div class="card-body">
+                                <div class="d-flex flex-wrap gap-2" id="dashboardReportButtons">
+                                    <button class="btn btn-sm btn-outline-primary dashboard-report-btn" data-permission="manage_members" onclick="printSystemReport('students')"><i class="fas fa-print"></i> Students</button>
+                                    <button class="btn btn-sm btn-outline-primary dashboard-report-btn" data-permission="manage_members" onclick="printSystemReport('members')"><i class="fas fa-print"></i> Paid Members</button>
+                                    <button class="btn btn-sm btn-outline-primary dashboard-report-btn" data-permission="manage_payments" onclick="printSystemReport('payments')"><i class="fas fa-print"></i> Dues</button>
+                                    <button class="btn btn-sm btn-outline-primary dashboard-report-btn" data-permission="manage_payments" onclick="printSystemReport('donations')"><i class="fas fa-print"></i> Donations</button>
+                                    <button class="btn btn-sm btn-outline-primary dashboard-report-btn" data-permission="manage_leadership" onclick="printSystemReport('officers')"><i class="fas fa-print"></i> Officers</button>
+                                    <button class="btn btn-sm btn-outline-primary dashboard-report-btn" data-permission="generate_reports" onclick="printSystemReport('research')"><i class="fas fa-print"></i> AI Usage</button>
+                                </div>
                             </div>
                         </div>
 
@@ -1007,6 +1166,9 @@
                                         <h5 class="mt-3" id="profileName">Student Name</h5>
                                         <p class="text-muted" id="profileStudentId">Student ID</p>
                                         <button class="btn btn-sm btn-primary" onclick="editProfile()">Edit Profile</button>
+                                        <button class="btn btn-sm btn-outline-success mt-2" onclick="openMemberDigitalCard()">
+                                            <i class="fas fa-id-card"></i> Digital Card
+                                        </button>
                                     </div>
                                 </div>
                             </div>
@@ -1093,6 +1255,102 @@
                         </div>
                     </div>
 
+                    <!-- Settings View -->
+                    <div id="settingsView" class="view-container">
+                        <div class="page-header">
+                            <h2>Settings</h2>
+                        </div>
+
+                        <div class="row g-3">
+                            <div class="col-lg-6">
+                                <div class="card settings-card h-100">
+                                    <div class="card-header">
+                                        <h5 class="mb-0"><i class="fas fa-user-shield"></i> Account & Privacy</h5>
+                                    </div>
+                                    <div class="card-body">
+                                        <div class="settings-row">
+                                            <div>
+                                                <strong>Browser notifications</strong>
+                                                <p class="text-muted mb-0">Allow important dashboard alerts in this browser.</p>
+                                            </div>
+                                            <div class="form-check form-switch">
+                                                <input class="form-check-input" type="checkbox" id="settingBrowserNotifications">
+                                            </div>
+                                        </div>
+                                        <div class="settings-row">
+                                            <div>
+                                                <strong>Compact dashboard</strong>
+                                                <p class="text-muted mb-0">Use tighter spacing for repeated work.</p>
+                                            </div>
+                                            <div class="form-check form-switch">
+                                                <input class="form-check-input" type="checkbox" id="settingCompactDashboard">
+                                            </div>
+                                        </div>
+                                        <div class="settings-row">
+                                            <div>
+                                                <strong>Reduced motion</strong>
+                                                <p class="text-muted mb-0">Calm animations and moving interface elements.</p>
+                                            </div>
+                                            <div class="form-check form-switch">
+                                                <input class="form-check-input" type="checkbox" id="settingReducedMotion">
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="col-lg-6">
+                                <div class="card settings-card h-100">
+                                    <div class="card-header">
+                                        <h5 class="mb-0"><i class="fas fa-comments"></i> Research AI Chat</h5>
+                                    </div>
+                                    <div class="card-body">
+                                        <div class="settings-row">
+                                            <div>
+                                                <strong>Show chat box</strong>
+                                                <p class="text-muted mb-0">Display the Research AI helper inside the logged-in workspace.</p>
+                                            </div>
+                                            <div class="form-check form-switch">
+                                                <input class="form-check-input" type="checkbox" id="settingAiChatEnabled">
+                                            </div>
+                                        </div>
+                                        <div class="settings-row">
+                                            <div>
+                                                <strong>Save research history</strong>
+                                                <p class="text-muted mb-0">Keep recent questions, answers, sources, and voice transcripts locally.</p>
+                                            </div>
+                                            <div class="form-check form-switch">
+                                                <input class="form-check-input" type="checkbox" id="settingResearchHistory">
+                                            </div>
+                                        </div>
+                                        <label class="form-label mt-2" for="settingResearchMode">Preferred answer style</label>
+                                        <select class="form-select" id="settingResearchMode">
+                                            <option value="groq_chat">Balanced</option>
+                                            <option value="quick">Quick</option>
+                                            <option value="deep">Deep research</option>
+                                            <option value="islamic">Islamic note</option>
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="col-12">
+                                <div class="card settings-card">
+                                    <div class="card-body d-flex flex-wrap gap-2 justify-content-between align-items-center">
+                                        <div>
+                                            <h5 class="mb-1"><i class="fas fa-floppy-disk"></i> Save Workspace Settings</h5>
+                                            <p class="text-muted mb-0">These settings are saved on this browser for the current logged-in workspace.</p>
+                                        </div>
+                                        <div class="d-flex flex-wrap gap-2">
+                                            <button class="btn btn-primary" type="button" onclick="saveWorkspaceSettings()"><i class="fas fa-save"></i> Save Settings</button>
+                                            <button class="btn btn-outline-secondary" type="button" onclick="resetWorkspaceSettings()"><i class="fas fa-rotate-left"></i> Reset</button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
                     <!-- Membership Status View -->
                     <div id="membershipStatusView" class="view-container">
                         <div class="page-header">
@@ -1107,19 +1365,19 @@
                                         <table class="table table-borderless">
                                             <tr>
                                                 <td><strong>Status:</strong></td>
-                                                <td><span class="badge bg-success">Active</span></td>
+                                                <td><span class="badge bg-secondary" id="membershipDetailStatus">Not member</span></td>
                                             </tr>
                                             <tr>
-                                                <td><strong>Member Since:</strong></td>
-                                                <td>January 15, 2024</td>
+                                                <td><strong>Registered Since:</strong></td>
+                                                <td id="membershipDetailJoinDate">Not set</td>
                                             </tr>
                                             <tr>
                                                 <td><strong>Membership Expires:</strong></td>
-                                                <td>January 14, 2025</td>
+                                                <td id="membershipDetailExpiryDate">Not set</td>
                                             </tr>
                                             <tr>
                                                 <td><strong>Membership Fee:</strong></td>
-                                                <td>Paid</td>
+                                                <td><span class="badge bg-secondary" id="membershipDetailPaymentStatus">No payment</span></td>
                                             </tr>
                                         </table>
                                     </div>
@@ -1134,7 +1392,18 @@
                                         </ul>
                                     </div>
                                 </div>
-                                <button class="btn btn-primary" onclick="renewMembership()">Renew Membership</button>
+                                <div class="alert alert-light border mb-3" id="membershipCardApplicationPanel"></div>
+                                <div class="d-flex flex-wrap gap-2">
+                                    <button class="btn btn-primary" onclick="applyForMembershipCard()">
+                                        <i class="fas fa-id-card"></i> Apply for Membership Card
+                                    </button>
+                                    <button class="btn btn-outline-primary" onclick="showMembershipDuesPayment()">
+                                        <i class="fas fa-money-bill"></i> Pay Membership Dues
+                                    </button>
+                                    <button class="btn btn-outline-success" onclick="openMemberDigitalCard()">
+                                        <i class="fas fa-id-card"></i> View Digital Card
+                                    </button>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -1170,6 +1439,50 @@
                                                 <h5 class="mb-0">Daily Prayer Timetable</h5>
                                             </div>
                                             <div class="card-body" id="prayerTimesDetails"></div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6 d-none" id="officerPrayerManagerPanel">
+                                        <div class="card">
+                                            <div class="card-header">
+                                                <h5 class="mb-0">Update Prayer Timetable</h5>
+                                            </div>
+                                            <div class="card-body">
+                                                <form id="officerPrayerTimesForm" onsubmit="saveOfficerPrayerTimes(event)">
+                                                    <div class="row">
+                                                        <div class="col-md-6 mb-3">
+                                                            <label class="form-label">Date</label>
+                                                            <input type="date" class="form-control" id="officerPrayerDate">
+                                                        </div>
+                                                        <div class="col-md-6 mb-3">
+                                                            <label class="form-label">Fajr</label>
+                                                            <input type="time" class="form-control" id="officerPrayerFajr">
+                                                        </div>
+                                                        <div class="col-md-6 mb-3">
+                                                            <label class="form-label">Dhuhr</label>
+                                                            <input type="time" class="form-control" id="officerPrayerDhuhr">
+                                                        </div>
+                                                        <div class="col-md-6 mb-3">
+                                                            <label class="form-label">Asr</label>
+                                                            <input type="time" class="form-control" id="officerPrayerAsr">
+                                                        </div>
+                                                        <div class="col-md-6 mb-3">
+                                                            <label class="form-label">Maghrib</label>
+                                                            <input type="time" class="form-control" id="officerPrayerMaghrib">
+                                                        </div>
+                                                        <div class="col-md-6 mb-3">
+                                                            <label class="form-label">Isha</label>
+                                                            <input type="time" class="form-control" id="officerPrayerIsha">
+                                                        </div>
+                                                        <div class="col-md-6 mb-3">
+                                                            <label class="form-label">Jumu'ah</label>
+                                                            <input type="time" class="form-control" id="officerPrayerJummah">
+                                                        </div>
+                                                    </div>
+                                                    <button class="btn btn-success" type="submit" id="officerPrayerSaveButton">
+                                                        <i class="fas fa-save"></i> Save Prayer Times
+                                                    </button>
+                                                </form>
+                                            </div>
                                         </div>
                                     </div>
                                     <div class="col-md-6">
@@ -1316,7 +1629,7 @@
                         <div class="page-header">
                             <div>
                                 <h2>Activities</h2>
-                                <p class="text-muted mb-0">Track daily, weekly, and monthly Dawa'ah programmes.</p>
+                                <p class="text-muted mb-0">Track daily, weekly, and monthly UMMA University Da'awah Team programmes.</p>
                             </div>
                         </div>
 
@@ -1403,6 +1716,91 @@
                         </div>
 
                         <div id="resourcesGrid"></div>
+                    </div>
+
+                    <!-- Research Assistant View -->
+                    <div id="researchView" class="view-container">
+                        <div class="page-header">
+                            <h2>Research Assistant</h2>
+                        </div>
+
+                        <div class="card mb-4">
+                            <div class="card-header">
+                                <h5 class="mb-0">Ask a Research Question</h5>
+                            </div>
+                            <div class="card-body">
+                                <div class="mb-3">
+                                    <label class="form-label">Question</label>
+                                    <textarea class="form-control" id="researchQuestion" rows="4" placeholder="Type your research question or record it with voice"></textarea>
+                                </div>
+                                <div class="row g-3 align-items-end">
+                                    <div class="col-md-4">
+                                        <label class="form-label">Mode</label>
+                                        <select class="form-select" id="researchMode">
+                                            <option value="quick">Quick Answer</option>
+                                            <option value="deep">Deep Research</option>
+                                            <option value="islamic">Islamic Evidence</option>
+                                            <option value="summarize">Summarize</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-md-8">
+                                        <div class="btn-group flex-wrap" role="group" aria-label="Research actions">
+                                            <button type="button" class="btn btn-outline-secondary" id="researchRecordBtn" onclick="toggleResearchRecording()">
+                                                <i class="fas fa-microphone"></i> Record
+                                            </button>
+                                            <label class="btn btn-outline-secondary mb-0">
+                                                <i class="fas fa-file-audio"></i> Upload Audio
+                                                <input type="file" id="researchAudioUpload" accept="audio/*,video/webm" hidden onchange="uploadResearchAudio()">
+                                            </label>
+                                            <label class="btn btn-outline-secondary mb-0">
+                                                <i class="fas fa-camera"></i> Camera
+                                                <input type="file" id="researchPhotoUpload" accept="image/*" capture="environment" hidden onchange="handleResearchPhotoUpload()">
+                                            </label>
+                                            <button type="button" class="btn btn-primary" id="researchRunBtn" onclick="runStudentResearch()">
+                                                <i class="fas fa-magnifying-glass"></i> Research
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="research-photo-preview d-none" id="researchPhotoPreview">
+                                    <img id="researchPhotoPreviewImage" src="" alt="Research photo preview">
+                                    <div>
+                                        <strong id="researchPhotoName">Research photo attached</strong>
+                                        <button type="button" class="btn btn-sm btn-outline-danger ms-2" onclick="clearResearchPhoto()">Remove</button>
+                                    </div>
+                                </div>
+                                <div class="alert alert-info mt-3 mb-0" id="researchStatus">Research uses web sources when the server OpenAI key is configured. Verify religious rulings with qualified scholars.</div>
+                            </div>
+                        </div>
+
+                        <div class="card mb-4">
+                            <div class="card-header d-flex justify-content-between align-items-center">
+                                <h5 class="mb-0">Result</h5>
+                                <div class="d-flex gap-2">
+                                    <button type="button" class="btn btn-sm btn-outline-secondary" onclick="exportLatestResearch()">
+                                        <i class="fas fa-download"></i> Export
+                                    </button>
+                                    <button type="button" class="btn btn-sm btn-outline-danger" onclick="clearResearchResult()">
+                                        <i class="fas fa-eraser"></i> Clear
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="card-body" id="researchResult">
+                                <p class="text-muted mb-0">Your research answer will appear here.</p>
+                            </div>
+                        </div>
+
+                        <div class="card">
+                            <div class="card-header d-flex justify-content-between align-items-center">
+                                <h5 class="mb-0">Research History</h5>
+                                <button type="button" class="btn btn-sm btn-outline-danger" onclick="clearResearchHistory()" title="Clear all research history">
+                                    <i class="fas fa-trash"></i> Clear
+                                </button>
+                            </div>
+                            <div class="card-body" id="researchHistory">
+                                <p class="text-muted mb-0">No research saved yet.</p>
+                            </div>
+                        </div>
                     </div>
 
                     <!-- Volunteer View -->
@@ -1537,11 +1935,11 @@
                                         <table class="table table-borderless">
                                             <tr>
                                                 <td><strong>Total Due:</strong></td>
-                                                <td>$0</td>
+                                                <td>KSh 0</td>
                                             </tr>
                                             <tr>
                                                 <td><strong>Total Paid:</strong></td>
-                                                <td>$0</td>
+                                                <td>KSh 0</td>
                                             </tr>
                                             <tr>
                                                 <td><strong>Next Due Date:</strong></td>
@@ -1560,6 +1958,7 @@
                                 <h5 class="mb-0">Payment History</h5>
                             </div>
                             <div class="card-body">
+                                <div id="paymentFinanceSummary" class="row g-2 mb-3"></div>
                                 <div class="row g-2 mb-3" id="paymentReviewControls">
                                     <div class="col-md-4">
                                         <select class="form-select form-select-sm" id="paymentStatusFilter" onchange="renderPaymentHistory()">
@@ -1572,6 +1971,11 @@
                                     </div>
                                     <div class="col-md-8">
                                         <input type="search" class="form-control form-control-sm" id="paymentSearchInput" placeholder="Search name, reference, method, or amount" oninput="renderPaymentHistory()">
+                                    </div>
+                                    <div class="col-12">
+                                        <button class="btn btn-sm btn-outline-secondary" onclick="exportFinanceCsv('payments')">
+                                            <i class="fas fa-file-csv"></i> Export Payments
+                                        </button>
                                     </div>
                                 </div>
                                 <table class="table">
@@ -1652,6 +2056,7 @@
                                 <h5 class="mb-0">Donation History</h5>
                             </div>
                             <div class="card-body">
+                                <div id="donationFinanceSummary" class="row g-2 mb-3"></div>
                                 <div class="row g-2 mb-3" id="donationReviewControls">
                                     <div class="col-md-4">
                                         <select class="form-select form-select-sm" id="donationStatusFilter" onchange="renderDonationHistory()">
@@ -1663,6 +2068,11 @@
                                     </div>
                                     <div class="col-md-8">
                                         <input type="search" class="form-control form-control-sm" id="donationSearchInput" placeholder="Search donor, reference, method, or amount" oninput="renderDonationHistory()">
+                                    </div>
+                                    <div class="col-12">
+                                        <button class="btn btn-sm btn-outline-secondary" onclick="exportFinanceCsv('donations')">
+                                            <i class="fas fa-file-csv"></i> Export Donations
+                                        </button>
                                     </div>
                                 </div>
                                 <table class="table">
@@ -1690,15 +2100,34 @@
                     <!-- Admin: Member Database View -->
                     <div id="memberDatabaseView" class="view-container">
                         <div class="page-header">
-                            <h2>Member Database</h2>
-                            <input type="text" class="form-control form-control-sm" id="memberSearchBox" placeholder="Search members..." style="max-width: 300px;" oninput="searchMembers()">
+                            <h2>Student Database</h2>
+                            <input type="text" class="form-control form-control-sm" id="memberSearchBox" placeholder="Search students..." style="max-width: 300px;" oninput="searchMembers()">
                         </div>
 
                         <div class="card">
                             <div class="card-body">
+                                <div class="d-flex flex-wrap gap-2 align-items-center mb-3">
+                                    <select class="form-select form-select-sm" id="studentBulkAction" style="max-width: 220px;">
+                                        <option value="">Bulk action</option>
+                                        <option value="Active">Approve selected</option>
+                                        <option value="Inactive">Deactivate selected</option>
+                                        <option value="export">Export selected</option>
+                                    </select>
+                                    <button class="btn btn-sm btn-outline-primary" type="button" onclick="applyStudentBulkAction()">
+                                        <i class="fas fa-check-double"></i> Apply
+                                    </button>
+                                    <button class="btn btn-sm btn-outline-secondary" type="button" onclick="toggleAllStudentSelection(this.checked)">
+                                        <i class="fas fa-list-check"></i> Toggle selected
+                                    </button>
+                                    <label class="btn btn-sm btn-outline-success mb-0">
+                                        <i class="fas fa-file-import"></i> Import CSV
+                                        <input type="file" accept=".csv,text/csv" hidden onchange="importStudentsCsv(this)">
+                                    </label>
+                                </div>
                                 <table class="table table-hover">
                                     <thead>
                                         <tr>
+                                            <th>Select</th>
                                             <th>Photo</th>
                                             <th>Name</th>
                                             <th>Student ID</th>
@@ -1710,7 +2139,7 @@
                                     </thead>
                                     <tbody id="membersList">
                                         <tr>
-                                            <td colspan="7" class="text-center text-muted">No registered members yet</td>
+                                            <td colspan="8" class="text-center text-muted">No registered students yet</td>
                                         </tr>
                                     </tbody>
                                 </table>
@@ -1884,27 +2313,9 @@
                                             <th>Rejected</th>
                                         </tr>
                                     </thead>
-                                    <tbody>
+                                    <tbody id="welfareReportRows">
                                         <tr>
-                                            <td>Medical Support</td>
-                                            <td>15</td>
-                                            <td>12</td>
-                                            <td>2</td>
-                                            <td>1</td>
-                                        </tr>
-                                        <tr>
-                                            <td>Financial Assistance</td>
-                                            <td>20</td>
-                                            <td>16</td>
-                                            <td>3</td>
-                                            <td>1</td>
-                                        </tr>
-                                        <tr>
-                                            <td>Accommodation Support</td>
-                                            <td>10</td>
-                                            <td>8</td>
-                                            <td>2</td>
-                                            <td>0</td>
+                                            <td colspan="5" class="text-muted text-center">No welfare requests have been recorded yet.</td>
                                         </tr>
                                     </tbody>
                                 </table>
@@ -2113,6 +2524,12 @@
                                     <div class="mb-3">
                                         <label class="form-label">English Translation *</label>
                                         <textarea class="form-control" id="officerHadithEnglish" rows="3" placeholder="English translation of hadith" required></textarea>
+                                        <div class="d-flex align-items-center gap-2 mt-2">
+                                            <button type="button" class="btn btn-sm btn-outline-primary" id="officerSuggestArabicBtn" onclick="suggestOfficerHadithArabic()">
+                                                <i class="fas fa-language"></i> Suggest Arabic
+                                            </button>
+                                            <small class="text-muted" id="officerArabicSuggestionStatus">Review suggested Arabic before saving.</small>
+                                        </div>
                                     </div>
                                     <div class="mb-3">
                                         <label class="form-label">Reference</label>
@@ -2126,6 +2543,14 @@
                                         <div class="col-md-6 mb-3">
                                             <label class="form-label">Category</label>
                                             <input type="text" class="form-control" id="officerHadithCategory" placeholder="e.g., Spirituality, Charity, Knowledge">
+                                        </div>
+                                        <div class="col-md-6 mb-3">
+                                            <label class="form-label">Verification Status</label>
+                                            <select class="form-select" id="officerHadithVerificationStatus">
+                                                <option value="needs_verification" selected>Needs Verification</option>
+                                                <option value="draft">Draft</option>
+                                                <option value="verified">Verified</option>
+                                            </select>
                                         </div>
                                     </div>
                                     <button type="submit" class="btn btn-primary">
@@ -2145,6 +2570,9 @@
                         </div>
                     </div>
                 </div>
+            </div>
+            <div class="dashboard-panel-footer" id="dashboardPanelFooter">
+                <div class="dashboard-panel-footer__actions" id="dashboardInstallActions"></div>
             </div>
         </div>
     </div>
@@ -2178,7 +2606,7 @@
                         </div>
                         <div class="mb-3">
                             <label class="form-label">Requested Amount (if applicable)</label>
-                            <input type="number" class="form-control" id="welfareAmount" placeholder="$">
+                            <input type="number" class="form-control" id="welfareAmount" placeholder="KSh">
                         </div>
                         <div class="mb-3">
                             <label class="form-label">Supporting Documents</label>
@@ -2223,7 +2651,7 @@
                             </div>
                             <div class="col-md-6 mb-3">
                                 <label class="form-label">Profile Photo</label>
-                                <input type="file" class="form-control" id="editPassportPhoto" accept="image/*">
+                                <input type="file" class="form-control" id="editPassportPhoto" accept="image/*" capture="environment">
                                 <div class="form-check mt-2">
                                     <input class="form-check-input" type="checkbox" id="removeProfilePhoto">
                                     <label class="form-check-label" for="removeProfilePhoto">Remove current photo</label>
@@ -2393,7 +2821,7 @@
                         </div>
                         <div class="mb-3">
                             <label class="form-label">Amount</label>
-                            <input type="number" class="form-control" id="paymentAmount" placeholder="$" required>
+                            <input type="number" class="form-control" id="paymentAmount" placeholder="KSh" min="1" step="1" required>
                         </div>
                         <div class="mb-3">
                             <label class="form-label">Payment Method</label>
@@ -2409,6 +2837,20 @@
                         <div class="mb-3 d-none" id="paymentMpesaPhoneGroup">
                             <label class="form-label">M-Pesa Phone Number</label>
                             <input type="tel" class="form-control" id="paymentMpesaPhone" placeholder="2547XXXXXXXX">
+                        </div>
+                        <div class="mb-3" id="paymentReferenceGroup">
+                            <label class="form-label">Transaction Code / Reference</label>
+                            <input type="text" class="form-control" id="paymentReference" placeholder="e.g. QAB12C3D4E or bank slip number">
+                        </div>
+                        <div class="mb-3" id="paymentProofLinkGroup">
+                            <label class="form-label">Google Drive Proof Link</label>
+                            <input type="url" class="form-control" id="paymentProofLink" placeholder="Paste Google Drive proof link if available">
+                            <div class="form-text">Upload the screenshot to Google Drive, set sharing to anyone with the link, then paste it here.</div>
+                        </div>
+                        <div class="mb-3" id="paymentProofGroup">
+                            <label class="form-label">Local Proof File</label>
+                            <input type="file" class="form-control" id="paymentProof" accept="image/*,application/pdf" capture="environment">
+                            <div class="form-text">Optional on this free setup. You can upload a file or snap a proof photo on mobile.</div>
                         </div>
                     </form>
                 </div>
@@ -2432,7 +2874,7 @@
                     <form id="donationForm">
                         <div class="mb-3">
                             <label class="form-label">Amount</label>
-                            <input type="number" class="form-control" id="donationAmount" placeholder="$" required>
+                            <input type="number" class="form-control" id="donationAmount" placeholder="KSh" min="1" step="1" required>
                         </div>
                         <div class="mb-3">
                             <label class="form-label">Payment Method</label>
@@ -2448,6 +2890,20 @@
                         <div class="mb-3 d-none" id="donationMpesaPhoneGroup">
                             <label class="form-label">M-Pesa Phone Number</label>
                             <input type="tel" class="form-control" id="donationMpesaPhone" placeholder="2547XXXXXXXX">
+                        </div>
+                        <div class="mb-3" id="donationReferenceGroup">
+                            <label class="form-label">Transaction Code / Reference</label>
+                            <input type="text" class="form-control" id="donationReference" placeholder="e.g. QAB12C3D4E or bank slip number">
+                        </div>
+                        <div class="mb-3" id="donationProofLinkGroup">
+                            <label class="form-label">Google Drive Proof Link</label>
+                            <input type="url" class="form-control" id="donationProofLink" placeholder="Paste Google Drive proof link if available">
+                            <div class="form-text">Upload the screenshot to Google Drive, set sharing to anyone with the link, then paste it here.</div>
+                        </div>
+                        <div class="mb-3" id="donationProofGroup">
+                            <label class="form-label">Local Proof File</label>
+                            <input type="file" class="form-control" id="donationProof" accept="image/*,application/pdf" capture="environment">
+                            <div class="form-text">Optional on this free setup. You can upload a file or snap a proof photo on mobile.</div>
                         </div>
                         <div class="form-check mb-3">
                             <input type="checkbox" class="form-check-input" id="anonymousDonation">
@@ -2622,10 +3078,12 @@
                             <label class="form-label">Leadership Position</label>
                             <select class="form-select" required>
                                 <option value="">Select position</option>
-                                <option value="president">President/Ameer</option>
-                                <option value="vp">Vice President</option>
+                                <option value="amir_director">Amir Da'awah / Director of Da'awah</option>
+                                <option value="vp">Vice Chairlady</option>
                                 <option value="secretary">Secretary General</option>
+                                <option value="vice_secretary">Vice Secretary</option>
                                 <option value="treasurer">Treasurer</option>
+                                <option value="vice_treasurer">Vice Treasurer</option>
                                 <option value="media">Media/Publicity Officer</option>
                                 <option value="organizer">Organizer</option>
                                 <option value="welfare">Welfare Officer</option>
@@ -2736,7 +3194,7 @@
                         </div>
                         <div class="mb-3">
                             <label class="form-label">Profile Photo</label>
-                            <input type="file" class="form-control" id="publicLeaderPhoto" accept="image/*">
+                            <input type="file" class="form-control" id="publicLeaderPhoto" accept="image/*" capture="environment">
                             <small class="text-muted">Optional: Upload a profile photo</small>
                         </div>
                     </form>
@@ -2769,7 +3227,7 @@
                         </div>
                         <div class="mb-3">
                             <label class="form-label">Image or Video</label>
-                            <input type="file" class="form-control" id="galleryImage" accept="image/*,video/mp4,video/webm,video/ogg" onchange="previewGalleryImage()" required>
+                            <input type="file" class="form-control" id="galleryImage" accept="image/*,video/mp4,video/webm,video/ogg" capture="environment" onchange="previewGalleryImage()" required>
                             <img id="galleryImagePreview" src="" alt="Selected gallery image preview" class="img-fluid mt-2 d-none" style="max-height:200px; object-fit:contain;">
                             <video id="galleryVideoPreview" class="img-fluid mt-2 d-none" style="max-height:220px; object-fit:contain;" controls muted></video>
                         </div>
@@ -2787,8 +3245,66 @@
         </div>
     </div>
 
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.js"></script>
-    <script src="dawaah.javascript?v=clear-accounts-20260510"></script>
+    <div class="ai-chat-widget" id="aiChatWidget" aria-live="polite">
+        <button class="ai-chat-toggle" id="aiChatToggle" type="button" aria-expanded="false" aria-controls="aiChatPanel">
+            <i class="fas fa-comments" aria-hidden="true"></i>
+            <span>Research AI</span>
+        </button>
+        <section class="ai-chat-panel" id="aiChatPanel" aria-label="Research AI chat">
+            <div class="ai-chat-header">
+                <div>
+                    <h2>Research AI</h2>
+                    <p>Ask for research help or guidance using this website.</p>
+                </div>
+                <button class="ai-chat-close" id="aiChatClose" type="button" aria-label="Close research chat">
+                    <i class="fas fa-xmark" aria-hidden="true"></i>
+                </button>
+            </div>
+            <div class="ai-chat-messages" id="aiChatMessages">
+                <div class="ai-chat-message ai-chat-message--bot">
+                    Assalamu alaikum. Ask me a research question or how to use this website, and I will guide you.
+                </div>
+            </div>
+            <form class="ai-chat-form" id="aiChatForm">
+                <button type="button" class="ai-chat-voice" id="aiChatVoice" aria-label="Record voice question">
+                    <i class="fas fa-microphone" aria-hidden="true"></i>
+                </button>
+                <label class="ai-chat-upload" for="aiChatAudioUpload" aria-label="Upload voice question">
+                    <i class="fas fa-file-audio" aria-hidden="true"></i>
+                    <input type="file" id="aiChatAudioUpload" accept="audio/*,video/webm" hidden>
+                </label>
+                <textarea id="aiChatInput" rows="2" maxlength="2000" placeholder="Ask research or website help..." required></textarea>
+                <button type="submit" id="aiChatSend" aria-label="Send question">
+                    <i class="fas fa-paper-plane" aria-hidden="true"></i>
+                </button>
+                <div class="ai-chat-voice-status" id="aiChatVoiceStatus"></div>
+            </form>
+        </section>
+    </div>
+
+    <div class="modal fade" id="memberDigitalCardModal" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title"><i class="fas fa-id-card"></i> Digital Membership Card</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body" id="memberDigitalCardBody"></div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Close</button>
+                    <button type="button" class="btn btn-primary" id="memberDigitalCardPrintButton" onclick="printMemberDigitalCard()"><i class="fas fa-print"></i> Print</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="vendor/bootstrap/js/bootstrap.bundle.min.js?v=local-20260523"></script>
+    <script src="vendor/chartjs/chart.min.js?v=local-20260523"></script>
+    <script src="ai_worker_config.js?v=cloudflare-ai-20260527-3"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="supabase_config.js?v=supabase-ready-20260607"></script>
+    <script src="ai_assistant_widget.js?v=dashboard-only-20260528-13"></script>
+    <script src="supabase_shared.js?v=supabase-ready-20260610"></script>
+    <script src="daawah.js?v=portal-lock-admin-login-20260604-4"></script>
 </body>
 </html>

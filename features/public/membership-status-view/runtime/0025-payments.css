@@ -1,0 +1,25 @@
+/* Runtime slice from daawah.css: PAYMENTS. */
+/* PAYMENTS */
+.payment-status-item {
+    margin-bottom: 15px;
+}
+
+.payment-status-item p {
+    margin-bottom: 8px;
+    font-weight: 600;
+}
+
+.progress {
+    height: 20px;
+    background-color: #e9ecef;
+}
+
+.progress-bar {
+    background-color: var(--primary-color);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 12px;
+    font-weight: 600;
+}

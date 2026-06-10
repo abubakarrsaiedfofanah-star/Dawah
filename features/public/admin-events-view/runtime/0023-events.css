@@ -1,0 +1,18 @@
+/* Runtime slice from daawah.css: EVENTS. */
+/* EVENTS */
+.event-card {
+    border-left: 4px solid var(--primary-color);
+}
+
+.event-card:hover {
+    transform: translateY(-10px);
+}
+
+.event-header {
+    background-color: rgba(15, 81, 50, 0.1);
+    color: var(--primary-color);
+}
+
+.event-header h6 {
+    font-weight: 700;
+}

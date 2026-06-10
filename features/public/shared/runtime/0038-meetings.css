@@ -1,0 +1,16 @@
+/* Runtime slice from daawah.css: MEETINGS. */
+/* MEETINGS */
+.meeting-item {
+    padding: 12px 0;
+    border-bottom: 1px solid var(--border-color);
+    transition: all 0.3s ease;
+}
+
+.meeting-item:last-child {
+    border-bottom: none;
+}
+
+.meeting-item:hover {
+    background-color: rgba(15, 81, 50, 0.05);
+    padding-left: 8px;
+}

@@ -3,10 +3,22 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dawa'ah Admin Panel</title>
-    <link rel="icon" type="image/png" href="assets/umma-university-logo-color.png">
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <meta name="referrer" content="strict-origin-when-cross-origin">
+    <meta http-equiv="Cache-Control" content="no-store, no-cache, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; base-uri 'self'; object-src 'none'; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://www.google.com https://www.google.com/recaptcha/ https://www.google.com/recaptcha/enterprise.js https://www.gstatic.com https://www.gstatic.com/recaptcha/; style-src 'self' 'unsafe-inline'; font-src 'self' data:; img-src 'self' data: blob: https:; media-src 'self' data: blob:; connect-src 'self' https://*.supabase.co https://identitytoolkit.googleapis.com https://firestore.googleapis.com https://firebaseappcheck.googleapis.com https://www.google.com https://www.google.com/recaptcha/ https://umma-dawaah-groq-ai.abubakarrsaiedfofanah.workers.dev; frame-src https://www.google.com https://www.google.com/recaptcha/ https://recaptcha.google.com/recaptcha/; form-action 'self'; upgrade-insecure-requests">
+    <script src="canonical_redirect.js?v=20260527-one-link"></script>
+    <script>
+        if (window.top !== window.self) {
+            window.top.location = window.self.location;
+        }
+    </script>
+    <title>UMMA University Da'awah Team Admin Panel</title>
+    <link rel="icon" type="image/png" href="assets/umma-university-logo-color.png?v=20260522-logo2">
+    <link href="vendor/bootstrap/css/bootstrap.min.css?v=local-20260523" rel="stylesheet">
+    <link rel="stylesheet" href="vendor/fontawesome/css/all.min.css?v=local-20260523">
+    <link rel="stylesheet" href="ai_assistant_widget.css?v=dashboard-only-20260522">
     <style>
         :root {
             --primary-color: #0f5132;
@@ -110,8 +122,40 @@
             font-weight: 800;
         }
 
+        .admin-login-top-link {
+            display: flex;
+            justify-content: flex-end;
+            margin-bottom: 18px;
+        }
+
+        .general-site-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 9px 14px;
+            border-radius: 999px;
+            color: #fff !important;
+            text-decoration: none;
+            font-weight: 800;
+            letter-spacing: 0;
+            background: linear-gradient(135deg, #40b050, #0060b0);
+            border: 1px solid rgba(255,255,255,0.28);
+            box-shadow: 0 12px 28px rgba(0, 96, 176, 0.26);
+        }
+
+        .general-site-link:hover,
+        .general-site-link:focus {
+            color: #fff !important;
+            transform: translateY(-1px);
+            box-shadow: 0 16px 34px rgba(64, 176, 80, 0.28);
+        }
+
         .admin-login-error {
             display: none;
+        }
+
+        .password-toggle-btn {
+            min-width: 48px;
         }
 
         .admin-login-error.active {
@@ -1021,16 +1065,254 @@
                 grid-template-columns: 1fr;
             }
         }
+
+        /* UMMA University logo palette */
+        :root {
+            --primary-color: #003040;
+            --secondary-color: #0060b0;
+            --link-color: #003040;
+            --link-hover-color: #0060b0;
+            --admin-black: #003040;
+            --admin-ink: #082f3c;
+            --admin-panel: #ffffff;
+            --admin-panel-soft: #f3fbf7;
+            --admin-gold: #40b050;
+            --admin-gold-light: #78d986;
+            --admin-gold-dark: #23863a;
+            --admin-text: #17323a;
+            --admin-muted: #5f7880;
+            --admin-border: rgba(0, 48, 64, 0.18);
+            --admin-shadow: 0 22px 55px rgba(0, 48, 64, 0.16);
+        }
+
+        body,
+        .admin-container {
+            background: linear-gradient(180deg, #f3fbf7 0%, #e7f4f1 100%) !important;
+            color: var(--admin-text);
+        }
+
+        .admin-login-screen,
+        .sidebar,
+        .admin-welcome-banner,
+        #dashboardView .admin-welcome-banner {
+            background: linear-gradient(135deg, #003040 0%, #004e70 56%, #40b050 118%) !important;
+            color: #ffffff !important;
+        }
+
+        .admin-login-card,
+        .content-card,
+        .pending-role-card,
+        .admin-empty-state,
+        .admin-header,
+        .form-section {
+            background: #ffffff !important;
+            color: var(--admin-text) !important;
+            border-color: var(--admin-border) !important;
+            box-shadow: var(--admin-shadow);
+        }
+
+        .admin-login-card h1,
+        .admin-header h2,
+        .admin-content h3,
+        .admin-content h4,
+        .admin-content h5,
+        .logo-icon,
+        .pending-role-card__icon,
+        .admin-empty-state i {
+            color: #003040 !important;
+        }
+
+        .btn-primary,
+        .btn-success,
+        .admin-auth-tabs .nav-link.active,
+        .pending-role-card__icon,
+        .admin-login-card .logo-icon {
+            background: linear-gradient(135deg, #40b050, #0060b0) !important;
+            border-color: #40b050 !important;
+            color: #ffffff !important;
+        }
+
+        .btn-outline-primary {
+            color: #003040 !important;
+            border-color: #40b050 !important;
+        }
+
+        .btn-outline-primary:hover {
+            background: #003040 !important;
+            color: #ffffff !important;
+        }
+
+        .table thead,
+        table thead {
+            background: linear-gradient(135deg, #003040, #0060b0) !important;
+            color: #ffffff !important;
+        }
+
+        /* Distinct admin sidebar tab colors for visibility */
+        .nav-menu a {
+            color: #ffffff !important;
+            font-weight: 900;
+            border-left-width: 5px !important;
+            border-radius: 8px;
+            margin: 0 10px 8px;
+            padding: 12px 14px !important;
+            text-shadow: 0 1px 2px rgba(0, 0, 0, 0.28);
+        }
+
+        .nav-menu a i {
+            color: #ffffff !important;
+            width: 22px;
+            text-align: center;
+            margin-right: 9px;
+        }
+
+        .nav-menu li:nth-child(6n + 1) a {
+            background: #0b5f7a !important;
+            border-left-color: #8fd0ff !important;
+        }
+
+        .nav-menu li:nth-child(6n + 2) a {
+            background: #1f8a44 !important;
+            border-left-color: #b7f7c1 !important;
+        }
+
+        .nav-menu li:nth-child(6n + 3) a {
+            background: #0057a8 !important;
+            border-left-color: #9fd4ff !important;
+        }
+
+        .nav-menu li:nth-child(6n + 4) a {
+            background: #23863a !important;
+            border-left-color: #d2ffd8 !important;
+        }
+
+        .nav-menu li:nth-child(6n + 5) a {
+            background: #17465a !important;
+            border-left-color: #78d986 !important;
+        }
+
+        .nav-menu li:nth-child(6n + 6) a {
+            background: #08736f !important;
+            border-left-color: #c5fff8 !important;
+        }
+
+        .nav-menu a:hover,
+        .nav-menu a.active {
+            color: #ffffff !important;
+            border-left-color: #40b050 !important;
+            transform: translateX(4px);
+            box-shadow: 0 12px 26px rgba(0, 48, 64, 0.26);
+        }
+
+        .nav-menu a:hover i,
+        .nav-menu a.active i {
+            color: #ffffff !important;
+        }
+
+        .sidebar .sidebar-header h3,
+        .sidebar .sidebar-header small,
+        .sidebar .nav-menu a,
+        .sidebar .nav-menu a i,
+        .sidebar .nav-menu a:hover,
+        .sidebar .nav-menu a:hover i,
+        .sidebar .nav-menu a.active,
+        .sidebar .nav-menu a.active i {
+            color: #ffffff !important;
+            -webkit-text-fill-color: #ffffff !important;
+            text-shadow: 0 1px 2px rgba(0, 0, 0, 0.35) !important;
+        }
+
+        .sidebar .nav-menu a:hover,
+        .sidebar .nav-menu a.active {
+            background: #0b5f7a !important;
+            border-left-color: #ffffff !important;
+        }
+
+        #dashboardDetailTable,
+        .admin-table-scroll,
+        .content-card .table-responsive {
+            width: 100%;
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+        }
+
+        #dashboardDetailTable table,
+        .admin-table-scroll table {
+            min-width: 720px;
+        }
+
+        @media (max-width: 768px) {
+            .content-card {
+                padding: 16px;
+            }
+
+            .content-card .btn,
+            .content-card .form-control,
+            .content-card .form-select {
+                max-width: 100%;
+            }
+
+            #systemHealthList .border {
+                min-height: 132px;
+            }
+
+            #dashboardDetailTable .d-flex,
+            #financeDashboardTable .d-flex {
+                align-items: stretch !important;
+            }
+
+            #dashboardDetailTable .form-control,
+            #dashboardDetailTable .form-select,
+            #dashboardDetailTable .btn {
+                width: 100%;
+                max-width: none !important;
+            }
+
+            #financeDashboardTable table {
+                font-size: 13px;
+                white-space: nowrap;
+            }
+        }
+
+        .settings-compact-dashboard .content-card,
+        .settings-compact-dashboard .form-section {
+            padding: 14px;
+            margin-bottom: 12px;
+        }
+
+        .settings-reduced-motion *,
+        .settings-reduced-motion *::before,
+        .settings-reduced-motion *::after {
+            animation-duration: 0.01ms !important;
+            animation-iteration-count: 1 !important;
+            scroll-behavior: auto !important;
+            transition-duration: 0.01ms !important;
+        }
+
+        .admin-panel-footer {
+            position: fixed;
+            right: 18px;
+            bottom: 18px;
+            z-index: 999;
+        }
+
+        .admin-panel-footer .btn {
+            background: #ffffff;
+            box-shadow: 0 10px 24px rgba(0, 48, 64, 0.16);
+            font-weight: 700;
+        }
     </style>
 </head>
 <body>
     <div id="adminLoginScreen" class="admin-login-screen">
         <div class="admin-login-card">
+            <div class="admin-login-top-link">
+                <a href="index.html#portals" class="general-site-link"><i class="fas fa-door-open"></i><span>Back to Portals</span></a>
+            </div>
             <div class="text-center">
-                <img src="assets/umma-university-logo-color.png" alt="UMMA University logo" class="admin-login-logo">
-                <div class="logo-icon"><i class="fas fa-mosque"></i></div>
+                <img src="assets/umma-university-logo-color.png?v=20260522-logo2" alt="UMMA University logo" class="admin-login-logo">
                 <h1>Admin Login</h1>
-                <p class="text-muted mb-4">Dawa'ah secure admin access</p>
+                <p class="text-muted mb-4">Secure admin access for approved UMMA University Da'awah Team administrators.</p>
             </div>
             <div id="adminLoginError" class="alert alert-danger admin-login-error"></div>
             <ul class="nav nav-tabs admin-auth-tabs mb-3" role="tablist">
@@ -1048,14 +1330,14 @@
                 <div id="adminLoginTab" class="tab-pane fade show active" role="tabpanel">
                     <form id="adminLoginForm">
                         <div class="mb-3">
-                            <label class="form-label">Admin Username</label>
-                            <input type="text" class="form-control" id="adminLoginUsername" autocomplete="username" required>
+                            <label class="form-label">Admin Email</label>
+                            <input type="email" class="form-control" id="adminLoginUsername" autocomplete="email" required>
                         </div>
                         <div class="mb-3">
                             <label class="form-label">Password</label>
                             <div class="input-group">
                                 <input type="password" class="form-control" id="adminLoginPassword" autocomplete="current-password" required>
-                                <button class="btn btn-outline-secondary" type="button" onclick="togglePasswordVisibility('adminLoginPassword', this)" aria-label="Show password">
+                                <button class="btn btn-outline-secondary password-toggle-btn" type="button" onclick="togglePasswordVisibility('adminLoginPassword', this)" aria-label="Show password" title="Show password">
                                     <i class="fas fa-eye"></i>
                                 </button>
                             </div>
@@ -1079,7 +1361,7 @@
                             <label class="form-label">Password</label>
                             <div class="input-group">
                                 <input type="password" class="form-control" id="adminRegisterPassword" autocomplete="new-password" minlength="12" required>
-                                <button class="btn btn-outline-secondary" type="button" onclick="togglePasswordVisibility('adminRegisterPassword', this)" aria-label="Show password">
+                                <button class="btn btn-outline-secondary password-toggle-btn" type="button" onclick="togglePasswordVisibility('adminRegisterPassword', this)" aria-label="Show password" title="Show password">
                                     <i class="fas fa-eye"></i>
                                 </button>
                             </div>
@@ -1088,7 +1370,7 @@
                             <label class="form-label">Confirm Password</label>
                             <div class="input-group">
                                 <input type="password" class="form-control" id="adminRegisterConfirmPassword" autocomplete="new-password" minlength="12" required>
-                                <button class="btn btn-outline-secondary" type="button" onclick="togglePasswordVisibility('adminRegisterConfirmPassword', this)" aria-label="Show password">
+                                <button class="btn btn-outline-secondary password-toggle-btn" type="button" onclick="togglePasswordVisibility('adminRegisterConfirmPassword', this)" aria-label="Show password" title="Show password">
                                     <i class="fas fa-eye"></i>
                                 </button>
                             </div>
@@ -1096,7 +1378,7 @@
                         <button type="submit" id="adminRegisterButton" class="btn btn-danger w-100">
                             <i class="fas fa-user-plus"></i> Create Admin Account
                         </button>
-                        <p class="text-muted small mt-2 mb-0">Only the first admin can register here. Other admins are added inside the panel.</p>
+                        <p class="text-muted small mt-2 mb-0">The main admin can register directly here. Other admins are added inside the panel.</p>
                     </form>
                 </div>
                 <div id="adminForgotTab" class="tab-pane fade" role="tabpanel">
@@ -1119,7 +1401,7 @@
                             <label class="form-label">New Strong Password</label>
                             <div class="input-group">
                                 <input type="password" class="form-control" id="adminResetNewPassword" autocomplete="new-password" minlength="12" required>
-                                <button class="btn btn-outline-secondary" type="button" onclick="togglePasswordVisibility('adminResetNewPassword', this)" aria-label="Show password">
+                                <button class="btn btn-outline-secondary password-toggle-btn" type="button" onclick="togglePasswordVisibility('adminResetNewPassword', this)" aria-label="Show password" title="Show password">
                                     <i class="fas fa-eye"></i>
                                 </button>
                             </div>
@@ -1136,14 +1418,19 @@
                 <a href="index.html" class="text-danger text-decoration-none"><i class="fas fa-arrow-left"></i> Back to home</a>
             </div>
         </div>
+        <div class="admin-panel-footer">
+            <a class="btn btn-sm btn-outline-primary" href="install.html?v=20260523-install-direct5">
+                <i class="fas fa-mobile-screen-button"></i> Install App
+            </a>
+        </div>
     </div>
 
     <div id="adminContainer" class="admin-container locked">
         <!-- Sidebar -->
         <div class="sidebar">
             <div class="sidebar-header">
-                <img src="assets/umma-university-logo-color.png" alt="UMMA University logo" class="sidebar-logo">
-                <h3><i class="fas fa-mosque"></i> Dawa'ah</h3>
+                <img src="assets/umma-university-logo-color.png?v=20260522-logo2" alt="UMMA University logo" class="sidebar-logo">
+                <h3>UMMA University Da'awah Team</h3>
                 <small>Admin Panel</small>
             </div>
             
@@ -1153,13 +1440,14 @@
                 <li><a href="#" onclick="switchAdminView('events')"><i class="fas fa-calendar"></i> Events</a></li>
                 <li><a href="#" onclick="switchAdminView('leadership')"><i class="fas fa-users"></i> Leadership</a></li>
                 <li><a href="#" onclick="switchAdminView('gallery')"><i class="fas fa-images"></i> Gallery</a></li>
-                <li><a href="#" onclick="switchAdminView('contactVoices')"><i class="fas fa-share-nodes"></i> Contact & Social</a></li>
+                <li><a href="#" onclick="switchAdminView('contactVoices')"><i class="fas fa-pen-to-square"></i> Public Content</a></li>
                 <li><a href="#" onclick="switchAdminView('welfare')"><i class="fas fa-triangle-exclamation"></i> Welfare Warnings</a></li>
                 <li><a href="#" onclick="switchAdminView('prayer')"><i class="fas fa-mosque"></i> Prayer & Religious Activities</a></li>
                 <li><a href="#" onclick="showReligiousAdminSection('jummahAdminSection')"><i class="fas fa-bell"></i> Jumu'ah Reminders</a></li>
                 <li><a href="#" onclick="showReligiousAdminSection('ramadanAdminSection')"><i class="fas fa-moon"></i> Ramadan Schedule</a></li>
                 <li><a href="#" onclick="showReligiousAdminSection('lectureAdminSection')"><i class="fas fa-chalkboard-user"></i> Islamic Lectures</a></li>
                 <li><a href="#" onclick="switchAdminView('account')"><i class="fas fa-user-gear"></i> My Account</a></li>
+                <li><a href="#" onclick="switchAdminView('settings')"><i class="fas fa-gear"></i> Settings</a></li>
                 <li><a href="#" onclick="switchAdminView('resources')"><i class="fas fa-folder-open"></i> Resources</a></li>
                 <li><a href="#" onclick="switchAdminView('hadiths')"><i class="fas fa-book"></i> Hadiths</a></li>
                 <li><a href="#" onclick="logoutAdmin()"><i class="fas fa-user-shield"></i> Admin Logout</a></li>
@@ -1171,6 +1459,8 @@
             <div class="admin-header">
                 <h2 id="pageTitle"><i class="fas fa-chart-line"></i> Dashboard</h2>
                 <div class="admin-user-chip">
+                    <input type="search" class="form-control form-control-sm" id="adminGlobalSearchInput" placeholder="Search system..." style="max-width: 220px;" onkeydown="if(event.key==='Enter') runAdminGlobalSearch()">
+                    <button class="btn btn-sm btn-outline-light" type="button" onclick="runAdminGlobalSearch()"><i class="fas fa-search"></i></button>
                     <img id="adminHeaderPhoto" class="admin-avatar d-none" src="" alt="Admin photo">
                     <i id="adminHeaderIcon" class="fas fa-user-shield"></i>
                     <span id="adminName">Admin</span> | <a href="#" onclick="logoutAdmin()" class="text-danger text-decoration-none">Logout</a>
@@ -1188,11 +1478,11 @@
                         <span><i class="fas fa-users"></i> Users</span>
                         <span><i class="fas fa-user-shield"></i> Admins</span>
                     </div>
-                    <div class="admin-welcome-marquee" aria-label="Welcome to Dawa'ah UMMA University">
+                    <div class="admin-welcome-marquee" aria-label="Welcome to UMMA University Da'awah Team">
                         <div class="admin-welcome-track">
-                            <span><i class="fas fa-star"></i> Welcome to Dawa'ah, UMMA University</span>
+                            <span><i class="fas fa-star"></i> Welcome to UMMA University Da'awah Team</span>
                             <span><i class="fas fa-mosque"></i> Admin Control Center</span>
-                            <span><i class="fas fa-star"></i> Welcome to Dawa'ah, UMMA University</span>
+                            <span><i class="fas fa-star"></i> Welcome to UMMA University Da'awah Team</span>
                             <span><i class="fas fa-mosque"></i> Admin Control Center</span>
                         </div>
                     </div>
@@ -1203,89 +1493,161 @@
                         <div class="content-card text-center dashboard-stat-card" style="cursor:pointer;" onclick="loadDashboardDetail('members')">
                             <h5><i class="fas fa-users"></i> Members</h5>
                             <h2 id="memberCount" style="color: var(--primary-color);">0</h2>
+                            <small>Paid/active membership</small>
                         </div>
                     </div>
                     <div class="admin-report-cell">
                         <div class="content-card text-center dashboard-stat-card" style="cursor:pointer;" onclick="loadDashboardDetail('students')">
                             <h5><i class="fas fa-user-graduate"></i> Students</h5>
                             <h2 id="studentCount" style="color: var(--secondary-color);">0</h2>
+                            <small>Registered student accounts</small>
                         </div>
                     </div>
                     <div class="admin-report-cell">
                         <div class="content-card text-center dashboard-stat-card" style="cursor:pointer;" onclick="loadDashboardDetail('donations')">
                             <h5><i class="fas fa-circle-check"></i> Total Donations</h5>
-                            <h2 id="donationTotal" style="color: #16a34a;">$0</h2>
+                            <h2 id="donationTotal" style="color: #40b050;">KSh 0</h2>
                             <small><span id="donationCount">0</span> records | <span id="pendingDonationCount">0</span> pending | <span id="failedDonationCount">0</span> rejected</small>
-                            <small>Pending value: <span id="pendingDonationAmount">$0</span></small>
-                            <small>This month: <span id="monthDonationTotal">$0</span></small>
+                            <small>Pending value: <span id="pendingDonationAmount">KSh 0</span></small>
+                            <small>This month: <span id="monthDonationTotal">KSh 0</span></small>
                         </div>
                     </div>
                     <div class="admin-report-cell">
                         <div class="content-card text-center dashboard-stat-card" style="cursor:pointer;" onclick="loadDashboardDetail('payments')">
                             <h5>Total Payments</h5>
-                            <h2 id="paymentTotal" style="color: #0ea5e9;">$0</h2>
+                            <h2 id="paymentTotal" style="color: #0060b0;">KSh 0</h2>
                             <small><span id="paymentCount">0</span> records | <span id="pendingPaymentCount">0</span> pending | <span id="failedPaymentCount">0</span> rejected</small>
-                            <small>Pending value: <span id="pendingPaymentAmount">$0</span></small>
-                            <small>This month: <span id="monthPaymentTotal">$0</span></small>
+                            <small>Pending value: <span id="pendingPaymentAmount">KSh 0</span></small>
+                            <small>This month: <span id="monthPaymentTotal">KSh 0</span></small>
                         </div>
                     </div>
                     <div class="admin-report-cell">
                         <div class="content-card text-center dashboard-stat-card" style="cursor:pointer;" onclick="loadDashboardDetail('welfare')">
                             <h5>Welfare Requests</h5>
-                            <h2 id="welfareCount" style="color: #f59e0b;">0</h2>
+                            <h2 id="welfareCount" style="color: #23863a;">0</h2>
                             <small><span id="pendingWelfareCount">0</span> pending</small>
                         </div>
                     </div>
                     <div class="admin-report-cell">
                         <div class="content-card text-center dashboard-stat-card" style="cursor:pointer;" onclick="loadDashboardDetail('events')">
                             <h5>Events</h5>
-                            <h2 id="eventCount" style="color: #ef4444;">0</h2>
+                            <h2 id="eventCount" style="color: #004e70;">0</h2>
                         </div>
                     </div>
                     <div class="admin-report-cell">
                         <div class="content-card text-center dashboard-stat-card" style="cursor:pointer;" onclick="loadDashboardDetail('announcements')">
                             <h5>Announcements</h5>
-                            <h2 id="announcementCount" style="color: #6366f1;">0</h2>
+                            <h2 id="announcementCount" style="color: #003040;">0</h2>
                         </div>
                     </div>
                     <div class="admin-report-cell">
                         <div class="content-card text-center dashboard-stat-card" style="cursor:pointer;" onclick="loadDashboardDetail('resources')">
                             <h5>Resources</h5>
-                            <h2 id="resourceCount" style="color: #14b8a6;">0</h2>
+                            <h2 id="resourceCount" style="color: #40b050;">0</h2>
                         </div>
                     </div>
                     <div class="admin-report-cell">
                         <div class="content-card text-center dashboard-stat-card" style="cursor:pointer;" onclick="loadDashboardDetail('gallery')">
                             <h5>Gallery Items</h5>
-                            <h2 id="galleryCount" style="color: #8b5cf6;">0</h2>
+                            <h2 id="galleryCount" style="color: #0060b0;">0</h2>
                         </div>
                     </div>
                     <div class="admin-report-cell">
                         <div class="content-card text-center dashboard-stat-card" style="cursor:pointer;" onclick="loadDashboardDetail('leadership')">
                             <h5>Leadership</h5>
-                            <h2 id="leaderCount" style="color: #f97316;">0</h2>
+                            <h2 id="leaderCount" style="color: #23863a;">0</h2>
                         </div>
                     </div>
                     <div class="admin-report-cell">
                         <div class="content-card text-center dashboard-stat-card" style="cursor:pointer;" onclick="loadDashboardDetail('hadiths')">
                             <h5>Hadiths</h5>
-                            <h2 id="hadithCount" style="color: #64748b;">0</h2>
+                            <h2 id="hadithCount" style="color: #35545c;">0</h2>
                         </div>
                     </div>
                     <div class="admin-report-cell">
                         <div class="content-card text-center dashboard-stat-card" style="cursor:pointer;" onclick="loadDashboardDetail('prayer')">
                             <h5>Prayer Days</h5>
-                            <h2 id="prayerCount" style="color: #22c55e;">0</h2>
+                            <h2 id="prayerCount" style="color: #40b050;">0</h2>
+                        </div>
+                    </div>
+                    <div class="admin-report-cell">
+                        <div class="content-card text-center dashboard-stat-card" style="cursor:pointer;" onclick="loadDashboardDetail('research')">
+                            <h5>Research</h5>
+                            <h2 id="researchCount" style="color: #6f42c1;">0</h2>
+                            <small>Today: <span id="researchTodayCount">0</span> | Deep: <span id="researchDeepCount">0</span> | Islamic: <span id="researchIslamicCount">0</span></small>
+                        </div>
+                    </div>
+                    <div class="admin-report-cell">
+                        <div class="content-card text-center dashboard-stat-card" style="cursor:pointer;" onclick="loadDashboardDetail('notifications')">
+                            <h5>Notifications</h5>
+                            <h2 id="notificationCount" style="color: #b05a00;">0</h2>
                         </div>
                     </div>
                 </div>
                 <div class="content-card">
+                    <div id="adminGlobalSearchResults" class="mb-3"></div>
                     <h4><i class="fas fa-info-circle"></i> System Information</h4>
-                    <p>Welcome to Dawa'ah Admin Panel. This dashboard shows live database totals for members, payments, donations, welfare, content, and resources.</p>
+                    <p>Welcome to UMMA University Da'awah Team Admin Panel. This dashboard shows live database totals for members, payments, donations, welfare, content, and resources.</p>
                     <p>All changes you make here will be immediately reflected to regular users on the system.</p>
-                    <button type="button" class="btn btn-primary btn-sm" onclick="seedSampleDatabaseData()">
-                        <i class="fas fa-database"></i> Add Starter Database Records
+                    <button type="button" class="btn btn-outline-primary btn-sm" onclick="downloadDatabaseBackup()">
+                        <i class="fas fa-download"></i> Download Database Backup
                     </button>
+                    <div id="backupStatusSummary" class="small text-muted mt-2">
+                        Backup status will appear here after the dashboard loads.
+                    </div>
+                </div>
+                <div class="content-card">
+                    <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
+                        <div>
+                            <h4 class="mb-1"><i class="fas fa-list-check"></i> Needs Attention</h4>
+                            <p class="text-muted mb-0">Quick action list for urgent admin work and suspicious activity.</p>
+                        </div>
+                        <button type="button" class="btn btn-outline-secondary btn-sm" onclick="renderNeedsAttentionPanel()">
+                            <i class="fas fa-rotate"></i> Refresh
+                        </button>
+                    </div>
+                    <div id="needsAttentionPanel" class="row g-2"></div>
+                </div>
+                <div class="content-card">
+                    <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
+                        <div>
+                            <h4 class="mb-1"><i class="fas fa-stethoscope"></i> System Health</h4>
+                            <p class="text-muted mb-0">Quick checks for the installed app, Firebase data, public verification pages, and Research AI.</p>
+                        </div>
+                        <button type="button" class="btn btn-outline-success btn-sm" onclick="runSystemHealthCheck()">
+                            <i class="fas fa-rotate"></i> Run Check
+                        </button>
+                    </div>
+                    <div id="systemHealthSummary" class="alert alert-info py-2 mb-3">
+                        Run a check before handover, after deployment, or when users report a problem.
+                    </div>
+                    <div id="systemHealthList" class="row g-2">
+                        <div class="col-md-6 col-xl-4">
+                            <div class="border rounded p-3 h-100">
+                                <strong><i class="fas fa-circle-notch fa-spin"></i> Waiting for check</strong>
+                                <p class="text-muted small mb-0">Click Run Check to verify core services.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="content-card">
+                    <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
+                        <h4 class="mb-0"><i class="fas fa-chart-pie"></i> Dashboard Charts</h4>
+                        <button type="button" class="btn btn-outline-secondary btn-sm" onclick="loadDashboardStats()">
+                            <i class="fas fa-rotate"></i> Refresh Charts
+                        </button>
+                    </div>
+                    <div class="row g-3">
+                        <div class="col-lg-4">
+                            <canvas id="adminMemberStatusChart" height="220"></canvas>
+                        </div>
+                        <div class="col-lg-4">
+                            <canvas id="adminFinanceStatusChart" height="220"></canvas>
+                        </div>
+                        <div class="col-lg-4">
+                            <canvas id="adminOperationsChart" height="220"></canvas>
+                        </div>
+                    </div>
                 </div>
                 <div class="content-card">
                     <h4 id="dashboardDetailTitle"><i class="fas fa-table"></i> Database Details</h4>
@@ -1441,7 +1803,7 @@
                         </div>
                         <div class="form-group mb-3">
                             <label>Passport Photo</label>
-                            <input type="file" class="form-control" id="leaderPassportPhoto" accept="image/*">
+                            <input type="file" class="form-control" id="leaderPassportPhoto" accept="image/*" capture="environment">
                         </div>
                         <button class="btn btn-success" onclick="addLeader()">
                             <i class="fas fa-save"></i> Add Member
@@ -1468,7 +1830,7 @@
                         </div>
                         <div class="form-group mb-3">
                             <label>Upload Image or Video *</label>
-                            <input type="file" class="form-control" id="galleryImageUpload" accept="image/*,video/mp4,video/webm,video/ogg" onchange="previewAdminGalleryImage()">
+                            <input type="file" class="form-control" id="galleryImageUpload" accept="image/*,video/mp4,video/webm,video/ogg" capture="environment" onchange="previewAdminGalleryImage()">
                             <img id="galleryImagePreview" src="" alt="Selected image preview" class="img-fluid mt-2 d-none" style="max-height: 180px; object-fit: contain;">
                             <video id="galleryVideoPreview" class="img-fluid mt-2 d-none" style="max-height: 220px; object-fit: contain;" controls muted></video>
                             <small class="text-muted">Videos can be MP4, WebM, or OGG.</small>
@@ -1598,7 +1960,7 @@
                             <img id="adminPhotoPreview" class="admin-avatar-preview d-none" src="" alt="Admin photo preview">
                             <i id="adminPhotoPreviewIcon" class="fas fa-user-shield fa-3x text-muted"></i>
                             <div>
-                                <input type="file" class="form-control mb-2" id="adminPhotoInput" accept="image/*">
+                                <input type="file" class="form-control mb-2" id="adminPhotoInput" accept="image/*" capture="environment">
                                 <button class="btn btn-primary btn-sm" type="button" onclick="saveAdminPhoto()"><i class="fas fa-save"></i> Save Photo</button>
                                 <button class="btn btn-outline-secondary btn-sm" type="button" onclick="removeAdminPhoto()"><i class="fas fa-trash"></i> Remove</button>
                             </div>
@@ -1643,7 +2005,12 @@
                     </div>
 
                     <div class="form-section" style="margin-top: 30px;">
-                        <h4><i class="fas fa-rotate-left"></i> My Recent Actions</h4>
+                        <div class="d-flex flex-wrap justify-content-between align-items-center gap-2">
+                            <h4 class="mb-0"><i class="fas fa-rotate-left"></i> My Recent Actions</h4>
+                            <button class="btn btn-sm btn-outline-danger" type="button" onclick="clearMyAdminActivityLogs()">
+                                <i class="fas fa-trash-can"></i> Clear My Recent Actions
+                            </button>
+                        </div>
                         <div id="myAdminActivityLogList"></div>
                     </div>
 
@@ -1666,15 +2033,15 @@
                                     </thead>
                                     <tbody>
                                         <tr>
-                                            <td><span class="badge bg-primary">Chairman / Chairlady</span></td>
+                                            <td><span class="badge bg-primary">Chairlady / Vice Chairladies</span></td>
                                             <td>Welfare requests, member support, and oversight reports.</td>
                                         </tr>
                                         <tr>
-                                            <td><span class="badge bg-primary">Secretary</span></td>
+                                            <td><span class="badge bg-primary">Secretary / Vice Secretary</span></td>
                                             <td>Member records, announcements, and reports.</td>
                                         </tr>
                                         <tr>
-                                            <td><span class="badge bg-primary">Treasurer</span></td>
+                                            <td><span class="badge bg-primary">Treasurer / Vice Treasurer</span></td>
                                             <td>Dues, donations, payment confirmation, and financial reports.</td>
                                         </tr>
                                         <tr>
@@ -1686,12 +2053,40 @@
                                             <td>Events, daily/weekly/monthly activities, and volunteer coordination.</td>
                                         </tr>
                                         <tr>
-                                            <td><span class="badge bg-primary">Imam / Religious Lead</span></td>
-                                            <td>Prayer times, Hadiths, Islamic resources, lectures, and religious reminders.</td>
+                                            <td><span class="badge bg-primary">Amir Da'awah / Director of Da'awah</span></td>
+                                            <td>Prayer times, Hadiths, Islamic resources, lectures, and reminders.</td>
                                         </tr>
                                     </tbody>
                                 </table>
                             </div>
+                        </div>
+
+                        <div class="form-section">
+                            <h4><i class="fas fa-sliders"></i> Role Permission Editor</h4>
+                            <p class="text-muted">Main admin can adjust role permissions used by the browser app. Keep admin/executive roles broad and officer roles focused.</p>
+                            <div class="row g-3">
+                                <div class="col-md-4">
+                                    <label>Role</label>
+                                    <select class="form-select" id="permissionRoleSelect" onchange="renderRolePermissionEditor()">
+                                        <option value="chairlady">Chairlady</option>
+                                        <option value="vice_chairlady_1">Vice Chairlady 1</option>
+                                        <option value="vice_chairlady_2">Vice Chairlady 2</option>
+                                        <option value="secretary">Secretary</option>
+                                        <option value="vice_secretary">Vice Secretary</option>
+                                        <option value="treasurer">Treasurer</option>
+                                        <option value="vice_treasurer">Vice Treasurer</option>
+                                        <option value="media">Media</option>
+                                        <option value="organizer">Organizer</option>
+                                        <option value="amir_director">Amir Da'awah / Director</option>
+                                        <option value="executive">Executive</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-8 d-flex align-items-end gap-2">
+                                    <button class="btn btn-outline-primary" type="button" onclick="saveRolePermissionEditor()"><i class="fas fa-save"></i> Save Permissions</button>
+                                    <button class="btn btn-outline-secondary" type="button" onclick="resetRolePermissionEditor()"><i class="fas fa-rotate-left"></i> Reset Role</button>
+                                </div>
+                            </div>
+                            <div id="rolePermissionEditorList" class="row g-2 mt-3"></div>
                         </div>
 
                         <div class="form-section">
@@ -1715,13 +2110,16 @@
                                         <label>Role *</label>
                                         <select class="form-select" id="memberRoleValue" required>
                                             <option value="student">Student Member</option>
-                                            <option value="chairman">Chairman / Welfare Lead</option>
                                             <option value="chairlady">Chairlady / Welfare Lead</option>
+                                            <option value="vice_chairlady_1">Vice Chairlady 1 / Welfare Lead</option>
+                                            <option value="vice_chairlady_2">Vice Chairlady 2 / Welfare Lead</option>
                                             <option value="secretary">Secretary</option>
+                                            <option value="vice_secretary">Vice Secretary</option>
                                             <option value="treasurer">Treasurer</option>
+                                            <option value="vice_treasurer">Vice Treasurer</option>
                                             <option value="media">Media</option>
                                             <option value="organizer">Organizer</option>
-                                            <option value="imam">Imam / Religious Lead</option>
+                                            <option value="amir_director">Amir Da'awah / Director of Da'awah</option>
                                         </select>
                                     </div>
                                     <div class="col-md-3 mb-3">
@@ -1737,8 +2135,8 @@
                         </div>
 
                         <div class="form-section">
-                            <h4><i class="fas fa-key"></i> Reset Member Password</h4>
-                            <p class="text-muted">Set a temporary password for a student or officer account without viewing their old password.</p>
+                            <h4><i class="fas fa-envelope"></i> Reset Member Password</h4>
+                            <p class="text-muted">Send a Firebase password reset email to the member's registered email address.</p>
                             <form id="memberPasswordResetForm">
                                 <div class="row">
                                     <div class="col-md-5 mb-3">
@@ -1747,17 +2145,8 @@
                                             <option value="" disabled selected>Loading members...</option>
                                         </select>
                                     </div>
-                                    <div class="col-md-4 mb-3">
-                                        <label>Temporary Password *</label>
-                                        <div class="input-group">
-                                            <input type="password" class="form-control" id="memberTemporaryPassword" minlength="6" autocomplete="new-password" required>
-                                            <button class="btn btn-outline-secondary" type="button" onclick="togglePasswordVisibility('memberTemporaryPassword', this)" aria-label="Show password">
-                                                <i class="fas fa-eye"></i>
-                                            </button>
-                                        </div>
-                                    </div>
                                     <div class="col-md-3 mb-3 d-flex align-items-end">
-                                        <button class="btn btn-outline-primary w-100" id="memberPasswordResetButton" type="submit"><i class="fas fa-rotate"></i> Reset</button>
+                                        <button class="btn btn-outline-primary w-100" id="memberPasswordResetButton" type="submit"><i class="fas fa-envelope"></i> Send Reset Email</button>
                                     </div>
                                 </div>
                             </form>
@@ -1765,6 +2154,9 @@
 
                         <div class="form-section">
                             <h4><i class="fas fa-user-plus"></i> Add Admin</h4>
+                            <div class="alert alert-info">
+                                First admin self-registration is locked after the main admin exists. Use this form to add any other admin account.
+                            </div>
                             <form id="adminCreateForm">
                                 <div class="row">
                                     <div class="col-md-4 mb-3">
@@ -1792,8 +2184,88 @@
                         <h4 style="margin-top: 30px;"><i class="fas fa-list"></i> Current Admins</h4>
                         <div id="adminAccountsList"></div>
 
-                        <h4 style="margin-top: 30px;"><i class="fas fa-shield-halved"></i> Admin Activity</h4>
+                        <div class="form-section" style="margin-top: 30px;">
+                            <div class="d-flex flex-wrap justify-content-between align-items-center gap-2">
+                                <div>
+                                    <h4 class="mb-1"><i class="fas fa-database"></i> Database Backup & Restore</h4>
+                                    <p class="text-muted mb-0">Download a private Firestore JSON backup before hosting changes, upgrades, or large edits. Restore is locked unless the server enables it.</p>
+                                </div>
+                                <div class="d-flex flex-wrap gap-2">
+                                    <button class="btn btn-outline-primary" type="button" onclick="downloadDatabaseBackup()">
+                                        <i class="fas fa-download"></i> Download Backup
+                                    </button>
+                                    <label class="btn btn-outline-secondary mb-0">
+                                        <i class="fas fa-upload"></i> Restore SQL
+                                        <input type="file" id="databaseRestoreInput" accept=".json" hidden onchange="restoreDatabaseBackup(this)">
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="d-flex flex-wrap justify-content-between align-items-center gap-2" style="margin-top: 30px;">
+                            <h4 class="mb-0"><i class="fas fa-shield-halved"></i> Admin Activity</h4>
+                            <button class="btn btn-sm btn-outline-danger" type="button" onclick="clearAllAdminActivityLogs()">
+                                <i class="fas fa-trash-can"></i> Clear All Admin Activity
+                            </button>
+                        </div>
                         <div id="adminActivityLogList"></div>
+                    </div>
+                </div>
+            </div>
+
+            <div id="settingsView" class="admin-content">
+                <div class="content-card">
+                    <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
+                        <h4 class="mb-0"><i class="fas fa-gear"></i> Admin Settings</h4>
+                        <button class="btn btn-outline-primary btn-sm" type="button" onclick="loadAdminWorkspaceSettings()">
+                            <i class="fas fa-rotate"></i> Reload
+                        </button>
+                    </div>
+
+                    <div class="row g-3">
+                        <div class="col-lg-6">
+                            <div class="form-section">
+                                <h4><i class="fas fa-comments"></i> Research AI Chat</h4>
+                                <div class="form-check form-switch mb-3">
+                                    <input class="form-check-input" type="checkbox" id="adminSettingAiChatEnabled">
+                                    <label class="form-check-label" for="adminSettingAiChatEnabled">Show Research AI chat box</label>
+                                </div>
+                                <div class="form-check form-switch mb-3">
+                                    <input class="form-check-input" type="checkbox" id="adminSettingResearchHistory">
+                                    <label class="form-check-label" for="adminSettingResearchHistory">Save research history locally</label>
+                                </div>
+                                <label class="form-label" for="adminSettingResearchMode">Preferred answer style</label>
+                                <select class="form-select" id="adminSettingResearchMode">
+                                    <option value="groq_chat">Balanced</option>
+                                    <option value="quick">Quick</option>
+                                    <option value="deep">Deep research</option>
+                                    <option value="islamic">Islamic note</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="col-lg-6">
+                            <div class="form-section">
+                                <h4><i class="fas fa-sliders"></i> Workspace</h4>
+                                <div class="form-check form-switch mb-3">
+                                    <input class="form-check-input" type="checkbox" id="adminSettingBrowserNotifications">
+                                    <label class="form-check-label" for="adminSettingBrowserNotifications">Browser notifications</label>
+                                </div>
+                                <div class="form-check form-switch mb-3">
+                                    <input class="form-check-input" type="checkbox" id="adminSettingCompactDashboard">
+                                    <label class="form-check-label" for="adminSettingCompactDashboard">Compact dashboard layout</label>
+                                </div>
+                                <div class="form-check form-switch mb-3">
+                                    <input class="form-check-input" type="checkbox" id="adminSettingReducedMotion">
+                                    <label class="form-check-label" for="adminSettingReducedMotion">Reduced motion</label>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="d-flex flex-wrap gap-2 mt-3">
+                        <button class="btn btn-primary" type="button" onclick="saveAdminWorkspaceSettings()"><i class="fas fa-save"></i> Save Settings</button>
+                        <button class="btn btn-outline-secondary" type="button" onclick="resetAdminWorkspaceSettings()"><i class="fas fa-rotate-left"></i> Reset</button>
                     </div>
                 </div>
             </div>
@@ -1809,6 +2281,12 @@
                         <div class="form-group mb-3">
                             <label>English Translation *</label>
                             <textarea class="form-control" id="hadithEnglish" rows="3" placeholder="English translation of hadith"></textarea>
+                            <div class="d-flex align-items-center gap-2 mt-2">
+                                <button type="button" class="btn btn-sm btn-outline-primary" id="adminSuggestArabicBtn" onclick="suggestAdminHadithArabic()">
+                                    <i class="fas fa-language"></i> Suggest Arabic
+                                </button>
+                                <small class="text-muted" id="adminArabicSuggestionStatus">Review suggested Arabic before saving.</small>
+                            </div>
                         </div>
                         <div class="form-group mb-3">
                             <label>Reference</label>
@@ -1827,6 +2305,16 @@
                                     <input type="text" class="form-control" id="hadithCategory" placeholder="e.g., Spirituality, Charity, Knowledge">
                                 </div>
                             </div>
+                            <div class="col-md-6">
+                                <div class="form-group mb-3">
+                                    <label>Verification Status</label>
+                                    <select class="form-select" id="hadithVerificationStatus">
+                                        <option value="needs_verification" selected>Needs Verification</option>
+                                        <option value="draft">Draft</option>
+                                        <option value="verified">Verified</option>
+                                    </select>
+                                </div>
+                            </div>
                         </div>
                         <button class="btn btn-success" onclick="addHadith()">
                             <i class="fas fa-save"></i> Add Hadith
@@ -1841,11 +2329,85 @@
             <div id="contactVoicesView" class="admin-content">
                 <div class="content-card">
                     <div class="d-flex justify-content-between align-items-center mb-3">
-                        <h4 class="mb-0"><i class="fas fa-share-nodes"></i> Public Contact & Social Links</h4>
+                        <h4 class="mb-0"><i class="fas fa-pen-to-square"></i> Public Page Content</h4>
                         <button class="btn btn-outline-primary btn-sm" onclick="loadAdminSiteSettings()">
                             <i class="fas fa-rotate"></i> Reload
                         </button>
                     </div>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">About Section Title</label>
+                            <input type="text" class="form-control" id="adminAboutTitle">
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Who We Are Heading</label>
+                            <input type="text" class="form-control" id="adminAboutHeading">
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Who We Are Paragraph 1</label>
+                            <textarea class="form-control" id="adminAboutParagraph1" rows="4"></textarea>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Who We Are Paragraph 2</label>
+                            <textarea class="form-control" id="adminAboutParagraph2" rows="4"></textarea>
+                        </div>
+                        <div class="col-md-3 mb-3">
+                            <label class="form-label">About Feature 1</label>
+                            <input type="text" class="form-control" id="adminAboutFeature1">
+                        </div>
+                        <div class="col-md-3 mb-3">
+                            <label class="form-label">About Feature 2</label>
+                            <input type="text" class="form-control" id="adminAboutFeature2">
+                        </div>
+                        <div class="col-md-3 mb-3">
+                            <label class="form-label">About Feature 3</label>
+                            <input type="text" class="form-control" id="adminAboutFeature3">
+                        </div>
+                        <div class="col-md-3 mb-3">
+                            <label class="form-label">About Feature 4</label>
+                            <input type="text" class="form-control" id="adminAboutFeature4">
+                        </div>
+                        <div class="col-12 mb-3">
+                            <label class="form-label">What We Do Section Title</label>
+                            <input type="text" class="form-control" id="adminWhatWeDoTitle">
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">What We Do 1 Title</label>
+                            <input type="text" class="form-control" id="adminWhatWeDo1Title">
+                            <textarea class="form-control mt-2" id="adminWhatWeDo1Text" rows="3"></textarea>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">What We Do 2 Title</label>
+                            <input type="text" class="form-control" id="adminWhatWeDo2Title">
+                            <textarea class="form-control mt-2" id="adminWhatWeDo2Text" rows="3"></textarea>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">What We Do 3 Title</label>
+                            <input type="text" class="form-control" id="adminWhatWeDo3Title">
+                            <textarea class="form-control mt-2" id="adminWhatWeDo3Text" rows="3"></textarea>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">What We Do 4 Title</label>
+                            <input type="text" class="form-control" id="adminWhatWeDo4Title">
+                            <textarea class="form-control mt-2" id="adminWhatWeDo4Text" rows="3"></textarea>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">What We Do 5 Title</label>
+                            <input type="text" class="form-control" id="adminWhatWeDo5Title">
+                            <textarea class="form-control mt-2" id="adminWhatWeDo5Text" rows="3"></textarea>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">What We Do 6 Title</label>
+                            <input type="text" class="form-control" id="adminWhatWeDo6Title">
+                            <textarea class="form-control mt-2" id="adminWhatWeDo6Text" rows="3"></textarea>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="content-card">
+                    <h4 class="mb-3"><i class="fas fa-share-nodes"></i> Public Contact & Social Links</h4>
                     <div class="row">
                         <div class="col-md-6 mb-3">
                             <label class="form-label">Location</label>
@@ -1891,9 +2453,33 @@
                             <label class="form-label">LinkedIn URL</label>
                             <input type="url" class="form-control" id="adminSocialLinkedin" placeholder="https://linkedin.com/...">
                         </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Receipt Signature Name</label>
+                            <input type="text" class="form-control" id="adminFinanceSignatureName" placeholder="Authorized treasurer name">
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Receipt Signature Title</label>
+                            <input type="text" class="form-control" id="adminFinanceSignatureTitle" placeholder="Imam">
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Receipt Signature Image</label>
+                            <input type="file" class="form-control" id="adminFinanceSignatureImageFile" accept="image/png,image/jpeg,image/webp" capture="environment" onchange="previewFinanceSignatureImage()">
+                            <input type="hidden" id="adminFinanceSignatureImage">
+                            <small class="text-muted">Upload a clear PNG, JPG, or WebP signature under 250 KB.</small>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Signature Preview</label>
+                            <div class="border rounded bg-white p-3" style="min-height: 92px;">
+                                <img id="adminFinanceSignaturePreview" class="d-none" src="" alt="Receipt signature preview" style="max-width: 260px; max-height: 70px; object-fit: contain;">
+                                <p id="adminFinanceSignatureEmpty" class="text-muted mb-0">No signature image uploaded.</p>
+                            </div>
+                            <button class="btn btn-outline-secondary btn-sm mt-2" type="button" onclick="removeFinanceSignatureImage()">
+                                <i class="fas fa-trash"></i> Remove Signature Image
+                            </button>
+                        </div>
                     </div>
                     <button class="btn btn-success" onclick="saveAdminSiteSettings()">
-                        <i class="fas fa-save"></i> Save Public Links
+                        <i class="fas fa-save"></i> Save Public Page Content
                     </button>
                 </div>
 
@@ -1944,8 +2530,51 @@
     </div>
     
     <div id="notificationContainer" style="position: fixed; top: 20px; right: 20px; z-index: 1000;"></div>
+
+    <div class="ai-chat-widget" id="aiChatWidget" aria-live="polite">
+        <button class="ai-chat-toggle" id="aiChatToggle" type="button" aria-expanded="false" aria-controls="aiChatPanel">
+            <i class="fas fa-comments" aria-hidden="true"></i>
+            <span>Research AI</span>
+        </button>
+        <section class="ai-chat-panel" id="aiChatPanel" aria-label="Research AI chat">
+            <div class="ai-chat-header">
+                <div>
+                    <h2>Research AI</h2>
+                    <p>Generate admin work or guide people through the website.</p>
+                </div>
+                <button class="ai-chat-close" id="aiChatClose" type="button" aria-label="Close research chat">
+                    <i class="fas fa-xmark" aria-hidden="true"></i>
+                </button>
+            </div>
+            <div class="ai-chat-messages" id="aiChatMessages">
+                <div class="ai-chat-message ai-chat-message--bot">
+                    Assalamu alaikum. Ask by text or voice and I will help with admin work or website guidance.
+                </div>
+            </div>
+            <form class="ai-chat-form" id="aiChatForm">
+                <button type="button" class="ai-chat-voice" id="aiChatVoice" aria-label="Record voice question">
+                    <i class="fas fa-microphone" aria-hidden="true"></i>
+                </button>
+                <label class="ai-chat-upload" for="aiChatAudioUpload" aria-label="Upload voice question">
+                    <i class="fas fa-file-audio" aria-hidden="true"></i>
+                    <input type="file" id="aiChatAudioUpload" accept="audio/*,video/webm" hidden>
+                </label>
+                <textarea id="aiChatInput" rows="2" maxlength="2000" placeholder="Type or record what you need..." required></textarea>
+                <button type="submit" id="aiChatSend" aria-label="Send question">
+                    <i class="fas fa-paper-plane" aria-hidden="true"></i>
+                </button>
+                <div class="ai-chat-voice-status" id="aiChatVoiceStatus"></div>
+            </form>
+        </section>
+    </div>
     
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="admin.js?v=clear-accounts-20260510"></script>
+    <script src="vendor/bootstrap/js/bootstrap.bundle.min.js?v=local-20260523"></script>
+    <script src="vendor/chartjs/chart.min.js?v=local-20260523"></script>
+    <script src="ai_worker_config.js?v=cloudflare-ai-20260527-3"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="supabase_config.js?v=supabase-ready-20260607"></script>
+    <script src="ai_assistant_widget.js?v=dashboard-only-20260528-13"></script>
+    <script src="supabase_shared.js?v=supabase-ready-20260610"></script>
+    <script src="admin.js?v=portal-lock-admin-login-20260604-4"></script>
 </body>
 </html>

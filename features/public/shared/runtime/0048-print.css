@@ -1,0 +1,18 @@
+/* Runtime slice from daawah.css: PRINT. */
+/* PRINT */
+@media print {
+    .navbar,
+    .sidebar-menu,
+    .btn {
+        display: none !important;
+    }
+
+    .main-content {
+        padding: 0;
+    }
+
+    .card {
+        box-shadow: none;
+        border: 1px solid #ddd;
+    }
+}

@@ -1,0 +1,329 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function signedIn() {
+      return request.auth != null;
+    }
+
+    function isSuperAdmin() {
+      return signedIn() && (
+        request.auth.token.email == 'abubakarrsaiedfofanah@gmail.com'
+        || (('superAdmin' in request.auth.token) && request.auth.token.superAdmin == true)
+        || (
+          exists(/databases/$(database)/documents/admins/$(request.auth.uid))
+          && get(/databases/$(database)/documents/admins/$(request.auth.uid)).data.isMainAdmin == true
+        )
+      );
+    }
+
+    function isSystemAdmin() {
+      return isSuperAdmin() ||
+        (signedIn() && (('admin' in request.auth.token) && request.auth.token.admin == true)) ||
+        (signedIn() && exists(/databases/$(database)/documents/admins/$(request.auth.uid)));
+    }
+
+    function authRole() {
+      return signedIn() && ('role' in request.auth.token)
+        ? request.auth.token.role
+        : '';
+    }
+
+    function activeMemberRole() {
+      return signedIn()
+        && exists(/databases/$(database)/documents/members/$(request.auth.uid))
+        && get(/databases/$(database)/documents/members/$(request.auth.uid)).data.status in ['Active', 'active']
+        ? get(/databases/$(database)/documents/members/$(request.auth.uid)).data.role
+        : '';
+    }
+
+    function hasAnyRole(roles) {
+      return isSystemAdmin()
+        || (authRole() in roles)
+        || (activeMemberRole() in roles);
+    }
+
+    function canManageMembers() {
+      return hasAnyRole(['admin', 'executive', 'secretary', 'vice_secretary']);
+    }
+
+    function canManageEvents() {
+      return hasAnyRole(['admin', 'executive', 'organizer']);
+    }
+
+    function canManageWelfare() {
+      return hasAnyRole(['admin', 'executive', 'chairlady', 'vice_chairlady_1', 'vice_chairlady_2']);
+    }
+
+    function canManagePayments() {
+      return hasAnyRole(['admin', 'executive', 'treasurer', 'vice_treasurer']);
+    }
+
+    function canManageMedia() {
+      return hasAnyRole(['admin', 'executive', 'media']);
+    }
+
+    function canManageReligious() {
+      return hasAnyRole(['admin', 'executive', 'amir_director']);
+    }
+
+    function publicStore(storeId) {
+      return storeId in [
+        'adminAnnouncements',
+        'adminEvents',
+        'publicLeaders',
+        'galleryItems',
+        'adminHadiths',
+        'adminResources',
+        'adminPrayerTimes',
+        'adminReligiousActivities',
+        'siteSettings',
+        'volunteerOpportunities'
+      ];
+    }
+
+    function canReadStore(storeId) {
+      return isSystemAdmin()
+        || publicStore(storeId)
+        || (canManageMembers() && storeId in ['allMembers'])
+        || (canManageEvents() && storeId in ['registeredEvents', 'volunteerRecords', 'volunteerOpportunities', 'adminActivities'])
+        || (canManageWelfare() && storeId in ['welfareRequests'])
+        || (canManagePayments() && storeId in ['payments', 'donations'])
+        || (canManageMedia() && storeId in ['galleryItems', 'contactVoiceMessages'])
+        || (canManageReligious() && storeId in ['adminHadiths', 'adminResources', 'adminPrayerTimes', 'adminReligiousActivities']);
+    }
+
+    function canWriteStore(storeId) {
+      return isSystemAdmin()
+        || (canManageEvents() && storeId in ['adminEvents', 'registeredEvents', 'volunteerRecords', 'volunteerOpportunities', 'adminActivities'])
+        || (canManageWelfare() && storeId in ['welfareRequests'])
+        || (canManagePayments() && storeId in ['payments', 'donations'])
+        || (canManageMedia() && storeId in ['galleryItems', 'contactVoiceMessages'])
+        || (canManageReligious() && storeId in ['adminHadiths', 'adminResources', 'adminPrayerTimes', 'adminReligiousActivities'])
+        || (canManageMembers() && storeId in ['adminAnnouncements'])
+        || (hasAnyRole(['admin', 'executive']) && storeId in ['publicLeaders']);
+    }
+
+    function validRequestedRole() {
+      return !('role' in request.resource.data)
+        || request.resource.data.role in [
+          'student',
+          'chairlady',
+          'vice_chairlady_1',
+          'vice_chairlady_2',
+          'secretary',
+          'vice_secretary',
+          'treasurer',
+          'vice_treasurer',
+          'media',
+          'organizer',
+          'amir_director'
+        ];
+    }
+
+    function validRequestedStatus() {
+      return !('status' in request.resource.data)
+        || request.resource.data.status in ['Pending', 'pending', 'Active', 'active'];
+    }
+
+    function ownCreateIsSafe(uid) {
+      return signedIn()
+        && request.auth.uid == uid
+        && validRequestedRole()
+        && validRequestedStatus()
+        && (
+          !('role' in request.resource.data)
+          || request.resource.data.role == 'student'
+          || !('status' in request.resource.data)
+          || request.resource.data.status in ['Pending', 'pending']
+        );
+    }
+
+    function ownUpdateIsSafe(uid) {
+      return signedIn()
+        && request.auth.uid == uid
+        && !request.resource.data.diff(resource.data).affectedKeys().hasAny([
+          'role',
+          'status',
+          'uid',
+          'authEmail',
+          'admin',
+          'permissions',
+          'approvedBy',
+          'approvedAt'
+        ]);
+    }
+
+    function ownsNewRecord() {
+      return signedIn()
+        && request.resource.data.ownerUid == request.auth.uid
+        && request.resource.data.ownerEmail == request.auth.token.email;
+    }
+
+    function ownsExistingRecord() {
+      return signedIn() && resource.data.ownerUid == request.auth.uid;
+    }
+
+    function publicMemberVerificationIsSafe() {
+      return request.resource.data.keys().hasOnly([
+        'fullName',
+        'name',
+        'username',
+        'studentId',
+        'role',
+        'status',
+        'course',
+        'updatedAt'
+      ]);
+    }
+
+    function publicReceiptVerificationIsSafe() {
+      return request.resource.data.keys().hasOnly([
+        'receiptNumber',
+        'kind',
+        'type',
+        'name',
+        'amount',
+        'method',
+        'transactionRef',
+        'status',
+        'approvedBy',
+        'approvedAt',
+        'updatedAt',
+        'auditTrail'
+      ]);
+    }
+
+    function publicMembershipCardIsSafe() {
+      return request.resource.data.keys().hasOnly([
+        'cardId',
+        'ownerUid',
+        'fullName',
+        'name',
+        'username',
+        'studentId',
+        'paymentStatus',
+        'status',
+        'issuedAt',
+        'updatedAt',
+        'receiptNumber',
+        'course'
+      ]);
+    }
+
+    function auditLogIsSafe() {
+      return request.resource.data.keys().hasOnly([
+        'action',
+        'actor',
+        'actorEmail',
+        'actorUid',
+        'details',
+        'createdAt',
+        'source',
+        'userAgent'
+      ])
+      && request.resource.data.action is string
+      && request.resource.data.createdAt is timestamp;
+    }
+
+    match /members/{uid} {
+      allow create: if ownCreateIsSafe(uid) || isSystemAdmin();
+      allow get: if signedIn() && request.auth.uid == uid || canManageMembers() || isSystemAdmin();
+      allow list: if canManageMembers() || isSystemAdmin();
+      allow update: if ownUpdateIsSafe(uid) || isSystemAdmin();
+      allow delete: if isSystemAdmin();
+    }
+
+    match /admins/{uid} {
+      allow read: if signedIn() && request.auth.uid == uid || isSuperAdmin();
+      allow create, update, delete: if isSuperAdmin();
+    }
+
+    match /appStores/{storeId} {
+      allow read: if canReadStore(storeId);
+      allow write: if canWriteStore(storeId);
+    }
+
+    match /auditLogs/{logId} {
+      allow read, list: if isSystemAdmin();
+      allow create: if isSystemAdmin() && auditLogIsSafe();
+      allow update, delete: if false;
+    }
+
+    match /backupMetadata/{docId} {
+      allow read, write: if isSystemAdmin();
+    }
+
+    match /payments/{paymentId} {
+      allow create: if ownsNewRecord();
+      allow get: if ownsExistingRecord() || canManagePayments();
+      allow list: if canManagePayments();
+      allow update: if canManagePayments();
+      allow delete: if isSystemAdmin();
+    }
+
+    match /donations/{donationId} {
+      allow create: if ownsNewRecord();
+      allow get: if ownsExistingRecord() || canManagePayments();
+      allow list: if canManagePayments();
+      allow update: if canManagePayments();
+      allow delete: if isSystemAdmin();
+    }
+
+    match /receiptVerifications/{receiptId} {
+      allow get: if true;
+      allow list: if canManagePayments();
+      allow create, update: if (canManagePayments() || isSystemAdmin()) && publicReceiptVerificationIsSafe();
+      allow delete: if canManagePayments() || isSystemAdmin();
+    }
+
+    match /memberVerifications/{memberId} {
+      allow get: if true;
+      allow list: if canManageMembers() || isSystemAdmin();
+      allow create, update: if (canManageMembers() || isSystemAdmin()) && publicMemberVerificationIsSafe();
+      allow delete: if canManageMembers() || isSystemAdmin();
+    }
+
+    match /membershipCards/{cardId} {
+      allow get: if true;
+      allow list: if canManageMembers() || isSystemAdmin();
+      allow create: if signedIn()
+        && request.resource.data.cardId == cardId
+        && request.resource.data.ownerUid == request.auth.uid
+        && request.resource.data.paymentStatus == 'Paid'
+        && request.resource.data.status in ['Active', 'Revoked', 'Reissued']
+        && publicMembershipCardIsSafe();
+      allow update: if ownsExistingRecord()
+        && request.resource.data.cardId == resource.data.cardId
+        && request.resource.data.ownerUid == resource.data.ownerUid
+        && request.resource.data.paymentStatus == 'Paid'
+        && request.resource.data.status in ['Active', 'Revoked', 'Reissued']
+        && publicMembershipCardIsSafe();
+      allow delete: if isSystemAdmin();
+    }
+
+    match /welfareRequests/{requestId} {
+      allow create: if ownsNewRecord();
+      allow get: if ownsExistingRecord() || canManageWelfare();
+      allow list: if canManageWelfare();
+      allow update: if canManageWelfare();
+      allow delete: if isSystemAdmin();
+    }
+
+    match /eventRegistrations/{registrationId} {
+      allow create: if ownsNewRecord();
+      allow get: if ownsExistingRecord() || canManageEvents();
+      allow list: if canManageEvents();
+      allow update: if canManageEvents();
+      allow delete: if ownsExistingRecord() || canManageEvents();
+    }
+
+    match /volunteerRegistrations/{registrationId} {
+      allow create: if ownsNewRecord();
+      allow get: if ownsExistingRecord() || canManageEvents();
+      allow list: if canManageEvents();
+      allow update: if canManageEvents();
+      allow delete: if ownsExistingRecord() || canManageEvents();
+    }
+  }
+}

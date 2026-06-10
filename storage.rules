@@ -1,0 +1,38 @@
+rules_version = '2';
+
+service firebase.storage {
+  match /b/{bucket}/o {
+    function signedIn() {
+      return request.auth != null;
+    }
+
+    function isAdmin() {
+      return signedIn()
+        && (
+          request.auth.token.admin == true
+          || exists(/databases/(default)/documents/admins/$(request.auth.uid))
+        );
+    }
+
+    function isSafeProofUpload() {
+      return signedIn()
+        && request.resource.size < 5 * 1024 * 1024
+        && request.resource.contentType.matches('image/.*|application/pdf');
+    }
+
+    match /payment-proofs/{uid}/{fileName} {
+      allow create: if signedIn() && request.auth.uid == uid && isSafeProofUpload();
+      allow read: if signedIn() && request.auth.uid == uid || isAdmin();
+      allow update: if false;
+      allow delete: if isAdmin();
+    }
+
+    match /admin-uploads/{fileName} {
+      allow read, write: if isAdmin();
+    }
+
+    match /{allPaths=**} {
+      allow read, write: if false;
+    }
+  }
+}

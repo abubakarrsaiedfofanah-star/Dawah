@@ -3,27 +3,41 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dawa'ah Officer Access</title>
-    <link rel="icon" type="image/png" href="assets/umma-university-logo-color.png">
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <meta name="referrer" content="strict-origin-when-cross-origin">
+    <meta http-equiv="Cache-Control" content="no-store, no-cache, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; base-uri 'self'; object-src 'none'; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://www.google.com https://www.google.com/recaptcha/ https://www.google.com/recaptcha/enterprise.js https://www.gstatic.com https://www.gstatic.com/recaptcha/; style-src 'self' 'unsafe-inline'; font-src 'self' data:; img-src 'self' data: blob: https:; media-src 'self' data: blob:; connect-src 'self' https://*.supabase.co https://identitytoolkit.googleapis.com https://firestore.googleapis.com https://firebaseappcheck.googleapis.com https://www.google.com https://www.google.com/recaptcha/ https://umma-dawaah-groq-ai.abubakarrsaiedfofanah.workers.dev; frame-src https://www.google.com https://www.google.com/recaptcha/ https://recaptcha.google.com/recaptcha/; form-action 'self'; upgrade-insecure-requests">
+    <script src="canonical_redirect.js?v=20260527-one-link"></script>
+    <script>
+        if (window.top !== window.self) {
+            window.top.location = window.self.location;
+        }
+    </script>
+    <title>UMMA University Da'awah Team Officer Access</title>
+    <link rel="icon" type="image/png" href="assets/umma-university-logo-color.png?v=20260522-logo2">
+    <link href="vendor/bootstrap/css/bootstrap.min.css?v=local-20260523" rel="stylesheet">
+    <link rel="stylesheet" href="vendor/fontawesome/css/all.min.css?v=local-20260523">
+    <link rel="stylesheet" href="ai_assistant_widget.css?v=dashboard-only-20260522">
     <style>
         :root {
-            --officer-gold: #d4af37;
-            --officer-gold-light: #f5d76e;
-            --officer-bg: #080808;
-            --officer-panel: #171717;
-            --officer-text: #f7f1dd;
-            --officer-muted: #a8a29a;
-            --officer-border: rgba(212, 175, 55, 0.28);
+            --officer-primary: #003040;
+            --officer-blue: #0060b0;
+            --officer-green: #40b050;
+            --officer-green-light: #78d986;
+            --officer-bg: #f3fbf7;
+            --officer-panel: #ffffff;
+            --officer-text: #17323a;
+            --officer-muted: #5f7880;
+            --officer-border: rgba(0, 48, 64, 0.18);
         }
 
         body {
             min-height: 100vh;
             background:
-                radial-gradient(circle at 16% 12%, rgba(245, 215, 110, 0.2), transparent 26%),
-                radial-gradient(circle at 86% 84%, rgba(212, 175, 55, 0.12), transparent 28%),
-                linear-gradient(135deg, #030303 0%, #111111 52%, #2b2108 100%);
+                radial-gradient(circle at 16% 12%, rgba(64, 176, 80, 0.18), transparent 26%),
+                radial-gradient(circle at 86% 84%, rgba(0, 96, 176, 0.12), transparent 28%),
+                linear-gradient(135deg, #003040 0%, #004e70 52%, #40b050 118%);
             color: var(--officer-text);
             font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
         }
@@ -37,10 +51,10 @@
 
         .officer-card {
             width: min(100%, 980px);
-            background: linear-gradient(180deg, rgba(31,31,31,0.96), rgba(13,13,13,0.98));
+            background: linear-gradient(180deg, rgba(255,255,255,0.98), rgba(243,251,247,0.98));
             border: 1px solid var(--officer-border);
             border-radius: 16px;
-            box-shadow: 0 22px 55px rgba(0, 0, 0, 0.34);
+            box-shadow: 0 22px 55px rgba(0, 48, 64, 0.18);
             overflow: hidden;
         }
 
@@ -68,7 +82,7 @@
         }
 
         h1 {
-            color: var(--officer-gold-light);
+            color: var(--officer-primary);
             font-size: 26px;
             font-weight: 800;
             margin: 0;
@@ -87,41 +101,64 @@
         }
 
         .nav-tabs .nav-link {
-            color: var(--officer-gold-light);
+            color: var(--officer-primary);
             font-weight: 700;
             border-color: transparent;
         }
 
         .nav-tabs .nav-link.active {
-            color: #111;
-            background: linear-gradient(135deg, var(--officer-gold-light), var(--officer-gold));
-            border-color: var(--officer-gold);
+            color: #fff;
+            background: linear-gradient(135deg, var(--officer-green), var(--officer-blue));
+            border-color: var(--officer-green);
+        }
+
+        .general-site-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 9px 14px;
+            border-radius: 999px;
+            color: #fff !important;
+            text-decoration: none;
+            font-weight: 800;
+            letter-spacing: 0;
+            background: linear-gradient(135deg, var(--officer-green), var(--officer-blue));
+            border: 1px solid rgba(255,255,255,0.64);
+            box-shadow: 0 12px 28px rgba(0, 96, 176, 0.2);
+            white-space: nowrap;
+        }
+
+        .general-site-link:hover,
+        .general-site-link:focus {
+            color: #fff !important;
+            transform: translateY(-1px);
+            box-shadow: 0 16px 34px rgba(64, 176, 80, 0.24);
         }
 
         .form-control,
         .form-select {
             background-color: rgba(255,255,255,0.94);
-            border: 1px solid rgba(212,175,55,0.26);
+            border: 1px solid rgba(0,48,64,0.18);
             border-radius: 10px;
         }
 
         .btn-primary,
         .btn-success {
-            background: linear-gradient(135deg, var(--officer-gold-light), var(--officer-gold));
-            border-color: var(--officer-gold);
-            color: #111;
+            background: linear-gradient(135deg, var(--officer-green), var(--officer-blue));
+            border-color: var(--officer-green);
+            color: #fff;
             font-weight: 800;
         }
 
         .btn-primary:hover,
         .btn-success:hover {
-            color: #111;
-            border-color: var(--officer-gold-light);
+            color: #fff;
+            border-color: var(--officer-green-light);
             transform: translateY(-1px);
         }
 
         .officer-note {
-            background: rgba(212, 175, 55, 0.1);
+            background: rgba(64, 176, 80, 0.1);
             border: 1px solid var(--officer-border);
             border-radius: 12px;
             padding: 14px;
@@ -129,7 +166,7 @@
         }
 
         a:not(.btn):not(.nav-link) {
-            color: var(--officer-gold-light);
+            color: var(--officer-blue);
         }
 
         @media (max-width: 700px) {
@@ -149,20 +186,20 @@
         <section class="officer-card">
             <div class="officer-header">
                 <div class="officer-brand">
-                    <img src="assets/umma-university-logo-color.png" alt="UMMA University logo" class="officer-logo">
+                    <img src="assets/umma-university-logo-color.png?v=20260522-logo2" alt="UMMA University logo" class="officer-logo">
                     <div>
-                        <h1>Dawa'ah Officer Access</h1>
-                        <p class="text-muted mb-0">Register and login for Treasurer, Media, Organizer, Imam, Secretary, Chairman, and Chairlady roles.</p>
+                        <h1>UMMA University Da'awah Team Officer Access</h1>
+                        <p class="text-muted mb-0">Register and login for Treasurer, Vice Treasurer, Media, Organizer, Amir Da'awah / Director of Da'awah, Secretary, Vice Secretary, Chairlady, Vice Chairlady 1, and Vice Chairlady 2 roles.</p>
                     </div>
                 </div>
                 <div class="d-flex gap-2 flex-wrap">
-                    <a href="index.html" class="btn btn-outline-light btn-sm"><i class="fas fa-home"></i> Student Site</a>
+                    <a href="index.html#portals" class="general-site-link"><i class="fas fa-door-open"></i><span>Back to Portals</span></a>
                 </div>
             </div>
 
             <div class="officer-body">
                 <div id="officerAlert" class="alert d-none" role="alert"></div>
-
+                
                 <div class="officer-note mb-4">
                     Each officer role can have only one account. New officer registrations stay pending until the main admin approves them in the admin panel.
                     Already registered as a student? Do not register again. Ask the main admin to assign your officer role, then login here with your existing credentials.
@@ -175,6 +212,9 @@
                     <li class="nav-item" role="presentation">
                         <button class="nav-link" id="officerRegisterTabBtn" data-bs-toggle="tab" data-bs-target="#officerRegisterTab" type="button" role="tab">Officer Register</button>
                     </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="officerForgotTabBtn" data-bs-toggle="tab" data-bs-target="#officerForgotTab" type="button" role="tab">Forgot Password</button>
+                    </li>
                 </ul>
 
                 <div class="tab-content">
@@ -182,15 +222,21 @@
                         <form id="officerLoginForm">
                             <div class="row">
                                 <div class="col-md-6 mb-3">
-                                    <label class="form-label">Email or ID</label>
-                                    <input type="text" class="form-control" id="officerLoginUsername" autocomplete="username" required>
+                                    <label class="form-label">Email</label>
+                                    <input type="email" class="form-control" id="officerLoginUsername" autocomplete="email" required>
                                 </div>
                                 <div class="col-md-6 mb-3">
                                     <label class="form-label">Password</label>
-                                    <input type="password" class="form-control" id="officerLoginPassword" autocomplete="current-password" required>
+                                    <div class="input-group">
+                                        <input type="password" class="form-control" id="officerLoginPassword" autocomplete="current-password" required>
+                                        <button class="btn btn-outline-secondary" type="button" data-password-toggle="officerLoginPassword" aria-label="Show password">
+                                            <i class="fas fa-eye"></i>
+                                        </button>
+                                    </div>
                                 </div>
                             </div>
                             <button type="submit" id="officerLoginButton" class="btn btn-primary"><i class="fas fa-right-to-bracket"></i> Login as Officer</button>
+                            <button type="button" class="btn btn-link" onclick="showOfficerForgotPassword()">Forgot password?</button>
                         </form>
                     </div>
 
@@ -217,13 +263,16 @@
                                     <label class="form-label">Officer Role</label>
                                     <select class="form-select" id="officerRole" required>
                                         <option value="" disabled selected>Select role</option>
-                                        <option value="chairman">Chairman / Welfare Lead</option>
                                         <option value="chairlady">Chairlady / Welfare Lead</option>
+                                        <option value="vice_chairlady_1">Vice Chairlady 1 / Welfare Lead</option>
+                                        <option value="vice_chairlady_2">Vice Chairlady 2 / Welfare Lead</option>
                                         <option value="secretary">Secretary</option>
+                                        <option value="vice_secretary">Vice Secretary</option>
                                         <option value="treasurer">Treasurer</option>
+                                        <option value="vice_treasurer">Vice Treasurer</option>
                                         <option value="media">Media</option>
                                         <option value="organizer">Organizer</option>
-                                        <option value="imam">Imam / Religious Lead</option>
+                                        <option value="amir_director">Amir Da'awah / Director of Da'awah</option>
                                     </select>
                                 </div>
                                 <div class="col-md-6 mb-3">
@@ -278,14 +327,67 @@
                                 </div>
                                 <div class="col-md-6 mb-3">
                                     <label class="form-label">Password</label>
-                                    <input type="password" class="form-control" id="officerPassword" autocomplete="new-password" minlength="6" required>
+                                    <div class="input-group">
+                                        <input type="password" class="form-control" id="officerPassword" autocomplete="new-password" minlength="6" required>
+                                        <button class="btn btn-outline-secondary" type="button" data-password-toggle="officerPassword" aria-label="Show password">
+                                            <i class="fas fa-eye"></i>
+                                        </button>
+                                    </div>
                                 </div>
                                 <div class="col-md-6 mb-3">
                                     <label class="form-label">Confirm Password</label>
-                                    <input type="password" class="form-control" id="officerConfirmPassword" autocomplete="new-password" minlength="6" required>
+                                    <div class="input-group">
+                                        <input type="password" class="form-control" id="officerConfirmPassword" autocomplete="new-password" minlength="6" required>
+                                        <button class="btn btn-outline-secondary" type="button" data-password-toggle="officerConfirmPassword" aria-label="Show password">
+                                            <i class="fas fa-eye"></i>
+                                        </button>
+                                    </div>
                                 </div>
                             </div>
                             <button type="submit" id="officerRegisterButton" class="btn btn-success"><i class="fas fa-user-plus"></i> Submit Officer Registration</button>
+                        </form>
+                    </div>
+
+                    <div id="officerForgotTab" class="tab-pane fade" role="tabpanel">
+                        <form id="officerForgotPasswordForm">
+                            <div class="mb-3">
+                                <label class="form-label">Registered Email</label>
+                                <input type="email" class="form-control" id="officerForgotEmail" autocomplete="email" required>
+                            </div>
+                            <button type="submit" id="officerForgotButton" class="btn btn-outline-primary">
+                                <i class="fas fa-envelope"></i> Send Reset Code
+                            </button>
+                        </form>
+
+                        <form id="officerResetPasswordForm" class="mt-4 d-none">
+                            <div class="row">
+                                <div class="col-md-4 mb-3">
+                                    <label class="form-label">Reset Code</label>
+                                    <input type="text" class="form-control" id="officerResetCode" inputmode="numeric" pattern="[0-9]{6}" maxlength="6" autocomplete="one-time-code" required>
+                                </div>
+                                <div class="col-md-4 mb-3">
+                                    <label class="form-label">New Password</label>
+                                    <div class="input-group">
+                                        <input type="password" class="form-control" id="officerResetPassword" autocomplete="new-password" minlength="6" required>
+                                        <button class="btn btn-outline-secondary" type="button" data-password-toggle="officerResetPassword" aria-label="Show password">
+                                            <i class="fas fa-eye"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                                <div class="col-md-4 mb-3">
+                                    <label class="form-label">Confirm Password</label>
+                                    <div class="input-group">
+                                        <input type="password" class="form-control" id="officerResetConfirmPassword" autocomplete="new-password" minlength="6" required>
+                                        <button class="btn btn-outline-secondary" type="button" data-password-toggle="officerResetConfirmPassword" aria-label="Show password">
+                                            <i class="fas fa-eye"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                            <button type="submit" id="officerResetButton" class="btn btn-primary">
+                                <i class="fas fa-key"></i> Set New Password
+                            </button>
+                            <button type="button" class="btn btn-link" onclick="resendOfficerResetCode()">Resend code</button>
                         </form>
                     </div>
                 </div>
@@ -293,7 +395,49 @@
         </section>
     </main>
 
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="officer.js"></script>
+    <div class="ai-chat-widget" id="aiChatWidget" aria-live="polite">
+        <button class="ai-chat-toggle" id="aiChatToggle" type="button" aria-expanded="false" aria-controls="aiChatPanel">
+            <i class="fas fa-comments" aria-hidden="true"></i>
+            <span>Research AI</span>
+        </button>
+        <section class="ai-chat-panel" id="aiChatPanel" aria-label="Research AI chat">
+            <div class="ai-chat-header">
+                <div>
+                    <h2>Research AI</h2>
+                    <p>Generate officer work or guide people through the website.</p>
+                </div>
+                <button class="ai-chat-close" id="aiChatClose" type="button" aria-label="Close research chat">
+                    <i class="fas fa-xmark" aria-hidden="true"></i>
+                </button>
+            </div>
+            <div class="ai-chat-messages" id="aiChatMessages">
+                <div class="ai-chat-message ai-chat-message--bot">
+                    Assalamu alaikum. Ask by text or voice and I will help with officer work or website guidance.
+                </div>
+            </div>
+            <form class="ai-chat-form" id="aiChatForm">
+                <button type="button" class="ai-chat-voice" id="aiChatVoice" aria-label="Record voice question">
+                    <i class="fas fa-microphone" aria-hidden="true"></i>
+                </button>
+                <label class="ai-chat-upload" for="aiChatAudioUpload" aria-label="Upload voice question">
+                    <i class="fas fa-file-audio" aria-hidden="true"></i>
+                    <input type="file" id="aiChatAudioUpload" accept="audio/*,video/webm" hidden>
+                </label>
+                <textarea id="aiChatInput" rows="2" maxlength="2000" placeholder="Type or record what you need..." required></textarea>
+                <button type="submit" id="aiChatSend" aria-label="Send question">
+                    <i class="fas fa-paper-plane" aria-hidden="true"></i>
+                </button>
+                <div class="ai-chat-voice-status" id="aiChatVoiceStatus"></div>
+            </form>
+        </section>
+    </div>
+
+    <script src="vendor/bootstrap/js/bootstrap.bundle.min.js?v=local-20260523"></script>
+    <script src="ai_worker_config.js?v=cloudflare-ai-20260527-3"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="supabase_config.js?v=supabase-ready-20260607"></script>
+    <script src="ai_assistant_widget.js?v=dashboard-only-20260528-13"></script>
+    <script src="supabase_shared.js?v=supabase-ready-20260610"></script>
+    <script src="officer.js?v=portal-lock-admin-login-20260604-4"></script>
 </body>
 </html>

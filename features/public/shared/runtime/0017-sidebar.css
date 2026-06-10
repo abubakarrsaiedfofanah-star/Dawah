@@ -1,0 +1,66 @@
+/* Runtime slice from daawah.css: SIDEBAR. */
+/* SIDEBAR */
+.sidebar-menu {
+    background-color: white;
+    border-right: 1px solid var(--border-color);
+    padding: 20px 0;
+    max-height: calc(100vh - 56px);
+    overflow-y: auto;
+    position: sticky;
+    top: 56px;
+}
+
+.menu-section {
+    padding: 15px 20px;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.menu-title {
+    color: var(--primary-color);
+    font-size: 12px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin-bottom: 15px;
+}
+
+.nav-link {
+    color: var(--dark-text);
+    padding: 12px 20px;
+    border-left: 3px solid transparent;
+    transition: color var(--transition-fast), background-color var(--transition-fast), border-color var(--transition-fast), transform var(--transition-fast), box-shadow var(--transition-smooth);
+    margin-bottom: 5px;
+    border-radius: 0 5px 5px 0;
+    font-weight: 500;
+}
+
+.nav-link:hover {
+    color: var(--primary-color);
+    background-color: rgba(15, 81, 50, 0.05);
+    border-left-color: var(--primary-color);
+}
+
+.nav-link.active {
+    color: white;
+    background: linear-gradient(135deg, var(--primary-color), var(--gold-color));
+    border-left-color: var(--accent-color);
+    box-shadow: 0 8px 18px rgba(15, 81, 50, 0.18);
+}
+
+.nav-link:active {
+    transform: scale(0.99);
+}
+
+.sidebar-menu .nav-link:hover {
+    transform: translateX(4px);
+}
+
+.sidebar-menu .nav-link:active {
+    transform: translateX(2px) scale(0.99);
+}
+
+.nav-link i {
+    margin-right: 12px;
+    width: 20px;
+    text-align: center;
+}

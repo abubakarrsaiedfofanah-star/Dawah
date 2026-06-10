@@ -1,0 +1,71 @@
+/* Runtime slice from daawah.css: CONTACT SECTION. */
+/* CONTACT SECTION */
+.contact-info {
+    padding: 30px;
+    background: linear-gradient(180deg, #ffffff, #fffaf0);
+    border-radius: 12px;
+    border: 1px solid rgba(212, 175, 55, 0.28);
+    box-shadow: var(--shadow);
+}
+
+.contact-info h5 {
+    color: var(--primary-color);
+    font-weight: 700;
+    margin-bottom: 30px;
+    font-size: 24px;
+}
+
+.contact-item {
+    display: flex;
+    gap: 20px;
+    margin-bottom: 25px;
+    padding-bottom: 20px;
+    border-bottom: 1px solid rgba(212, 175, 55, 0.18);
+}
+
+.contact-item:last-child {
+    border-bottom: none;
+}
+
+.contact-item i {
+    font-size: 24px;
+    color: var(--gold-color);
+    width: 40px;
+    text-align: center;
+}
+
+.contact-item h6 {
+    color: var(--primary-color);
+    font-weight: 700;
+    margin-bottom: 5px;
+}
+
+.contact-item p {
+    color: #58645e;
+    margin: 0;
+}
+
+.contact-form {
+    background: linear-gradient(180deg, #ffffff, #fffaf0);
+    padding: 30px;
+    border-radius: 12px;
+    border: 1px solid rgba(212, 175, 55, 0.28);
+    box-shadow: var(--shadow);
+}
+
+.contact-form .form-control {
+    border: 1px solid rgba(212, 175, 55, 0.36);
+    border-radius: 8px;
+    padding: 12px;
+}
+
+.contact-form .form-control:focus {
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 0.2rem rgba(15, 81, 50, 0.18);
+}
+
+.contact-form .form-label {
+    color: var(--primary-color);
+    font-weight: 600;
+    margin-bottom: 8px;
+}

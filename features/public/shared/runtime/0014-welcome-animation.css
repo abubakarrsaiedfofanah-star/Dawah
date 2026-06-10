@@ -1,0 +1,101 @@
+/* Runtime slice from daawah.css: Welcome Animation. */
+/* Welcome Animation */
+@keyframes welcomeSlideIn {
+    0% {
+        opacity: 0;
+        transform: translateX(-50px);
+    }
+    100% {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
+@keyframes welcomeFadeInScale {
+    0% {
+        opacity: 0;
+        transform: scale(0.8);
+    }
+    100% {
+        opacity: 1;
+        transform: scale(1);
+    }
+}
+
+@keyframes welcomePulse {
+    0%, 100% {
+        opacity: 1;
+    }
+    50% {
+        opacity: 0.8;
+    }
+}
+
+.welcome-banner {
+    background:
+        linear-gradient(135deg, #0b3d2a 0%, #0f5132 48%, #2f2508 100%);
+    color: white;
+    padding: 28px;
+    border-radius: 12px;
+    margin-bottom: 30px;
+    box-shadow: 0 12px 30px rgba(17, 24, 39, 0.22);
+    animation: welcomeSlideIn 0.6s ease-out;
+    overflow: hidden;
+    position: relative;
+}
+
+.welcome-kicker {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-bottom: 16px;
+}
+
+.welcome-kicker span {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    padding: 6px 10px;
+    border: 1px solid rgba(255,255,255,0.22);
+    border-radius: 999px;
+    background: rgba(255,255,255,0.1);
+    font-size: 12px;
+    font-weight: 700;
+}
+
+.welcome-marquee {
+    overflow: hidden;
+    white-space: nowrap;
+}
+
+.welcome-marquee__track {
+    display: inline-flex;
+    gap: 42px;
+    min-width: max-content;
+    animation: welcomeMarquee 18s linear infinite;
+}
+
+.welcome-marquee__track span {
+    display: inline-flex;
+    align-items: center;
+    gap: 12px;
+    font-size: 30px;
+    font-weight: 800;
+    letter-spacing: 0;
+}
+
+@keyframes welcomeMarquee {
+    from {
+        transform: translateX(0);
+    }
+    to {
+        transform: translateX(-50%);
+    }
+}
+
+.welcome-subtext {
+    font-size: 16px;
+    margin: 14px 0 0;
+    opacity: 0.95;
+    animation: welcomePulse 3s ease-in-out infinite;
+}

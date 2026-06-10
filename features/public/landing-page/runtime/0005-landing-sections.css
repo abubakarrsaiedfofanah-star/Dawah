@@ -1,0 +1,41 @@
+/* Runtime slice from daawah.css: LANDING SECTIONS. */
+/* LANDING SECTIONS */
+.landing-section {
+    padding: 80px 20px;
+    border-top: 1px solid rgba(212, 175, 55, 0.18);
+    background: #fffdf6;
+}
+
+.public-section-hidden {
+    display: none !important;
+}
+
+.landing-page:not(.portal-view-active) #portals {
+    display: none !important;
+}
+
+.landing-section.bg-light {
+    background: linear-gradient(180deg, #f8f3e4 0%, #fffaf0 100%);
+}
+
+.section-title {
+    text-align: center;
+    font-size: 42px;
+    font-weight: 700;
+    color: var(--primary-color);
+    margin-bottom: 50px;
+    position: relative;
+    padding-bottom: 20px;
+}
+
+.section-title::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 100px;
+    height: 4px;
+    background-color: var(--primary-color);
+    border-radius: 2px;
+}
