@@ -1,4 +1,4 @@
-const DAWAAH_CACHE = 'dawah-shell-supabase-v3'; // Supabase: bump cache after Vercel backend readiness update.
+const DAWAAH_CACHE = 'dawah-shell-supabase-v4';
 const SHELL_ASSETS = [
   './',
   './index.html',
