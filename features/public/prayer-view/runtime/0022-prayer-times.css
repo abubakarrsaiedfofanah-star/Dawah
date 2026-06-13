@@ -1,0 +1,66 @@
+/* Runtime slice from daawah.css: PRAYER TIMES. */
+/* PRAYER TIMES */
+.prayer-schedule {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+.prayer-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 15px;
+    background-color: var(--light-bg);
+    border-left: 4px solid var(--primary-color);
+    border-radius: 5px;
+    transition: all 0.3s ease;
+}
+
+.prayer-item:hover {
+    background-color: rgba(15, 81, 50, 0.1);
+    transform: translateX(5px);
+}
+
+.prayer-label {
+    font-weight: 600;
+    color: var(--primary-color);
+    flex: 1;
+}
+
+.prayer-time {
+    font-weight: 700;
+    color: var(--dark-text);
+    font-size: 16px;
+    margin-right: 15px;
+}
+
+.prayer-time-item {
+    display: flex;
+    justify-content: space-between;
+    padding: 10px 0;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.prayer-time-item:last-child {
+    border-bottom: none;
+}
+
+.prayer-name {
+    font-weight: 600;
+    color: var(--dark-text);
+}
+
+.prayer-time-value {
+    color: var(--primary-color);
+    font-weight: 700;
+}
+
+.iqamah {
+    background-color: var(--primary-color);
+    color: white;
+    padding: 5px 12px;
+    border-radius: 5px;
+    font-size: 12px;
+    font-weight: 600;
+}

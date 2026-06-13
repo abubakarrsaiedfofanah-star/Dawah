@@ -1,0 +1,21 @@
+/* Runtime slice from daawah.css: ANNOUNCEMENTS. */
+/* ANNOUNCEMENTS */
+.announcement-item {
+    margin-bottom: 15px;
+    padding-bottom: 15px;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.announcement-item:last-child {
+    border-bottom: none;
+    margin-bottom: 0;
+    padding-bottom: 0;
+}
+
+.announcement-item strong {
+    color: var(--primary-color);
+}
+
+.announcement-item p {
+    margin-bottom: 5px;
+}

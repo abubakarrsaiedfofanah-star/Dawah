@@ -1,0 +1,11 @@
+/* Runtime slice from daawah.css: DONATIONS. */
+/* DONATIONS */
+.donation-card {
+    text-align: center;
+    border: 2px solid var(--border-color);
+}
+
+.donation-header {
+    background: linear-gradient(135deg, #0f5132 0%, #d4af37 100%);
+    color: white;
+}

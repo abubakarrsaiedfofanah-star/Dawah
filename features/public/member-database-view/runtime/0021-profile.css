@@ -1,0 +1,33 @@
+/* Runtime slice from daawah.css: PROFILE. */
+/* PROFILE */
+.profile-card {
+    text-align: center;
+    border: 2px solid var(--border-color);
+}
+
+.profile-photo {
+    font-size: 80px;
+    color: var(--primary-color);
+    margin-bottom: 15px;
+}
+
+.profile-photo__image {
+    width: 96px;
+    height: 96px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 3px solid rgba(0, 128, 0, 0.18);
+}
+
+.member-photo-thumb {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 2px solid rgba(0, 128, 0, 0.14);
+}
+
+.profile-card h5 {
+    color: var(--primary-color);
+    font-weight: 700;
+}

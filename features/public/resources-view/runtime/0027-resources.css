@@ -1,0 +1,41 @@
+/* Runtime slice from daawah.css: RESOURCES. */
+/* RESOURCES */
+.resource-card {
+    transition: all 0.3s ease;
+}
+
+.resource-card:hover {
+    transform: translateY(-10px);
+    box-shadow: var(--shadow-lg);
+}
+
+.resource-card .card-header {
+    background-color: rgba(15, 81, 50, 0.1);
+    color: var(--primary-color);
+}
+
+.resource-list {
+    list-style: none;
+    padding: 0;
+}
+
+.resource-list li {
+    padding: 8px 0;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.resource-list li:last-child {
+    border-bottom: none;
+}
+
+.resource-list a {
+    color: var(--primary-color);
+    text-decoration: none;
+    font-weight: 500;
+    transition: all 0.3s ease;
+}
+
+.resource-list a:hover {
+    color: var(--secondary-color);
+    text-decoration: underline;
+}

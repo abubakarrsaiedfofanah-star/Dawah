@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#003040">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; base-uri 'self'; object-src 'none'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; manifest-src 'self'; connect-src 'self'; form-action 'self'; upgrade-insecure-requests">
+    <script src="canonical_redirect.js?v=20260527-one-link"></script>
+    <link rel="manifest" href="manifest.webmanifest?v=install-page-20260523-direct5">
+    <link rel="icon" type="image/png" href="assets/icon-192.png">
+    <title>Install UMMA Da'wah App</title>
+    <style>
+        :root {
+            color-scheme: light;
+            --green: #0f5132;
+            --brand: #003040;
+            --accent: #40b050;
+        }
+        * {
+            box-sizing: border-box;
+        }
+        body {
+            margin: 0;
+            min-height: 100vh;
+            display: grid;
+            place-items: center;
+            padding: 18px;
+            font-family: Arial, sans-serif;
+            background: #f3fbf7;
+            color: #17323a;
+        }
+        main {
+            width: min(520px, 100%);
+            padding: 24px;
+            border: 1px solid rgba(0, 48, 64, 0.12);
+            border-radius: 8px;
+            background: #ffffff;
+            box-shadow: 0 18px 45px rgba(0, 48, 64, 0.12);
+            text-align: center;
+        }
+        img {
+            width: 86px;
+            height: 86px;
+            object-fit: contain;
+            margin-bottom: 12px;
+        }
+        h1 {
+            margin: 0 0 8px;
+            color: var(--brand);
+            font-size: 1.35rem;
+        }
+        p {
+            margin: 0 0 18px;
+            color: #5f7880;
+            line-height: 1.5;
+        }
+        button,
+        a {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 46px;
+            border-radius: 8px;
+            font-weight: 700;
+            text-decoration: none;
+        }
+        button {
+            width: 100%;
+            border: 0;
+            background: var(--accent);
+            color: #ffffff;
+            font-size: 1rem;
+        }
+        button:disabled {
+            cursor: wait;
+            opacity: 0.75;
+        }
+        a {
+            margin-top: 12px;
+            color: var(--green);
+        }
+        .status {
+            min-height: 22px;
+            margin-top: 14px;
+            color: #5f7880;
+            font-size: 0.92rem;
+        }
+        .install-help {
+            display: none;
+            margin-top: 16px;
+            padding: 14px;
+            border-radius: 8px;
+            background: #eef8f2;
+            color: #27464d;
+            text-align: left;
+            font-size: 0.94rem;
+            line-height: 1.45;
+        }
+        .install-help.is-visible {
+            display: block;
+        }
+        .install-help strong {
+            color: var(--brand);
+        }
+    </style>
+</head>
+<body>
+    <main>
+        <img src="assets/icon-192.png" alt="UMMA Da'wah app icon">
+        <h1>Install UMMA Da'wah App</h1>
+        <p>Tap install. Chrome or Edge will open the app installation popup when the browser allows direct install.</p>
+        <button type="button" id="installButton">Install App</button>
+        <div class="status" id="installStatus">Loading install support...</div>
+        <div class="install-help" id="installHelp">
+            <strong>Install from your browser:</strong>
+            <div id="installHelpText">Chrome or Edge has not released the direct install popup yet.</div>
+        </div>
+        <a href="./">Back to main site</a>
+    </main>
+    <script>
+        let deferredInstallPrompt = null;
+        const button = document.getElementById('installButton');
+        const status = document.getElementById('installStatus');
+        const help = document.getElementById('installHelp');
+        const helpText = document.getElementById('installHelpText');
+        const params = new URLSearchParams(window.location.search);
+        const hasInstallRefresh = params.get('installReady') === '1' || sessionStorage.getItem('dawaahInstallReadyReloaded') === '1';
+
+        function setStatus(message) {
+            status.textContent = message || '';
+        }
+
+        function setReady() {
+            button.disabled = false;
+            button.textContent = 'Install App';
+            setStatus('Ready. Tap the button to install.');
+            help.classList.remove('is-visible');
+        }
+
+        function showManualInstallHelp() {
+            const ua = navigator.userAgent || '';
+            if (/Android/i.test(ua)) {
+                helpText.textContent = 'Android: open this page in Chrome or Edge, tap the three dots menu, then tap Install app or Add to Home screen.';
+            } else if (/Edg/i.test(ua)) {
+                helpText.textContent = 'Desktop Edge: click the Apps/install icon in the address bar, or open the three dots menu > Apps > Install this site as an app.';
+            } else {
+                helpText.textContent = 'Desktop Chrome: click the install icon in the address bar, or open the three dots menu > Save and share > Install page as app.';
+            }
+            help.classList.add('is-visible');
+        }
+
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('service-worker.js')
+                .then(registration => {
+                    setStatus('Preparing the app for install...');
+                    registration.update().catch(() => registration);
+                    return Promise.race([
+                        navigator.serviceWorker.ready,
+                        new Promise(resolve => setTimeout(() => resolve(registration), 4000))
+                    ]);
+                })
+                .then(() => {
+                    if (!hasInstallRefresh && !deferredInstallPrompt && !isStandaloneApp()) {
+                        sessionStorage.setItem('dawaahInstallReadyReloaded', '1');
+                        params.set('installReady', '1');
+                        setStatus('Finishing install setup...');
+                        setTimeout(() => {
+                            window.location.replace(`${window.location.pathname}?${params.toString()}`);
+                        }, 700);
+                        return;
+                    }
+                    if (!deferredInstallPrompt) {
+                        setStatus('Tap Install App. Chrome or Edge should open the install popup.');
+                        setTimeout(() => {
+                            if (!deferredInstallPrompt && !isStandaloneApp()) {
+                                showManualInstallHelp();
+                            }
+                        }, 4000);
+                    }
+                })
+                .catch(() => setStatus('Tap Install App.'));
+        } else {
+            setStatus('Use Chrome or Edge to install this app.');
+        }
+
+        window.addEventListener('beforeinstallprompt', event => {
+            event.preventDefault();
+            deferredInstallPrompt = event;
+            setReady();
+        });
+
+        window.addEventListener('appinstalled', () => {
+            button.disabled = true;
+            button.textContent = 'Installed';
+            setStatus('App installed successfully.');
+        });
+
+        function isStandaloneApp() {
+            return window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
+        }
+
+        button.addEventListener('click', () => {
+            if (!deferredInstallPrompt) {
+                button.disabled = true;
+                button.textContent = 'Preparing...';
+                setStatus('Waiting for Chrome or Edge to release the install popup.');
+                setTimeout(() => {
+                    if (!deferredInstallPrompt) {
+                        button.disabled = false;
+                        button.textContent = 'Install App';
+                        setStatus('Chrome did not open the popup on this host. Use the browser menu install option, or install from the clean app host when it is published.');
+                        showManualInstallHelp();
+                    }
+                }, 2500);
+                return;
+            }
+            deferredInstallPrompt.prompt();
+            deferredInstallPrompt.userChoice.finally(() => {
+                deferredInstallPrompt = null;
+                button.disabled = false;
+                button.textContent = 'Install App';
+            });
+        });
+    </script>
+</body>
+</html>

@@ -7,7 +7,7 @@ module.exports = defineConfig({
     timeout: 5000
   },
   use: {
-    baseURL: 'http://127.0.0.1:8000',
+    baseURL: process.env.PLAYWRIGHT_BASE_URL || 'http://127.0.0.1:8000',
     channel: 'chrome',
     trace: 'retain-on-failure',
     screenshot: 'only-on-failure'

@@ -1,0 +1,44 @@
+/* Runtime slice from daawah.css: ABOUT SECTION. */
+/* ABOUT SECTION */
+.about-content {
+    padding: 20px 0;
+}
+
+.about-content h4 {
+    color: var(--primary-color);
+    font-weight: 700;
+    margin-bottom: 15px;
+    font-size: 28px;
+}
+
+.about-content p {
+    color: #4b5563;
+    line-height: 1.8;
+    margin-bottom: 15px;
+    font-size: 16px;
+}
+
+.about-features {
+    list-style: none;
+    padding: 0;
+    margin-top: 20px;
+}
+
+.about-features li {
+    padding: 10px 0;
+    color: #26352d;
+    font-size: 16px;
+}
+
+.about-features i {
+    color: var(--gold-color);
+    margin-right: 10px;
+    font-size: 18px;
+}
+
+.about-image {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 300px;
+}

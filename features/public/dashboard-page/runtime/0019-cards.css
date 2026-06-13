@@ -1,0 +1,140 @@
+/* Runtime slice from daawah.css: CARDS. */
+/* CARDS */
+.card {
+    border: 1px solid var(--border-color);
+    border-radius: 10px;
+    box-shadow: var(--shadow);
+    transition: transform var(--transition-smooth), box-shadow var(--transition-smooth), border-color var(--transition-fast);
+    margin-bottom: 20px;
+}
+
+.card:hover {
+    box-shadow: 0 12px 28px rgba(15, 81, 50, 0.22);
+    transform: translateY(-5px);
+    border-color: rgba(15, 81, 50, 0.24);
+}
+
+.card:active {
+    transform: translateY(-2px);
+}
+
+.card-header {
+    background-color: rgba(15, 81, 50, 0.05);
+    border-bottom: 1px solid var(--border-color);
+    border-radius: 10px 10px 0 0;
+    padding: 15px 20px;
+    font-weight: 600;
+    color: var(--primary-color);
+}
+
+.card-body {
+    padding: 20px;
+}
+
+.premium-dashboard-card {
+    height: 100%;
+    border-color: rgba(212, 175, 55, 0.28);
+    background: linear-gradient(180deg, #fff, #fffaf0);
+}
+
+.role-quick-actions {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+}
+
+.role-quick-actions .btn {
+    justify-content: flex-start;
+    text-align: left;
+}
+
+.profile-meter {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+}
+
+.profile-meter__ring {
+    width: 82px;
+    height: 82px;
+    border-radius: 50%;
+    display: grid;
+    place-items: center;
+    background: conic-gradient(var(--primary-color) 0deg, rgba(15, 81, 50, 0.12) 0deg);
+    color: var(--primary-color);
+    font-weight: 800;
+    flex: 0 0 auto;
+}
+
+.profile-meter__ring span {
+    width: 62px;
+    height: 62px;
+    border-radius: 50%;
+    display: grid;
+    place-items: center;
+    background: #fff;
+}
+
+.dashboard-alert-list {
+    display: grid;
+    gap: 10px;
+}
+
+.dashboard-alert-item,
+.empty-state {
+    border: 1px solid rgba(212, 175, 55, 0.22);
+    border-radius: 12px;
+    padding: 14px;
+    background: rgba(255, 255, 255, 0.72);
+}
+
+.dashboard-alert-item {
+    display: flex;
+    gap: 10px;
+    align-items: flex-start;
+}
+
+.dashboard-alert-item i,
+.empty-state i {
+    color: var(--gold-color);
+}
+
+.empty-state {
+    text-align: center;
+}
+
+.empty-state i {
+    font-size: 32px;
+    margin-bottom: 10px;
+}
+
+.activity-calendar {
+    display: grid;
+    grid-template-columns: repeat(7, minmax(0, 1fr));
+    gap: 8px;
+}
+
+.activity-calendar__day {
+    min-height: 92px;
+    border: 1px solid rgba(212, 175, 55, 0.22);
+    border-radius: 10px;
+    padding: 8px;
+    background: rgba(255, 255, 255, 0.72);
+}
+
+.activity-calendar__date {
+    font-weight: 800;
+    color: var(--primary-color);
+    margin-bottom: 6px;
+}
+
+.activity-calendar__event {
+    display: block;
+    font-size: 12px;
+    line-height: 1.25;
+    padding: 4px 6px;
+    border-radius: 8px;
+    background: rgba(15, 81, 50, 0.08);
+    color: var(--primary-color);
+    margin-bottom: 4px;
+}

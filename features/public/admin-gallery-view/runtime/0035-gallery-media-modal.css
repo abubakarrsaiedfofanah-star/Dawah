@@ -1,0 +1,7 @@
+/* Runtime slice from daawah.css: GALLERY MEDIA MODAL. */
+/* GALLERY MEDIA MODAL */
+#galleryModalImage,
+#galleryModalVideo {
+    border-radius: 10px;
+    box-shadow: var(--shadow);
+}

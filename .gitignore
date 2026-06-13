@@ -1,4 +1,16 @@
 node_modules/
 test-results/
 playwright-report/
+ui-debug.log
+.env
+.env.*
+!functions/.env.example
+.wrangler/
 *.sql
+!supabase_schema.sql
+supabase_config.js
+app_config.local.php
+dist/
+backups/
+*.backup.json
+transfers/

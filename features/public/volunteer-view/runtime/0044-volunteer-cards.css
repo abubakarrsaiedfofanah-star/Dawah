@@ -1,0 +1,64 @@
+/* Runtime slice from daawah.css: VOLUNTEER CARDS. */
+/* VOLUNTEER CARDS */
+.volunteer-card {
+    border: 2px solid var(--border-color);
+    transition: all 0.3s ease;
+}
+
+.volunteer-card:hover {
+    border-color: var(--primary-color);
+    box-shadow: var(--shadow-lg);
+    transform: translateY(-5px);
+}
+
+.volunteer-details {
+    background-color: var(--light-bg);
+    padding: 10px;
+    border-radius: 5px;
+    margin: 10px 0;
+}
+
+.volunteer-details small {
+    display: block;
+    margin-bottom: 5px;
+}
+
+.volunteer-details small:last-child {
+    margin-bottom: 0;
+}
+
+.voice-recorder {
+    border: 1px solid #dee2e6;
+    border-radius: 8px;
+    padding: 12px;
+    background: #f8f9fa;
+}
+
+.voice-recorder__controls {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.voice-inbox-list {
+    display: grid;
+    gap: 12px;
+}
+
+.voice-inbox-item {
+    border: 1px solid #dee2e6;
+    border-radius: 8px;
+    padding: 14px;
+    background: #fff;
+}
+
+.voice-inbox-item__header {
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+    align-items: flex-start;
+}
+
+.voice-inbox-item__header h6 {
+    margin-bottom: 4px;
+}

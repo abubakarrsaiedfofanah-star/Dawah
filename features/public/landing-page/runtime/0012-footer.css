@@ -1,0 +1,198 @@
+/* Runtime slice from daawah.css: FOOTER. */
+/* FOOTER */
+.landing-footer {
+    background:
+        linear-gradient(135deg, #071f15 0%, #0f5132 58%, #2f2508 100%);
+    color: white;
+    padding: 28px 20px 20px;
+    margin-top: 60px;
+}
+
+.footer-brand-column {
+    transform: translateY(-14px);
+}
+
+.footer-quick-column {
+    padding-left: clamp(18px, 3vw, 42px);
+    border-left: 1px solid rgba(255, 248, 220, 0.18);
+}
+
+.landing-footer h6 {
+    color: var(--gold-light);
+    font-weight: 800;
+    margin-bottom: 15px;
+    font-size: 17px;
+    text-shadow: 0 0 14px rgba(245, 215, 110, 0.22);
+}
+
+.landing-footer p {
+    color: rgba(255, 255, 255, 0.76);
+    font-size: 14px;
+    line-height: 1.6;
+}
+
+.footer-brand-lockup {
+    align-items: flex-start;
+    gap: 10px;
+    padding: 4px 18px 10px 0;
+}
+
+.footer-brand__image {
+    flex: 0 0 auto;
+}
+
+.footer-brand-copy {
+    min-width: 0;
+    padding-top: 2px;
+}
+
+.footer-brand-kicker {
+    display: block;
+    color: rgba(255, 255, 255, 0.78);
+    font-size: 13px;
+    font-weight: 700;
+    line-height: 1.2;
+}
+
+.footer-brand-title {
+    margin: 4px 0 0;
+    color: #ffffff !important;
+    font-size: 15px !important;
+    line-height: 1.25;
+    text-shadow: none;
+}
+
+.footer-brand-copy p {
+    max-width: 330px;
+    margin: 0;
+    color: rgba(255, 255, 255, 0.86);
+}
+
+.landing-footer ul {
+    list-style: none;
+    padding: 0;
+}
+
+.landing-footer ul li {
+    margin-bottom: 10px;
+}
+
+.landing-footer ul li a {
+    color: #fff8dc;
+    text-decoration: none;
+    transition: color 0.3s ease, transform 0.3s ease, background-color 0.3s ease;
+    font-size: 15px;
+    font-weight: 700;
+    display: inline-flex;
+    align-items: center;
+    padding: 5px 9px;
+    border-radius: 999px;
+}
+
+.footer-contact-list {
+    display: grid;
+    gap: 9px;
+}
+
+.footer-contact-list li {
+    margin-bottom: 0 !important;
+}
+
+.footer-contact-list strong,
+.footer-contact-list span,
+.footer-contact-list a {
+    display: block;
+}
+
+.footer-contact-list strong {
+    color: #fff8dc;
+    font-size: 12px;
+    letter-spacing: 0;
+    text-transform: uppercase;
+}
+
+.footer-contact-list span,
+.footer-contact-list a {
+    color: rgba(255, 255, 255, 0.78) !important;
+    font-size: 14px;
+    padding: 0 !important;
+    background: transparent !important;
+    border-bottom: 0 !important;
+}
+
+.footer-contact-list a:hover {
+    color: var(--gold-light) !important;
+}
+
+.landing-footer .footer-quick-links .footer-link-about {
+    color: #8ff0a4 !important;
+    border-bottom: 2px solid #8ff0a4;
+}
+
+.landing-footer .footer-quick-links .footer-link-mission {
+    color: #8fd0ff !important;
+    border-bottom: 2px solid #8fd0ff;
+}
+
+.landing-footer .footer-quick-links .footer-link-leadership {
+    color: #ffe08a !important;
+    border-bottom: 2px solid #ffe08a;
+}
+
+.landing-footer .footer-quick-links .footer-link-contact {
+    color: #ffb3b3 !important;
+    border-bottom: 2px solid #ffb3b3;
+}
+
+.landing-footer ul li a:hover {
+    color: #0b3d2a !important;
+    background-color: var(--gold-light);
+    transform: translateX(4px);
+}
+
+.landing-footer .footer-contact-list a:hover {
+    color: var(--gold-light) !important;
+    background: transparent !important;
+}
+
+@media (max-width: 575.98px) {
+    .footer-brand-column {
+        transform: none;
+    }
+
+    .footer-brand-lockup {
+        align-items: flex-start;
+        padding-right: 0;
+    }
+
+    .footer-quick-column {
+        padding-left: 0;
+        border-left: 0;
+    }
+}
+
+.social-links {
+    display: flex;
+    gap: 15px;
+    flex-wrap: wrap;
+}
+
+.social-links a {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    height: 40px;
+    background: linear-gradient(135deg, var(--gold-light), var(--gold-color));
+    border: 1px solid rgba(255, 248, 220, 0.7);
+    border-radius: 50%;
+    color: #0b3d2a;
+    text-decoration: none;
+    transition: all 0.3s ease;
+}
+
+.social-links a:hover {
+    background: #fff8dc;
+    color: var(--primary-color);
+    transform: translateY(-3px);
+}

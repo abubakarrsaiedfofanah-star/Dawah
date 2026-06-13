@@ -1,0 +1,7 @@
+/* Runtime slice from daawah.css: QUICK ACTIONS. */
+/* QUICK ACTIONS */
+.quick-action {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}

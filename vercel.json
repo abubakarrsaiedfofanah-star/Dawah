@@ -1,0 +1,44 @@
+{
+  "version": 2,
+  "cleanUrls": true,
+  "trailingSlash": false,
+  "buildCommand": "npm run build",
+  "outputDirectory": ".",
+  "redirects": [
+    {
+      "source": "/(index|officer|admin).php",
+      "destination": "/$1.html",
+      "permanent": true
+    }
+  ],
+  "headers": [
+    {
+      "source": "/(index|admin|officer|install|verify-member|verify-receipt|offline).html",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "no-store"
+        }
+      ]
+    },
+    {
+      "source": "/(service-worker|version|supabase_config).(js|json)",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "no-store"
+        }
+      ]
+    }
+  ],
+  "rewrites": [
+    {
+      "source": "/version.json",
+      "destination": "/version.json"
+    },
+    {
+      "source": "/manifest.webmanifest",
+      "destination": "/manifest.webmanifest"
+    }
+  ]
+}

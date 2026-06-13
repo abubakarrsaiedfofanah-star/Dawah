@@ -1,0 +1,42 @@
+/* Runtime slice from daawah.css: AUTHENTICATION. */
+/* AUTHENTICATION */
+.auth-page {
+    display: none;
+    min-height: 100vh;
+    background:
+        linear-gradient(rgba(6, 45, 30, 0.88), rgba(6, 45, 30, 0.92)),
+        repeating-linear-gradient(135deg, rgba(245, 215, 110, 0.14) 0 1px, transparent 1px 24px),
+        linear-gradient(135deg, #0b3d2a 0%, #0f5132 56%, #2f2508 100%);
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+}
+
+.auth-page.active {
+    display: flex !important;
+}
+
+.auth-container {
+    width: 100%;
+    max-width: 600px;
+}
+
+.auth-card {
+    background: linear-gradient(180deg, #ffffff, #fffaf0);
+    border: 1px solid rgba(212, 175, 55, 0.34);
+    border-radius: 16px;
+    box-shadow: 0 24px 54px rgba(5, 45, 30, 0.28);
+    padding: 40px;
+    animation: slideIn 0.5s ease-out;
+}
+
+@keyframes slideIn {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}

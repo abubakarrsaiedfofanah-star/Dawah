@@ -1,0 +1,12 @@
+/* Runtime slice from daawah.css: PAYMENT MINI. */
+/* PAYMENT MINI */
+.payment-mini {
+    background-color: var(--light-bg);
+    padding: 15px;
+    border-radius: 8px;
+}
+
+.payment-mini .d-flex {
+    align-items: center;
+    justify-content: space-between;
+}

@@ -1,0 +1,23 @@
+/* Feature: public/research-view
+   Source: index.html#researchView
+   Move styles for this feature here from daawah.css, dawaah.css, or inline page styles as the feature is edited.
+*/
+
+.research-photo-preview {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-top: 14px;
+    padding: 10px;
+    border: 1px solid rgba(0, 48, 64, 0.14);
+    border-radius: 8px;
+    background: #f6f8f7;
+}
+
+.research-photo-preview img {
+    width: 72px;
+    height: 72px;
+    border-radius: 8px;
+    object-fit: cover;
+    background: #ffffff;
+}

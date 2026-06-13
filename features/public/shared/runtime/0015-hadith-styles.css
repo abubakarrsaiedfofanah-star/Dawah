@@ -1,0 +1,204 @@
+/* Runtime slice from daawah.css: Hadith Styles. */
+/* Hadith Styles */
+.hadith-section {
+    background: linear-gradient(135deg, rgba(15, 81, 50, 0.05) 0%, rgba(212, 175, 55, 0.08) 100%);
+    border: 1px solid var(--border-color);
+    border-radius: 12px;
+    padding: 25px;
+    margin-bottom: 30px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.hadith-header {
+    display: flex;
+    align-items: center;
+    margin-bottom: 20px;
+}
+
+.hadith-icon {
+    font-size: 32px;
+    color: var(--primary-color);
+    margin-right: 15px;
+}
+
+.hadith-title {
+    font-size: 20px;
+    font-weight: 700;
+    color: var(--primary-color);
+    margin: 0;
+}
+
+.hadith-content {
+    background: white;
+    border-left: 4px solid var(--primary-color);
+    padding: 20px;
+    border-radius: 8px;
+    font-style: italic;
+    color: #333;
+    line-height: 1.8;
+    font-size: 15px;
+    margin-bottom: 15px;
+}
+
+.hadith-reference {
+    text-align: right;
+    color: var(--primary-color);
+    font-weight: 600;
+    font-size: 13px;
+    margin-top: 10px;
+}
+
+.hadith-translation {
+    background: #f8f9fa;
+    padding: 15px;
+    border-radius: 8px;
+    color: #555;
+    margin-top: 10px;
+    font-size: 14px;
+    line-height: 1.7;
+}
+
+.hadith-nav {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 15px;
+}
+
+.hadith-btn {
+    background-color: var(--primary-color);
+    color: white;
+    border: none;
+    padding: 8px 15px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-weight: 600;
+    transition: all 0.3s ease;
+}
+
+.hadith-btn:hover {
+    background-color: var(--secondary-color);
+    transform: translateY(-2px);
+    box-shadow: 0 3px 8px rgba(15, 81, 50, 0.22);
+}
+
+.hadith-counter {
+    color: var(--primary-color);
+    font-weight: 600;
+}
+
+
+.logo-icon {
+    font-size: 60px;
+    color: var(--primary-color);
+    margin-bottom: 15px;
+}
+
+.auth-logo {
+    width: min(260px, 76vw);
+    height: auto;
+    display: block;
+    margin: 0 auto 16px;
+    border-radius: 8px;
+}
+
+.brand-title {
+    color: var(--primary-color);
+    font-weight: 700;
+    font-size: 32px;
+    letter-spacing: 0;
+}
+
+.auth-tabs {
+    border-bottom: 2px solid rgba(212, 175, 55, 0.28);
+}
+
+.auth-tabs .nav-link {
+    color: var(--dark-text);
+    border: none;
+    border-bottom: 3px solid transparent;
+    font-weight: 600;
+    margin-bottom: -2px;
+    transition: all 0.3s ease;
+}
+
+.auth-tabs .nav-link:hover,
+.auth-tabs .nav-link.active {
+    color: var(--primary-color);
+    border-bottom-color: var(--primary-color);
+}
+
+.password-strength__bar {
+    height: 8px;
+    border-radius: 999px;
+    background: rgba(15, 81, 50, 0.12);
+    overflow: hidden;
+}
+
+.password-strength__bar span {
+    display: block;
+    width: 0;
+    height: 100%;
+    border-radius: inherit;
+    background: #dc3545;
+    transition: width var(--transition-smooth), background-color var(--transition-smooth);
+}
+
+.password-strength.is-medium .password-strength__bar span {
+    background: var(--warning-color);
+}
+
+.password-strength.is-strong .password-strength__bar span {
+    background: var(--success-color);
+}
+
+.form-label {
+    font-weight: 600;
+    color: var(--dark-text);
+    margin-bottom: 8px;
+}
+
+.form-control,
+.form-select {
+    border: 1px solid rgba(212, 175, 55, 0.36);
+    border-radius: 8px;
+    padding: 10px 15px;
+    transition: border-color var(--transition-fast), box-shadow var(--transition-smooth), transform var(--transition-fast);
+}
+
+.form-control:hover,
+.form-select:hover {
+    border-color: rgba(15, 81, 50, 0.48);
+}
+
+.form-control:focus,
+.form-select:focus {
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 0.2rem rgba(15, 81, 50, 0.18);
+    transform: translateY(-1px);
+}
+
+.btn-primary {
+    background: linear-gradient(90deg, var(--primary-color), var(--gold-color));
+    border-color: var(--primary-color);
+    font-weight: 600;
+    border-radius: 8px;
+}
+
+.btn-primary:hover {
+    background: linear-gradient(90deg, var(--secondary-color), #072f20);
+    border-color: var(--secondary-color);
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-lg);
+}
+
+.btn-success {
+    background-color: var(--success-color);
+    border-color: var(--success-color);
+    font-weight: 600;
+}
+
+.btn-success:hover {
+    background-color: #218838;
+    box-shadow: 0 10px 24px rgba(40, 167, 69, 0.2);
+}

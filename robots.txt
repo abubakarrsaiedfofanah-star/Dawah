@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://umma-university-da-awah-team.web.app/sitemap.xml

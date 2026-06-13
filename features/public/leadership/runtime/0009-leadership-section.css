@@ -1,0 +1,67 @@
+/* Runtime slice from daawah.css: LEADERSHIP SECTION. */
+/* LEADERSHIP SECTION */
+.leadership-card {
+    background: linear-gradient(180deg, #ffffff, #fffaf0);
+    border: 1px solid rgba(212, 175, 55, 0.28);
+    border-radius: 12px;
+    padding: 30px 15px;
+    text-align: center;
+    transition: all 0.3s ease;
+    height: 100%;
+    cursor: pointer;
+}
+
+.leadership-card:hover {
+    transform: translateY(-10px);
+    border-color: var(--primary-color);
+    box-shadow: var(--shadow-lg);
+}
+
+.leadership-card:active {
+    transform: translateY(-5px) scale(0.99);
+}
+
+.leader-photo {
+    display: flex;
+    justify-content: center;
+    margin-bottom: 20px;
+    color: var(--gold-color);
+    opacity: 0.7;
+}
+
+.leader-photo img,
+.leader-photo i {
+    width: 104px !important;
+    height: 104px !important;
+    border-radius: 50% !important;
+    object-fit: cover;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border: 3px solid rgba(212, 175, 55, 0.42);
+    box-shadow: 0 12px 26px rgba(15, 81, 50, 0.12);
+}
+
+.leader-photo i {
+    font-size: 96px;
+    border: none;
+    box-shadow: none;
+}
+
+.leadership-card h6 {
+    color: var(--primary-color);
+    font-weight: 700;
+    margin-bottom: 8px;
+    font-size: 18px;
+}
+
+.leadership-card .position {
+    font-weight: 600;
+    color: #26352d;
+    margin-bottom: 8px;
+}
+
+.leadership-card .bio {
+    color: #999;
+    font-size: 14px;
+}

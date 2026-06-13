@@ -1,0 +1,18 @@
+/* Runtime slice from daawah.css: LEADERSHIP. */
+/* LEADERSHIP */
+.leadership-card {
+    text-align: center;
+    border: 2px solid var(--border-color);
+    transition: all 0.3s ease;
+}
+
+.leadership-card:hover {
+    transform: translateY(-10px);
+    box-shadow: var(--shadow-lg);
+}
+
+.leadership-icon {
+    font-size: 50px;
+    color: var(--primary-color);
+    margin-bottom: 15px;
+}

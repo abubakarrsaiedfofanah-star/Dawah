@@ -1,0 +1,129 @@
+/* Runtime slice from daawah.css: UMMA University brand palette overrides. */
+/* UMMA University brand palette overrides */
+:root {
+    --surface-white: #ffffff;
+    --surface-cream: #f3fbf7;
+    --surface-green-soft: #eaf7ee;
+    --ink-soft: #35545c;
+    --premium-card-shadow: 0 18px 42px rgba(0, 48, 64, 0.11);
+    --premium-card-shadow-hover: 0 24px 54px rgba(0, 48, 64, 0.16);
+}
+
+.landing-page.active,
+.auth-page,
+.dashboard,
+.modal-content {
+    background-color: #f3fbf7;
+}
+
+.landing-hero,
+.dashboard-header,
+.sidebar,
+.premium-navbar,
+.navbar.premium-navbar,
+.footer,
+.role-workspace-banner {
+    background:
+        linear-gradient(135deg, #003040 0%, #004e70 52%, #40b050 118%) !important;
+}
+
+.hero-subtitle,
+.section-title,
+.content-card h3,
+.content-card h4,
+.dashboard-card h5,
+.brand-title,
+.logo-icon,
+.nav-tabs .nav-link,
+.role-kicker,
+.stat-card i {
+    color: #003040;
+}
+
+.hero-buttons .btn-primary,
+.btn-primary,
+.btn-success,
+.role-action-card:hover,
+.nav-pills .nav-link.active,
+.nav-tabs .nav-link.active {
+    background: linear-gradient(135deg, #40b050, #0060b0) !important;
+    border-color: #40b050 !important;
+    color: #ffffff !important;
+}
+
+.btn-outline-primary,
+.visit-dawaah-link,
+.alert a {
+    color: #003040 !important;
+    border-color: #40b050 !important;
+}
+
+.btn-outline-primary:hover,
+.visit-dawaah-link:hover {
+    background-color: #003040 !important;
+    border-color: #003040 !important;
+    color: #ffffff !important;
+}
+
+.content-card,
+.dashboard-card,
+.auth-card,
+.profile-card,
+.event-card,
+.resource-card,
+.leader-card {
+    border-color: rgba(0, 48, 64, 0.12) !important;
+    box-shadow: 0 18px 42px rgba(0, 48, 64, 0.1);
+}
+
+.badge.bg-primary,
+.bg-primary {
+    background-color: #003040 !important;
+}
+
+.text-primary {
+    color: #003040 !important;
+}
+
+a:not(.btn):not(.nav-link):not(.navbar-brand) {
+    color: var(--primary-color) !important;
+    transition: color var(--transition-fast), text-decoration-color var(--transition-fast);
+}
+
+a:not(.btn):not(.nav-link):not(.navbar-brand):hover {
+    color: #0b3d2a !important;
+}
+
+.btn {
+    transition: transform var(--transition-fast), box-shadow var(--transition-smooth), background-color var(--transition-fast), border-color var(--transition-fast), color var(--transition-fast);
+}
+
+.btn:hover {
+    transform: translateY(-2px);
+}
+
+.btn:active {
+    transform: translateY(0) scale(0.98);
+}
+
+.btn:focus-visible,
+.nav-link:focus-visible,
+.navbar-brand:focus-visible,
+.premium-toggler:focus-visible {
+    outline: 3px solid rgba(255, 193, 7, 0.85);
+    outline-offset: 3px;
+    box-shadow: none;
+}
+
+.btn-outline-primary {
+    color: var(--primary-color) !important;
+    border-color: var(--primary-color) !important;
+}
+
+.btn-outline-primary:hover,
+.btn-outline-primary:focus {
+    color: #fff !important;
+    background-color: var(--primary-color) !important;
+    border-color: var(--primary-color) !important;
+    box-shadow: 0 10px 24px rgba(15, 81, 50, 0.18);
+}

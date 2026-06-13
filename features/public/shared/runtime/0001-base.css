@@ -1,0 +1,37 @@
+/* Runtime slice from daawah.css: base. */
+/* UMMA University Dawah Team - Complete CSS Stylesheet */
+
+:root {
+    --primary-color: #003040;
+    --secondary-color: #0060b0;
+    --accent-color: #40b050;
+    --gold-color: #40b050;
+    --gold-light: #78d986;
+    --cream-bg: #f3fbf7;
+    --success-color: #40b050;
+    --warning-color: #ffc107;
+    --danger-color: #dc3545;
+    --info-color: #0060b0;
+    --light-bg: #eef7f4;
+    --dark-text: #212529;
+    --border-color: #b9d8d2;
+    --shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+    --shadow-lg: 0 1rem 3rem rgba(0, 0, 0, 0.175);
+    --transition-fast: 160ms ease;
+    --transition-smooth: 260ms ease;
+}
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background:
+        linear-gradient(180deg, #fffdf6 0%, var(--light-bg) 100%);
+    color: var(--dark-text);
+    line-height: 1.6;
+    overflow-x: hidden;
+}
