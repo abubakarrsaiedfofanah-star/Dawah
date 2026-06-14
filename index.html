@@ -13,6 +13,44 @@
             window.top.location = window.self.location;
         }
         (function() {
+            var firebaseHosts = ['umma-university-dawah-team.web.app', 'umma-university-dawah-team.firebaseapp.com'];
+            if (firebaseHosts.indexOf(window.location.hostname) !== -1) {
+                window.location.replace('https://dawah-93d4.vercel.app/');
+                return;
+            }
+
+            var cleanupKey = 'dawaahVercelServiceWorkerCleanup:v2';
+            if (window.location.protocol === 'file:' || localStorage.getItem(cleanupKey)) return;
+            localStorage.setItem(cleanupKey, '1');
+
+            var cleanupTasks = [];
+            if ('caches' in window) {
+                cleanupTasks.push(
+                    caches.keys().then(function(keys) {
+                        return Promise.all(keys
+                            .filter(function(key) { return key.indexOf('dawaah-shell-') === 0; })
+                            .map(function(key) { return caches.delete(key); }));
+                    })
+                );
+            }
+            if ('serviceWorker' in navigator) {
+                cleanupTasks.push(
+                    navigator.serviceWorker.getRegistrations().then(function(registrations) {
+                        return Promise.all(registrations.map(function(registration) {
+                            return registration.unregister();
+                        }));
+                    })
+                );
+            }
+            if (cleanupTasks.length) {
+                Promise.allSettled(cleanupTasks).then(function() {
+                    if (navigator.serviceWorker && navigator.serviceWorker.controller) {
+                        window.location.reload();
+                    }
+                });
+            }
+        })();
+        (function() {
             window.__dawaahDeferredInstallPrompt = null;
             window.__dawaahPendingInstallClick = false;
             window.__dawaahEnsureManifest = function() {

@@ -1,4 +1,4 @@
-const DAWAAH_CACHE = 'dawah-shell-supabase-v5';
+const DAWAAH_CACHE = 'dawah-shell-supabase-v6';
 const SHELL_ASSETS = [
   './',
   './index.html',
