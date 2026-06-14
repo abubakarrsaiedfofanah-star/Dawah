@@ -11,8 +11,7 @@ A community-focused management platform for the UMMA University Dawah Team, desi
 - `features/` - generated feature-owned HTML/CSS/JS folders for easier maintenance and fault isolation.
 - `Supabase.rules` - production Supabase security rules.
 - `cloudflare-worker/` - Groq AI proxy Worker.
-- `scripts/build-Supabase-public.ps1` - prepares the Supabase Hosting output folder.
-- `Supabase-public/` - generated hosting output. Build it locally before deploy; do not edit it by hand.
+- `vercel.json` - Vercel static hosting config. Vercel runs `npm run build` and serves this repo root.
 
 ## Setup
 
@@ -51,11 +50,13 @@ npm.cmd run runtime:split
 
 ## Build And Deploy
 
-Prepare the Supabase Hosting folder:
+Prepare the static files:
 
 ```powershell
 npm.cmd run build
 ```
+
+For Vercel, keep the Output Directory as `.` because the build updates files in the repo root.
 
 Deploy hosting and rules:
 
