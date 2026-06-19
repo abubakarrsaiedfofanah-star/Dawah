@@ -21,6 +21,7 @@ let hostingCapabilities = null;
 let resetPasswordEmail = '';
 const LOCAL_RESET_CODE_STORE = 'dawaahPasswordResetCodes';
 const LOCAL_RESET_CODE_TTL_MS = 15 * 60 * 1000;
+const APP_VERSION = '2026.06.04.4';
 let researchRecorder = null;
 let researchAudioStream = null;
 let researchAudioChunks = [];
@@ -131,8 +132,9 @@ const STATIC_FRONTEND_HOSTS = [
     'localhost',
     '127.0.0.1',
     'github.io',
-    'umma-university-da-awah-team.web.app',
-    'umma-university-da-awah-team.Supabaseapp.com',
+    'netlify.app',
+    'vercel.app',
+    'pages.dev',
     '66ghz.com',
     'www.66ghz.com'
 ];
@@ -1666,7 +1668,7 @@ function getFriendlyRegistrationError(error) {
         return 'Password is too weak. Please use a stronger password (8+ characters recommended).';
     }
     if (/network|failed to fetch/i.test(message)) {
-        return 'Registration could not connect. Check your internet, refresh the main web.app link, and try again.';
+        return 'Registration could not connect. Check your internet, refresh this deployed link, and try again.';
     }
     return message || 'Registration failed. Please check your details and try again.';
 }
@@ -2175,7 +2177,7 @@ function resetForgotPasswordModal() {
     if (help) help.textContent = 'Use the same email you registered with. A verification code will be sent there.';
 }
 
-no// Runtime slice from daawah.js: showResetCodeStep.
+// Runtime slice from daawah.js: showResetCodeStep.
 function showResetCodeStep(email, result) {
     resetPasswordEmail = email;
     document.querySelectorAll('.reset-step-email').forEach(item => item.classList.add('d-none'));
@@ -8299,8 +8301,6 @@ function ensureAppManifestLink() {
     }
 }
 
-const APP_VERSION = '2026.06.04.4';
-
 // Runtime slice from daawah.js: checkForAppUpdate.
 function checkForAppUpdate(forceReload = false) {
     if (location.protocol === 'file:') return Promise.resolve(false);
@@ -8975,7 +8975,7 @@ function suggestOfficerHadithArabic() {
     })
     .catch(error => {
         const networkMessage = /failed to fetch|networkerror|load failed/i.test(error.message || '')
-            ? 'Arabic suggestion could not connect from this cached page. Refresh the main web.app link and try again.'
+            ? 'Arabic suggestion could not connect from this cached page. Refresh this deployed link and try again.'
             : '';
         if (status) status.textContent = networkMessage || 'Arabic suggestion unavailable.';
         showNotification(networkMessage || error.message || 'Could not suggest Arabic', 'danger');

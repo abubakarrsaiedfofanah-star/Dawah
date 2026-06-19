@@ -2,7 +2,7 @@ const { test, expect } = require('@playwright/test');
 const fs = require('fs');
 const path = require('path');
 
-const liveBase = 'https://umma-university-da-awah-team.web.app';
+const liveBase = process.env.PLAYWRIGHT_BASE_URL || 'http://127.0.0.1:8000';
 const adminEmail = process.env.DAWAAH_ADMIN_EMAIL;
 const adminPassword = process.env.DAWAAH_ADMIN_PASSWORD;
 const stamp = Date.now();

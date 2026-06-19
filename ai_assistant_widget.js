@@ -278,7 +278,7 @@
             })
             .catch(error => {
                 const networkMessage = /failed to fetch|networkerror|load failed/i.test(error.message || '')
-                    ? 'Research AI could not connect from this link. Refresh the main web.app link and try again; if it continues, redeploy the Cloudflare Worker allowlist.'
+                    ? 'Research AI could not connect from this link. Refresh this deployed link and try again; if it continues, redeploy the Cloudflare Worker allowlist.'
                     : '';
                 waitingMessage.textContent = error.name === 'AbortError'
                     ? 'The research AI is taking too long. Please try a shorter question.'

@@ -1,4 +1,4 @@
-no// Runtime slice from daawah.js: showResetCodeStep.
+// Runtime slice from daawah.js: showResetCodeStep.
 function showResetCodeStep(email, result) {
     resetPasswordEmail = email;
     document.querySelectorAll('.reset-step-email').forEach(item => item.classList.add('d-none'));

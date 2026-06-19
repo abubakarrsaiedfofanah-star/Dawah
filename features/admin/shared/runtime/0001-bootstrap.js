@@ -18,8 +18,6 @@ const STATIC_ADMIN_HOSTS = [
     'netlify.app',
     'vercel.app',
     'pages.dev',
-    'umma-university-da-awah-team.web.app',
-    'umma-university-da-awah-team.Supabaseapp.com',
     '66ghz.com',
     'www.66ghz.com'
 ];

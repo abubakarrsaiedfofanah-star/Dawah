@@ -16,8 +16,6 @@ function corsHeaders(request, env) {
 
 function allowedOrigins(env) {
   const defaults = [
-    'https://umma-university-da-awah-team.web.app',
-    'https://umma-university-da-awah-team.Supabaseapp.com',
     'https://66ghz.com',
     'https://www.66ghz.com',
     'http://localhost:8000',
@@ -35,10 +33,9 @@ function isAllowedOrigin(origin, env) {
   if (allowedOrigins(env).includes(origin)) return true;
   try {
     const host = new URL(origin).hostname;
-    return host === 'umma-university-da-awah-team.web.app'
-      || host === 'umma-university-da-awah-team.Supabaseapp.com'
-      || host === '66ghz.com'
+    return host === '66ghz.com'
       || host === 'www.66ghz.com'
+      || host.endsWith('.vercel.app')
       || host === 'localhost'
       || host === '127.0.0.1';
   } catch (error) {

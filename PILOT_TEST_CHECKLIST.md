@@ -41,7 +41,7 @@ Use this before inviting many users.
 - Supabase rules are deployed before inviting testers.
 - `npm.cmd run test:rules` passes before deploying rule changes.
 - Live UI smoke passes after deploy:
-  - `$env:PLAYWRIGHT_BASE_URL='https://umma-university-da-awah-team.web.app'; npm.cmd run test:ui`
+  - `$env:PLAYWRIGHT_BASE_URL='https://your-supabase-ready-domain.example'; npm.cmd run test:ui`
 - Live feature audit passes after deploy:
   - `npm.cmd run test:live`
 - Admin login is confirmed manually with the private main admin account.

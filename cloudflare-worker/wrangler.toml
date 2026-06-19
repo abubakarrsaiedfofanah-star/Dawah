@@ -5,7 +5,7 @@ account_id = "4d43e50e0969e85df8daec1d78ef940e"
 workers_dev = true
 
 [vars]
-ALLOWED_ORIGIN = "https://umma-university-da-awah-team.web.app,https://umma-university-da-awah-team.Supabaseapp.com,https://66ghz.com,https://www.66ghz.com"
+ALLOWED_ORIGIN = "https://66ghz.com,https://www.66ghz.com"
 GROQ_CHAT_MODEL = "llama-3.1-8b-instant"
 GROQ_TRANSCRIBE_MODEL = "whisper-large-v3-turbo"
 DAILY_AI_LIMIT = "0"

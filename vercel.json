@@ -33,30 +33,6 @@
   ],
   "rewrites": [
     {
-      "source": "/",
-      "destination": "/index.html"
-    },
-    {
-      "source": "/admin",
-      "destination": "/admin.html"
-    },
-    {
-      "source": "/officer",
-      "destination": "/officer.html"
-    },
-    {
-      "source": "/install",
-      "destination": "/install.html"
-    },
-    {
-      "source": "/verify-member",
-      "destination": "/verify-member.html"
-    },
-    {
-      "source": "/verify-receipt",
-      "destination": "/verify-receipt.html"
-    },
-    {
       "source": "/version.json",
       "destination": "/version.json"
     },

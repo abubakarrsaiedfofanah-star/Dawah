@@ -11,7 +11,7 @@ function getFriendlyRegistrationError(error) {
         return 'Password is too weak. Please use a stronger password (8+ characters recommended).';
     }
     if (/network|failed to fetch/i.test(message)) {
-        return 'Registration could not connect. Check your internet, refresh the main web.app link, and try again.';
+        return 'Registration could not connect. Check your internet, refresh this deployed link, and try again.';
     }
     return message || 'Registration failed. Please check your details and try again.';
 }

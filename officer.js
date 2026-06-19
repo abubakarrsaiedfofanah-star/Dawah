@@ -5,8 +5,9 @@ const OFFICER_STATIC_HOSTS = [
     'localhost',
     '127.0.0.1',
     'github.io',
-    'umma-university-da-awah-team.web.app',
-    'umma-university-da-awah-team.Supabaseapp.com',
+    'netlify.app',
+    'vercel.app',
+    'pages.dev',
     '66ghz.com',
     'www.66ghz.com'
 ];

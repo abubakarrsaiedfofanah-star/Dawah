@@ -49,7 +49,7 @@ function suggestAdminHadithArabic() {
     })
     .catch(error => {
         const networkMessage = /failed to fetch|networkerror|load failed/i.test(error.message || '')
-            ? 'Arabic suggestion could not connect from this cached page. Refresh the main web.app link and try again.'
+            ? 'Arabic suggestion could not connect from this cached page. Refresh this deployed link and try again.'
             : '';
         if (status) status.textContent = networkMessage || 'Arabic suggestion unavailable.';
         showNotification(networkMessage || error.message || 'Could not suggest Arabic', 'danger');

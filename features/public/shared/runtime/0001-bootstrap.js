@@ -20,6 +20,7 @@ let hostingCapabilities = null;
 let resetPasswordEmail = '';
 const LOCAL_RESET_CODE_STORE = 'dawaahPasswordResetCodes';
 const LOCAL_RESET_CODE_TTL_MS = 15 * 60 * 1000;
+const APP_VERSION = '2026.06.04.4';
 let researchRecorder = null;
 let researchAudioStream = null;
 let researchAudioChunks = [];
@@ -130,8 +131,9 @@ const STATIC_FRONTEND_HOSTS = [
     'localhost',
     '127.0.0.1',
     'github.io',
-    'umma-university-da-awah-team.web.app',
-    'umma-university-da-awah-team.Supabaseapp.com',
+    'netlify.app',
+    'vercel.app',
+    'pages.dev',
     '66ghz.com',
     'www.66ghz.com'
 ];

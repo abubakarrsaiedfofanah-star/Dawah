@@ -1,6 +1,6 @@
 const { test, expect } = require('@playwright/test');
 
-const base = 'https://umma-university-da-awah-team.web.app';
+const base = process.env.PLAYWRIGHT_BASE_URL || 'http://127.0.0.1:8000';
 const email = process.env.OFFICER_TEST_EMAIL;
 const password = process.env.OFFICER_TEST_PASSWORD;
 

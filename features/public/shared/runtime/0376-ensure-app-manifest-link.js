@@ -4,5 +4,3 @@ function ensureAppManifestLink() {
         window.__dawaahEnsureManifest();
     }
 }
-
-const APP_VERSION = '2026.06.04.4';

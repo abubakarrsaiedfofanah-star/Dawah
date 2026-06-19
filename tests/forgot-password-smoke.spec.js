@@ -1,6 +1,6 @@
 const { test, expect } = require('@playwright/test');
 
-const base = 'https://umma-university-da-awah-team.web.app';
+const base = process.env.PLAYWRIGHT_BASE_URL || 'http://127.0.0.1:8000';
 const adminEmail = process.env.DAWAAH_ADMIN_EMAIL || 'abubakarrsaiedfofanah@gmail.com';
 
 test('admin forgot password sends Supabase reset email without changing password', async ({ page }) => {
