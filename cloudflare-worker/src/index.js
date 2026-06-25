@@ -136,7 +136,7 @@ function searchFreshnessWindow(question) {
 
 async function liveWebSearch(question, env) {
   const key = String(env.BRAVE_SEARCH_API_KEY || '').trim();
-  if (!key) return { enabled: false, sources: [], note: 'BRAVE_SEARCH_API_KEY is not configured.' };
+  if (!key) return { enabled: false, sources: [], note: 'Live source lookup is unavailable for this answer.' };
 
   const query = String(question || '').replace(/\s+/g, ' ').trim().slice(0, 300);
   if (!query) return { enabled: true, sources: [], note: 'No search query was provided.' };
@@ -214,8 +214,8 @@ async function answerQuestion(question, context, mode, env) {
     ? hasLiveSources
       ? `The user is asking for latest/current information. Use the live search sources below, cite them as [1], [2], etc., include source links where useful, and state that the answer is based on sources available as of ${currentDate}.`
       : liveSearch.enabled
-        ? `The user is asking for latest/current information. Live search was attempted but no usable source was returned (${liveSearch.note || 'no details'}). Say this clearly, give the best stable guidance, and tell the user what official source to verify as of ${currentDate}.`
-        : `The user is asking for latest/current information. Live search is not connected yet. Say clearly that live updates require the search API key, then give the best stable guidance and what to verify as of ${currentDate}.`
+        ? `The user is asking for latest/current information. Live search was attempted but no usable source was returned (${liveSearch.note || 'no details'}). Do not mention backend configuration or API keys. Give the best stable guidance, state that live source results were unavailable for this answer, and tell the user what official source to verify as of ${currentDate}.`
+        : `The user is asking for latest/current information. Live source results are unavailable for this answer. Do not mention backend configuration or API keys. Give the best stable guidance and tell the user what official source to verify as of ${currentDate}.`
     : `Use stable knowledge and mention today's date (${currentDate}) only when it helps.`;
 
   const verificationNote = /\b(law|laws|legal|regulation|regulations|price|prices|statistics|stats|data)\b/i.test(question)

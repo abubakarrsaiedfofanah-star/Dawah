@@ -1,7 +1,7 @@
 // Runtime slice from daawah.js: transcribeResearchBlob.
 function transcribeResearchBlob(blob, filename) {
     if (frontendOnly) {
-        showNotification('Voice research needs the hosted backend and OpenAI API key.', 'warning');
+        showNotification('Voice research is not available right now. Please type your question instead.', 'warning');
         return;
     }
     if (blob.size > uploadLimits.voice.bytes) {

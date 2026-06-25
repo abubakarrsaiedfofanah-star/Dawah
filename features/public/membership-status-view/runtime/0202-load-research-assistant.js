@@ -13,6 +13,6 @@ function loadResearchAssistant() {
     }
     const status = document.getElementById('researchStatus');
     if (status) {
-        status.textContent = 'Research uses web sources when the server OpenAI key is configured. Verify religious rulings with qualified scholars.';
+        status.textContent = 'Research can include source links when available. Verify religious rulings with qualified scholars.';
     }
 }
