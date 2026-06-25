@@ -8,5 +8,7 @@
     if (location.protocol === 'https:' && !isAllowedHost) {
         return;
     }
-    window.DAWAH_AI_WORKER_URL = 'https://umma-dawah-groq-ai.abubakarrsaiedfofanah.workers.dev'; // Supabase: AI Worker URL
+    const workerUrl = 'https://umma-dawah-groq-ai.abubakarrsaiedfofanah.workers.dev';
+    window.DAWAH_AI_WORKER_URL = workerUrl; // Backward-compatible single-a alias.
+    window.DAWAAH_AI_WORKER_URL = workerUrl; // Supabase: AI Worker URL
 })();

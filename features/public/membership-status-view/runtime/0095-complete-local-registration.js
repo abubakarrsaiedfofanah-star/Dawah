@@ -1,7 +1,8 @@
 // Runtime slice from daawah.js: completeLocalRegistration.
 async function completeLocalRegistration(newUser, options = {}) {
     const needsApproval = (newUser.role || 'student') !== 'student';
-    const { passportPhotoFile, password: _discardedPassword, ...storableUser } = {
+    const shouldStoreLocalPassword = Boolean(frontendOnly && !window.SupabaseBackend?.enabled && newUser.password);
+    const { passportPhotoFile, password: localPassword, ...storableUserBase } = {
         ...newUser,
         status: newUser.status || (needsApproval ? 'Pending' : 'Active'),
         accountStatus: newUser.accountStatus || (needsApproval ? 'Pending Approval' : 'Active'),
@@ -13,6 +14,9 @@ async function completeLocalRegistration(newUser, options = {}) {
         registrationUserAgent: navigator.userAgent,
         registeredAt: newUser.registeredAt || new Date().toISOString()
     };
+    const storableUser = shouldStoreLocalPassword
+        ? { ...storableUserBase, password: localPassword }
+        : storableUserBase;
     const existingIndex = allMembers.findIndex(member =>
         member.studentId === storableUser.studentId ||
         member.email === storableUser.email ||

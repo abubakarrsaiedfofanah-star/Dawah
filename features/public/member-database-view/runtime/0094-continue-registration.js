@@ -29,5 +29,5 @@ function continueRegistration(newUser, fullName, password) {
         return;
     }
 
-    completeLocalRegistration(newUser);
+    completeLocalRegistration({ ...newUser, password });
 }

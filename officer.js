@@ -285,9 +285,12 @@ async function loadOfficerSharedMembers() {
 function findLocalMember(identifier) {
     const lookup = String(identifier || '').trim().toLowerCase();
     return readLocalMembers().find(member =>
+        String(member.uid || '').toLowerCase() === lookup ||
+        String(member.authUid || '').toLowerCase() === lookup ||
         String(member.studentId || '').toLowerCase() === lookup ||
         String(member.username || '').toLowerCase() === lookup ||
-        String(member.email || '').toLowerCase() === lookup
+        String(member.email || '').toLowerCase() === lookup ||
+        String(member.authEmail || '').toLowerCase() === lookup
     );
 }
 
@@ -744,7 +747,7 @@ async function handleOfficerLogin(event) {
             const user = loginOfficerLocally(username, password, { authenticatedBySupabase: Boolean(window.SupabaseBackend?.enabled) });
             localStorage.setItem('currentUser', JSON.stringify(user));
             localStorage.setItem('currentRole', user.role);
-            localStorage.setItem('DawaahAccountClearVersion', '20260526-Supabase-reset-v1');
+            localStorage.setItem('DawaahAccountClearVersion', '20260526-supabase-reset-v1');
             window.location.href = 'index.html?dashboard=1';
         } catch (error) {
             showOfficerAlert(error.message || 'Officer login failed.', 'danger');

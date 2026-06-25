@@ -32,7 +32,7 @@ async function handleOfficerLogin(event) {
             const user = loginOfficerLocally(username, password, { authenticatedBySupabase: Boolean(window.SupabaseBackend?.enabled) });
             localStorage.setItem('currentUser', JSON.stringify(user));
             localStorage.setItem('currentRole', user.role);
-            localStorage.setItem('DawaahAccountClearVersion', '20260526-Supabase-reset-v1');
+            localStorage.setItem('DawaahAccountClearVersion', '20260526-supabase-reset-v1');
             window.location.href = 'index.html?dashboard=1';
         } catch (error) {
             showOfficerAlert(error.message || 'Officer login failed.', 'danger');

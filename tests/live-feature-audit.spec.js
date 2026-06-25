@@ -8,7 +8,7 @@ const adminPassword = process.env.DAWAAH_ADMIN_PASSWORD;
 const stamp = Date.now();
 const student = {
   name: `Validation Student ${stamp}`,
-  id: `VAL${stamp}`,
+  id: `VAL/2026/${String(stamp).slice(-6)}`,
   email: `validation.student.${stamp}@example.invalid`,
   phone: `254700${String(stamp).slice(-6)}`,
   password: `Validation${stamp}!`

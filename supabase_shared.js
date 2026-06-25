@@ -162,15 +162,25 @@ const SupabaseBackendApi = (() => {
 
     async function registerEmail(email, password, fullName = '') {
         const db = await client();
+        const normalizedEmail = requireEmail(email);
         const { data, error } = await db.auth.signUp({ 
-            email: requireEmail(email), 
+            email: normalizedEmail, 
             password,
             options: {
                 data: { full_name: fullName }
             }
         });
         if (error) throw error;
-        return saveAuthSession(data.session || data.user || {});
+        if (data?.session) return saveAuthSession(data.session);
+
+        const loginResult = await db.auth.signInWithPassword({ email: normalizedEmail, password });
+        if (loginResult.error) {
+            if (/confirm|verified|verification/i.test(loginResult.error.message || '')) {
+                throw new Error('Please confirm your email address first, then login to complete your portal registration.');
+            }
+            throw loginResult.error;
+        }
+        return saveAuthSession(loginResult.data?.session);
     }
 
     async function loginEmail(email, password) {
