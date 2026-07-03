@@ -6,6 +6,7 @@
     "features:generate": "node scripts/generate-feature-modules.js",
     "runtime:split": "node scripts/split-runtime-modules.js",
     "runtime:assemble": "node scripts/assemble-runtime-bundles.js",
+    "test:local-registration": "cross-env PLAYWRIGHT_BASE_URL=http://127.0.0.1:8000 playwright test tests/local-registration.spec.js --project=desktop --reporter=list",
     "config:supabase": "node scripts/generate-supabase-config.js",
     "build": "npm run config:supabase && npm run runtime:assemble",
     "serve": "http-server . -p 8000 -c-1",

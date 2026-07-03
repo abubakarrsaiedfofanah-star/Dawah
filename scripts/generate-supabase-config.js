@@ -3,6 +3,16 @@ const path = require('path');
 
 const root = path.resolve(__dirname, '..');
 
+function normalizeEnabledHost(host) {
+  const value = String(host || '').trim();
+  if (!value) return '';
+  try {
+    return new URL(value.includes('://') ? value : `https://${value}`).hostname.toLowerCase();
+  } catch (error) {
+    return value.replace(/^https?:\/\//i, '').split('/')[0].split(':')[0].toLowerCase();
+  }
+}
+
 const config = {
   url: process.env.DAWAH_SUPABASE_URL
     || process.env.SUPABASE_URL
@@ -14,9 +24,9 @@ const config = {
     || process.env.VITE_SUPABASE_ANON_KEY
     || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
     || '',
-  enabledHosts: (process.env.DAWAH_SUPABASE_ENABLED_HOSTS || 'localhost,127.0.0.1,vercel.app')
+  enabledHosts: (process.env.DAWAH_SUPABASE_ENABLED_HOSTS || 'localhost,127.0.0.1,vercel.app,dawah-six.vercel.app,www.dawah-six.vercel.app,66ghz.com,www.66ghz.com')
     .split(',')
-    .map(host => host.trim())
+    .map(normalizeEnabledHost)
     .filter(Boolean),
   realtime: process.env.DAWAH_SUPABASE_REALTIME !== 'false'
 };

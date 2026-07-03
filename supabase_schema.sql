@@ -19,7 +19,7 @@ create index if not exists app_records_collection_idx on public.app_records (col
 create index if not exists app_records_data_gin_idx on public.app_records using gin (data);
 
 create table if not exists public.admin_roles (
-    uid uuid primary key references auth.users(id) on delete cascade,
+    uid uuid primary key,
     data jsonb not null default '{}'::jsonb,
     created_at timestamptz not null default now(),
     updated_at timestamptz not null default now()
@@ -88,3 +88,4 @@ create policy "Authenticated admins can manage admin roles"
 
 alter publication supabase_realtime add table public.app_stores;
 alter publication supabase_realtime add table public.app_records;
+

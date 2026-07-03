@@ -24,6 +24,9 @@ const STATIC_ADMIN_HOSTS = [
 ];
 const useStaticAdminApi = location.protocol === 'file:'
     || STATIC_ADMIN_HOSTS.some(host => location.hostname === host || location.hostname.endsWith(`.${host}`));
+const isHostedStaticAdminPage = useStaticAdminApi
+    && location.protocol !== 'file:'
+    && !['localhost', '127.0.0.1'].includes(location.hostname);
 const LOCAL_ADMIN_ACCOUNTS_KEY = 'DawaahAdminAccounts';
 const LOCAL_ADMIN_CLEANUP_KEY = 'DawaahAdminAccountsMainOnlyCleanup20260509';
 const LOCAL_ADMIN_FULL_RESET_KEY = 'DawaahAdminFullReset20260509';
@@ -1908,7 +1911,10 @@ async function checkAdminAuth() {
 // Runtime slice from admin.js: getLocalAdminPrompt.
 function getLocalAdminPrompt() {
     if (useStaticAdminApi && window.SupabaseBackend?.enabled) {
-        return 'Login with the registered main admin email. New admins are added inside the admin panel.';
+        return 'Login with the registered Supabase admin email. Use Register Admin only for the first main admin setup.';
+    }
+    if (isHostedStaticAdminPage && !window.SupabaseBackend?.enabled) {
+        return 'Supabase is not configured for this hosted admin page. Add SUPABASE_URL and SUPABASE_ANON_KEY in Vercel, then redeploy.';
     }
     const count = getLocalAdminAccounts().length;
     if (count === 0) {
@@ -1924,6 +1930,13 @@ async function refreshAdminSetupUi() {
     const loginButton = document.getElementById('adminLoginTabBtn');
     try {
         if (useStaticAdminApi && window.SupabaseBackend?.enabled && !window.SupabaseBackend.hasAuthSession()) {
+            registerItem?.classList.remove('d-none');
+            if (loginButton) {
+                bootstrap.Tab.getOrCreateInstance(loginButton).show();
+            }
+            return;
+        }
+        if (isHostedStaticAdminPage && !window.SupabaseBackend?.enabled) {
             registerItem?.classList.add('d-none');
             if (loginButton) {
                 bootstrap.Tab.getOrCreateInstance(loginButton).show();
@@ -1995,6 +2008,7 @@ async function resolveAdminUser(username) {
     if (!window.SupabaseBackend?.enabled || !window.SupabaseBackend.hasAuthSession?.()) return null;
     const email = window.SupabaseBackend.currentEmail?.() || username;
     let adminRole = await window.SupabaseBackend.loadMyAdminRole?.().catch(() => null);
+    const isTruthyFlag = value => value === true || ['true', '1', 'yes'].includes(String(value || '').toLowerCase());
     if (!adminRole && String(email).toLowerCase() === 'abubakarrsaiedfofanah@gmail.com') {
         await window.SupabaseBackend.saveAdminRole?.({
             username: 'iman',
@@ -2021,7 +2035,7 @@ async function resolveAdminUser(username) {
         email,
         fullName: adminRole.fullName || adminRole.full_name || adminRole.username || username || email,
         role: adminRole.role || 'admin',
-        isMainAdmin: Boolean(adminRole.isMainAdmin),
+        isMainAdmin: isTruthyFlag(adminRole.isMainAdmin) || ['main-admin', 'main admin', 'super-admin', 'super admin'].includes(String(adminRole.role || '').toLowerCase()),
         csrf_token: 'supabase'
     };
 }
@@ -2436,6 +2450,11 @@ async function handleAdminLogin(event) {
     button.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Checking...';
 
     try {
+        if (isHostedStaticAdminPage && !window.SupabaseBackend?.enabled) {
+            recordAdminLoginFailure();
+            showAdminLogin('Supabase is not configured for this hosted admin page. Add SUPABASE_URL and SUPABASE_ANON_KEY in Vercel, make sure the live domain is allowed, then redeploy.');
+            return;
+        }
         if (useStaticAdminApi && window.SupabaseBackend?.enabled) {
             await window.SupabaseBackend.loginEmail(username, password);
             await window.SupabaseBackend.ensureRealtimeAuth?.(username, password).catch(error => {
@@ -2483,9 +2502,17 @@ async function handleAdminLogin(event) {
         setInterval(refreshAdminRegistrationCapture, ADMIN_REGISTRATION_CAPTURE_MS);
     } catch (loginError) {
         const rawMessage = loginError.message || '';
-        const friendlyMessage = /failed to fetch|networkerror|load failed/i.test(rawMessage)
-            ? 'Admin login could not reach the hosted backend. Check your internet connection, turn off Brave Shields/ad blocker for this site, then refresh and try again.'
-            : rawMessage || 'Unable to verify admin login. Please check the server and database.';
+        recordAdminLoginFailure();
+        let friendlyMessage = rawMessage || 'Unable to verify admin login. Please check the server and database.';
+        if (/invalid login credentials/i.test(rawMessage)) {
+            friendlyMessage = 'Supabase rejected this email or password. Check the password saved for this Auth user, or send a password reset email from Supabase/Auth.';
+        } else if (/email not confirmed|confirm/i.test(rawMessage)) {
+            friendlyMessage = 'This Supabase email is not confirmed yet. Confirm the user in Supabase Auth, then try again.';
+        } else if (/not registered as an admin/i.test(rawMessage)) {
+            friendlyMessage = 'Supabase login worked, but this user does not have an admin role row yet. Add this user uid to public.admin_roles as the main admin.';
+        } else if (/failed to fetch|networkerror|load failed/i.test(rawMessage)) {
+            friendlyMessage = 'Admin login could not reach Supabase or the hosted backend. Check your internet connection, disable blockers for this site, then refresh and try again.';
+        }
         showAdminLogin(friendlyMessage);
     } finally {
         button.disabled = false;
@@ -2672,9 +2699,13 @@ async function handleAdminRegistration(event) {
     button.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Creating...';
 
     try {
+        if (isHostedStaticAdminPage && !window.SupabaseBackend?.enabled) {
+            showAdminLogin('Supabase is not configured for this hosted admin page. Add SUPABASE_URL and SUPABASE_ANON_KEY in Vercel, then redeploy before registering an admin.');
+            return;
+        }
         if (useStaticAdminApi && window.SupabaseBackend?.enabled) {
             await window.SupabaseBackend.registerEmail(email, password).catch(error => {
-                if (/EMAIL_EXISTS/i.test(error.message || '')) {
+                if (/EMAIL_EXISTS|already registered|already exists|user already/i.test(error.message || '')) {
                     return window.SupabaseBackend.loginEmail(email, password);
                 }
                 throw error;

@@ -137,13 +137,71 @@
             messages.scrollTop = messages.scrollHeight;
         };
 
+        const safeJson = fallback => value => {
+            try {
+                const parsed = JSON.parse(value || '');
+                return parsed == null ? fallback : parsed;
+            } catch (error) {
+                return fallback;
+            }
+        };
+
+        const readList = key => {
+            const value = safeJson([])(localStorage.getItem(key));
+            return Array.isArray(value) ? value : [];
+        };
+
+        const readObject = key => {
+            const value = safeJson({})(localStorage.getItem(key));
+            return value && typeof value === 'object' && !Array.isArray(value) ? value : {};
+        };
+
+        const activeWorkspaceView = () => {
+            const active = document.querySelector('.admin-content.active, .view-container.active, section.active, .tab-pane.active');
+            return active?.id || '';
+        };
+
+        const workspaceDataSnapshot = () => {
+            const resources = readList('adminResources');
+            const members = readList('allMembers');
+            const events = readList('allEvents');
+            const registrations = readList('registeredEvents');
+            const welfare = readList('welfareRequests');
+            const donations = readList('donations');
+            const payments = readList('payments');
+            const researchHistory = readList('researchHistory');
+            const currentUser = readObject('currentUser');
+            const currentAdmin = safeJson({})(sessionStorage.getItem('currentAdminUser'));
+            const pendingWelfare = welfare.filter(item => /pending|review/i.test(String(item?.status || ''))).length;
+            const activeMembers = members.filter(member => /active|approved/i.test(String(member?.status || ''))).length;
+            const resourceTitles = resources
+                .map(item => item?.title || item?.name || item?.resource_title || '')
+                .filter(Boolean)
+                .slice(0, 5);
+
+            return [
+                'Current app data snapshot from this browser/workspace:',
+                `Active view: ${activeWorkspaceView() || 'unknown'}.`,
+                `Current user role: ${currentAdmin?.isMainAdmin ? 'main admin' : currentAdmin?.role || currentUser?.role || 'unknown'}.`,
+                `Resources: ${resources.length}.`,
+                resourceTitles.length ? `Recent resource titles: ${resourceTitles.join('; ')}.` : 'Recent resource titles: none available.',
+                `Members: ${members.length}. Active/approved members: ${activeMembers}.`,
+                `Events: ${events.length}. Event registrations: ${registrations.length}.`,
+                `Welfare requests: ${welfare.length}. Pending welfare requests: ${pendingWelfare}.`,
+                `Donations: ${donations.length}. Payments: ${payments.length}.`,
+                `Saved research history items: ${researchHistory.length}.`,
+                'Use these counts directly when the user asks how many records/resources/items are in this workspace. Do not give navigation steps for a count question.'
+            ].join('\n');
+        };
+
         const workspaceContext = () => {
             const pageTitle = document.title || '';
-            if (document.body?.dataset?.aiContext) return document.body.dataset.aiContext;
-            if (/admin/i.test(pageTitle)) return 'admin workspace';
-            if (/officer/i.test(pageTitle)) return 'officer workspace';
-            if (document.getElementById('dashboardPage')?.classList.contains('active')) return 'student workspace';
-            return 'public website';
+            let label = 'public website';
+            if (document.body?.dataset?.aiContext) label = document.body.dataset.aiContext;
+            else if (/admin/i.test(pageTitle)) label = 'admin workspace';
+            else if (/officer/i.test(pageTitle)) label = 'officer workspace';
+            else if (document.getElementById('dashboardPage')?.classList.contains('active')) label = 'student workspace';
+            return `${label}\n\n${workspaceDataSnapshot()}`;
         };
 
         const aiEndpoint = () => {

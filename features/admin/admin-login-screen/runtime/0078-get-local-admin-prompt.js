@@ -1,7 +1,10 @@
 // Runtime slice from admin.js: getLocalAdminPrompt.
 function getLocalAdminPrompt() {
     if (useStaticAdminApi && window.SupabaseBackend?.enabled) {
-        return 'Login with the registered main admin email. New admins are added inside the admin panel.';
+        return 'Login with the registered Supabase admin email. Use Register Admin only for the first main admin setup.';
+    }
+    if (isHostedStaticAdminPage && !window.SupabaseBackend?.enabled) {
+        return 'Supabase is not configured for this hosted admin page. Add SUPABASE_URL and SUPABASE_ANON_KEY in Vercel, then redeploy.';
     }
     const count = getLocalAdminAccounts().length;
     if (count === 0) {

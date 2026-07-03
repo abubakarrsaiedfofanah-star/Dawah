@@ -1291,7 +1291,8 @@
 
         .admin-panel-footer {
             position: fixed;
-            right: 18px;
+            left: 18px;
+            right: auto;
             bottom: 18px;
             z-index: 999;
         }
@@ -1300,6 +1301,75 @@
             background: #ffffff;
             box-shadow: 0 10px 24px rgba(0, 48, 64, 0.16);
             font-weight: 700;
+        }
+
+        @media (min-width: 769px) {
+            .admin-login-screen {
+                min-height: 100vh;
+                align-items: center !important;
+                justify-content: center !important;
+                padding: 32px !important;
+            }
+
+            .admin-login-card {
+                width: min(100%, 468px) !important;
+                max-height: calc(100vh - 64px);
+                margin: auto !important;
+                overflow-y: auto;
+            }
+
+            .admin-auth-tabs {
+                display: flex;
+                justify-content: center;
+            }
+
+            .admin-auth-tabs .nav-item {
+                flex: 1 1 0;
+                text-align: center;
+            }
+
+            .admin-auth-tabs .nav-link {
+                width: 100%;
+                min-height: 44px;
+                display: inline-flex;
+                align-items: center;
+                justify-content: center;
+                white-space: normal;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .admin-login-screen {
+                min-height: 100svh;
+                align-items: flex-start !important;
+                justify-content: center !important;
+                padding: 16px !important;
+            }
+
+            .admin-login-card {
+                width: 100% !important;
+                max-width: 520px;
+                margin: 0 auto !important;
+                padding: 20px !important;
+                border-radius: 12px !important;
+            }
+
+            .admin-login-top-link {
+                justify-content: center;
+            }
+
+            .admin-auth-tabs {
+                display: grid;
+                grid-template-columns: 1fr;
+                gap: 6px;
+                border-bottom: 0;
+            }
+
+            .admin-auth-tabs .nav-link {
+                width: 100%;
+                border: 1px solid var(--admin-border);
+                border-radius: 8px;
+            }
         }
     </style>
 </head>
@@ -1419,9 +1489,9 @@
             </div>
         </div>
         <div class="admin-panel-footer">
-            <a class="btn btn-sm btn-outline-primary" href="install.html?v=20260613-dawah-name">
+            <button id="installAppButton" type="button" class="btn btn-sm btn-outline-primary" onclick="installAdminApp()">
                 <i class="fas fa-mobile-screen-button"></i> Install App
-            </a>
+            </button>
         </div>
     </div>
 
@@ -2574,6 +2644,46 @@
     <script src="ai_assistant_widget.js?v=dashboard-only-20260613-1"></script>
     <script src="supabase_config.js"></script>
     <script src="supabase_shared.js?v=supabase-ready-20260613-2"></script>
+    <script>
+        (function() {
+            function isStandaloneApp() {
+                return window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
+            }
+
+            function isAppInstalled() {
+                return localStorage.getItem('dawaahAppInstalled') === '1' || isStandaloneApp();
+            }
+
+            function updateAdminInstallButton() {
+                const button = document.getElementById('installAppButton');
+                const adminLocked = document.getElementById('adminContainer')?.classList.contains('locked');
+                if (!button) return;
+                button.classList.toggle('d-none', isAppInstalled() || adminLocked);
+            }
+
+            window.installAdminApp = function() {
+                const promptEvent = window.__dawaahDeferredInstallPrompt;
+                if (promptEvent) {
+                    promptEvent.prompt();
+                    promptEvent.userChoice.finally(() => {
+                        localStorage.setItem('dawaahAppInstalled', '1');
+                        updateAdminInstallButton();
+                    });
+                    window.__dawaahDeferredInstallPrompt = null;
+                    return;
+                }
+                window.location.href = 'install.html?v=20260613-dawah-name';
+            };
+
+            window.addEventListener('appinstalled', function() {
+                localStorage.setItem('dawaahAppInstalled', '1');
+                updateAdminInstallButton();
+            });
+
+            window.updateAdminInstallButton = updateAdminInstallButton;
+            document.addEventListener('DOMContentLoaded', updateAdminInstallButton);
+        })();
+    </script>
     <script src="admin.js?v=dawah-supabase-vercel-20260613-2"></script>
 </body>
 </html>

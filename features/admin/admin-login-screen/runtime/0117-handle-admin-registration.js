@@ -25,9 +25,13 @@ async function handleAdminRegistration(event) {
     button.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Creating...';
 
     try {
+        if (isHostedStaticAdminPage && !window.SupabaseBackend?.enabled) {
+            showAdminLogin('Supabase is not configured for this hosted admin page. Add SUPABASE_URL and SUPABASE_ANON_KEY in Vercel, then redeploy before registering an admin.');
+            return;
+        }
         if (useStaticAdminApi && window.SupabaseBackend?.enabled) {
             await window.SupabaseBackend.registerEmail(email, password).catch(error => {
-                if (/EMAIL_EXISTS/i.test(error.message || '')) {
+                if (/EMAIL_EXISTS|already registered|already exists|user already/i.test(error.message || '')) {
                     return window.SupabaseBackend.loginEmail(email, password);
                 }
                 throw error;

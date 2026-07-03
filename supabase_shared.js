@@ -11,9 +11,20 @@ const SupabaseBackendApi = (() => {
         realtime: true
     };
     const config = window.DAWAH_SUPABASE_CONFIG || window.DAWAAH_SUPABASE_CONFIG || legacyConfig;
-    const enabledHosts = config.enabledHosts || [];
+    function normalizeEnabledHost(host) {
+        const value = String(host || '').trim();
+        if (!value) return '';
+        try {
+            return new URL(value.includes('://') ? value : `https://${value}`).hostname.toLowerCase();
+        } catch (error) {
+            return value.replace(/^https?:\/\//i, '').split('/')[0].split(':')[0].toLowerCase();
+        }
+    }
+
+    const enabledHosts = (config.enabledHosts || []).map(normalizeEnabledHost).filter(Boolean);
+    const currentHost = location.hostname.toLowerCase();
     const enabledByHost = enabledHosts.length
-        ? enabledHosts.some(host => location.hostname === host || location.hostname.endsWith(`.${host}`))
+        ? enabledHosts.some(host => currentHost === host || currentHost.endsWith(`.${host}`))
         : true;
     const hasPlaceholderConfig = /YOUR_|YOUR-|PROJECT_REF|ANON_PUBLIC_KEY/i.test(`${config.url || ''} ${config.anonKey || ''}`);
     const enabled = Boolean(config.url && config.anonKey && enabledByHost && !hasPlaceholderConfig);
@@ -172,6 +183,10 @@ const SupabaseBackendApi = (() => {
         });
         if (error) throw error;
         if (data?.session) return saveAuthSession(data.session);
+        if (data?.user) {
+            saveAuthSession(data.user);
+            return { user: data.user, session: null, requiresEmailConfirmation: true };
+        }
 
         const loginResult = await db.auth.signInWithPassword({ email: normalizedEmail, password });
         if (loginResult.error) {

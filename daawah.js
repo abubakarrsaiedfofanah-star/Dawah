@@ -8246,11 +8246,12 @@ function markStudentNotificationRead(notificationId) {
 // Runtime slice from daawah.js: registerInstallableApp.
 function registerInstallableApp() {
     ensureAppManifestLink();
+    const skipAutomaticReload = navigator.webdriver === true;
     if ('serviceWorker' in navigator && location.protocol !== 'file:') {
         navigator.serviceWorker.register('service-worker.js')
             .then(registration => {
                 registration.update().catch(() => {});
-                if (!navigator.serviceWorker.controller && !sessionStorage.getItem('dawaahSwFirstControlReload')) {
+                if (!skipAutomaticReload && !navigator.serviceWorker.controller && !sessionStorage.getItem('dawaahSwFirstControlReload')) {
                     sessionStorage.setItem('dawaahSwFirstControlReload', '1');
                     setTimeout(() => window.location.reload(), 1200);
                 }
@@ -8272,6 +8273,7 @@ function registerInstallableApp() {
             const reloadKey = `serviceWorkerReloaded:${APP_VERSION}`;
             if (sessionStorage.getItem(reloadKey)) return;
             sessionStorage.setItem(reloadKey, '1');
+            if (skipAutomaticReload) return;
             window.location.reload();
         });
         navigator.serviceWorker.addEventListener('message', event => {
@@ -8279,6 +8281,7 @@ function registerInstallableApp() {
             const reloadKey = `serviceWorkerMessageReloaded:${APP_VERSION}`;
             if (sessionStorage.getItem(reloadKey)) return;
             sessionStorage.setItem(reloadKey, '1');
+            if (skipAutomaticReload) return;
             window.location.reload();
         });
     }

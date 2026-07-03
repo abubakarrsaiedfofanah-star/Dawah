@@ -414,6 +414,7 @@
                 <div class="text-center">
                     <p>&copy; 2026 UMMA University Dawah Team. All rights reserved.</p>
                 </div>
+                <div id="footerInstallWrapper" class="footer-install-wrapper"></div>
             </div>
         </footer>
     </div>
@@ -3304,6 +3305,62 @@
     <script src="ai_assistant_widget.js?v=dashboard-only-20260613-1"></script>
     <script src="supabase_config.js"></script>
     <script src="supabase_shared.js?v=supabase-ready-20260613-2"></script>
+    <script>
+        (function() {
+            function isStandaloneApp() {
+                return window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
+            }
+
+            function isAppInstalled() {
+                return localStorage.getItem('dawaahAppInstalled') === '1' || isStandaloneApp();
+            }
+
+            function updateFooterInstallButton() {
+                const wrapper = document.getElementById('footerInstallWrapper');
+                if (!wrapper) return;
+                const currentUser = localStorage.getItem('currentUser');
+                const dashboardPage = document.getElementById('dashboardPage');
+                if (!currentUser || !dashboardPage?.classList.contains('active')) {
+                    wrapper.innerHTML = '';
+                    return;
+                }
+                if (isAppInstalled()) {
+                    wrapper.innerHTML = '';
+                    return;
+                }
+                if (document.getElementById('installAppButton')) return;
+                wrapper.innerHTML = '<button type="button" id="installAppButton" class="btn btn-sm btn-outline-primary footer-install-button" onclick="installFromFooter()"><i class="fas fa-mobile-screen-button"></i> Install App</button>';
+            }
+
+            window.installFromFooter = function() {
+                const promptEvent = window.__dawaahDeferredInstallPrompt;
+                if (promptEvent) {
+                    promptEvent.prompt();
+                    promptEvent.userChoice.finally(() => {
+                        localStorage.setItem('dawaahAppInstalled', '1');
+                        updateFooterInstallButton();
+                    });
+                    window.__dawaahDeferredInstallPrompt = null;
+                    return;
+                }
+                window.location.href = 'install.html?v=20260613-dawah-name';
+            };
+
+            window.addEventListener('beforeinstallprompt', function(event) {
+                event.preventDefault();
+                window.__dawaahDeferredInstallPrompt = event;
+                updateFooterInstallButton();
+            });
+
+            window.addEventListener('appinstalled', function() {
+                localStorage.setItem('dawaahAppInstalled', '1');
+                updateFooterInstallButton();
+            });
+
+            window.updateFooterInstallButton = updateFooterInstallButton;
+            document.addEventListener('DOMContentLoaded', updateFooterInstallButton);
+        })();
+    </script>
     <script src="daawah.js?v=dawah-supabase-vercel-20260613-2"></script>
 </body>
 </html>

@@ -226,7 +226,9 @@ async function answerQuestion(question, context, mode, env) {
     'The portals include Student Login/Register, Officer Access, and Admin Login.',
     'Student workspace tasks include profile and registration details, resources/research, welfare requests, activities, reports, settings, and the digital membership card.',
     'Officer/admin workspaces include managing members, activities, welfare, resources, gallery/media, hadith content, reports, settings, and system checks depending on role.',
-    'When users ask how to use the website, give clear step-by-step navigation using the labels they can see on the page. Do not invent unavailable buttons or private permissions.'
+    'When users ask how to use the website, give clear step-by-step navigation using the labels they can see on the page. Do not invent unavailable buttons or private permissions.',
+    'When users ask for counts, totals, current records, or what is in the workspace now, use the Workspace context as the authoritative source and answer directly. Do not give navigation steps for count questions.',
+    'When users ask about external live facts such as sports fixtures, scores, news, prices, or schedules, use live sources if provided. If no live sources are provided, say you cannot verify the live/current answer from sources here, give the official source to check, and do not route the user through the UMMA website unless they specifically asked about website navigation.'
   ].join(' ');
 
   const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
@@ -247,6 +249,8 @@ async function answerQuestion(question, context, mode, env) {
             'Prefer high-quality structured answers over very short replies.',
             'Use headings, bullet points, examples, and action steps when useful.',
             'Use provided live search results when present. If no live search results are provided, do not claim live browsing or real-time updates.',
+            'Prefer a direct answer over navigation instructions when the user asks a direct factual or count question.',
+            'Never claim the UMMA website contains external sports schedules or current world event data unless the workspace context explicitly says so.',
             'If Islamic rulings are involved, be careful and remind the user to verify with qualified scholars.'
           ].join(' ')
         },

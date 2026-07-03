@@ -3,6 +3,7 @@ async function resolveAdminUser(username) {
     if (!window.SupabaseBackend?.enabled || !window.SupabaseBackend.hasAuthSession?.()) return null;
     const email = window.SupabaseBackend.currentEmail?.() || username;
     let adminRole = await window.SupabaseBackend.loadMyAdminRole?.().catch(() => null);
+    const isTruthyFlag = value => value === true || ['true', '1', 'yes'].includes(String(value || '').toLowerCase());
     if (!adminRole && String(email).toLowerCase() === 'abubakarrsaiedfofanah@gmail.com') {
         await window.SupabaseBackend.saveAdminRole?.({
             username: 'iman',
@@ -29,7 +30,7 @@ async function resolveAdminUser(username) {
         email,
         fullName: adminRole.fullName || adminRole.full_name || adminRole.username || username || email,
         role: adminRole.role || 'admin',
-        isMainAdmin: Boolean(adminRole.isMainAdmin),
+        isMainAdmin: isTruthyFlag(adminRole.isMainAdmin) || ['main-admin', 'main admin', 'super-admin', 'super admin'].includes(String(adminRole.role || '').toLowerCase()),
         csrf_token: 'supabase'
     };
 }

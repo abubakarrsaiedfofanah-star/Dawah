@@ -20,6 +20,11 @@ async function handleAdminLogin(event) {
     button.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Checking...';
 
     try {
+        if (isHostedStaticAdminPage && !window.SupabaseBackend?.enabled) {
+            recordAdminLoginFailure();
+            showAdminLogin('Supabase is not configured for this hosted admin page. Add SUPABASE_URL and SUPABASE_ANON_KEY in Vercel, make sure the live domain is allowed, then redeploy.');
+            return;
+        }
         if (useStaticAdminApi && window.SupabaseBackend?.enabled) {
             await window.SupabaseBackend.loginEmail(username, password);
             await window.SupabaseBackend.ensureRealtimeAuth?.(username, password).catch(error => {
@@ -67,9 +72,17 @@ async function handleAdminLogin(event) {
         setInterval(refreshAdminRegistrationCapture, ADMIN_REGISTRATION_CAPTURE_MS);
     } catch (loginError) {
         const rawMessage = loginError.message || '';
-        const friendlyMessage = /failed to fetch|networkerror|load failed/i.test(rawMessage)
-            ? 'Admin login could not reach the hosted backend. Check your internet connection, turn off Brave Shields/ad blocker for this site, then refresh and try again.'
-            : rawMessage || 'Unable to verify admin login. Please check the server and database.';
+        recordAdminLoginFailure();
+        let friendlyMessage = rawMessage || 'Unable to verify admin login. Please check the server and database.';
+        if (/invalid login credentials/i.test(rawMessage)) {
+            friendlyMessage = 'Supabase rejected this email or password. Check the password saved for this Auth user, or send a password reset email from Supabase/Auth.';
+        } else if (/email not confirmed|confirm/i.test(rawMessage)) {
+            friendlyMessage = 'This Supabase email is not confirmed yet. Confirm the user in Supabase Auth, then try again.';
+        } else if (/not registered as an admin/i.test(rawMessage)) {
+            friendlyMessage = 'Supabase login worked, but this user does not have an admin role row yet. Add this user uid to public.admin_roles as the main admin.';
+        } else if (/failed to fetch|networkerror|load failed/i.test(rawMessage)) {
+            friendlyMessage = 'Admin login could not reach Supabase or the hosted backend. Check your internet connection, disable blockers for this site, then refresh and try again.';
+        }
         showAdminLogin(friendlyMessage);
     } finally {
         button.disabled = false;

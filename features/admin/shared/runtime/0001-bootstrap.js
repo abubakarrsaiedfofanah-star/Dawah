@@ -23,6 +23,9 @@ const STATIC_ADMIN_HOSTS = [
 ];
 const useStaticAdminApi = location.protocol === 'file:'
     || STATIC_ADMIN_HOSTS.some(host => location.hostname === host || location.hostname.endsWith(`.${host}`));
+const isHostedStaticAdminPage = useStaticAdminApi
+    && location.protocol !== 'file:'
+    && !['localhost', '127.0.0.1'].includes(location.hostname);
 const LOCAL_ADMIN_ACCOUNTS_KEY = 'DawaahAdminAccounts';
 const LOCAL_ADMIN_CLEANUP_KEY = 'DawaahAdminAccountsMainOnlyCleanup20260509';
 const LOCAL_ADMIN_FULL_RESET_KEY = 'DawaahAdminFullReset20260509';

@@ -630,8 +630,10 @@ async function handleOfficerRegistration(event) {
                 await loadOfficerSharedMembers();
             }
             const member = registerOfficerLocally(data);
-            if (window.SupabaseBackend?.enabled) {
-                await window.SupabaseBackend.saveMember(member);
+            if (window.SupabaseBackend?.enabled && window.SupabaseBackend.hasAuthSession?.()) {
+                await window.SupabaseBackend.saveMember(member).catch(error => {
+                    console.warn('Officer member profile sync failed:', error);
+                });
             }
             showOfficerAlert('Officer registration submitted. The main admin must approve this role before login.', 'success');
             document.getElementById('officerRegisterForm').reset();
