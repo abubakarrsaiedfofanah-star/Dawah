@@ -174,6 +174,23 @@
             const currentAdmin = safeJson({})(sessionStorage.getItem('currentAdminUser'));
             const pendingWelfare = welfare.filter(item => /pending|review/i.test(String(item?.status || ''))).length;
             const activeMembers = members.filter(member => /active|approved/i.test(String(member?.status || ''))).length;
+            const students = members.filter(member => String(member?.role || 'student').toLowerCase() === 'student' || member?.studentId || member?.student_id);
+            const pendingStudents = students.filter(member => /pending/i.test(String(member?.status || member?.accountStatus || member?.membershipStatus || ''))).length;
+            const pendingRoleRequests = members.filter(member => {
+                const role = String(member?.role || 'student').toLowerCase();
+                const status = String(member?.status || member?.accountStatus || '').toLowerCase();
+                return role && role !== 'student' && !['active', 'approved', 'rejected', 'suspended'].includes(status);
+            });
+            const recentRegistrations = members
+                .slice()
+                .sort((a, b) => new Date(b?.registeredAt || b?.created_at || b?.createdAt || 0) - new Date(a?.registeredAt || a?.created_at || a?.createdAt || 0))
+                .slice(0, 5)
+                .map(member => {
+                    const name = member?.fullName || member?.name || [member?.first_name, member?.last_name].filter(Boolean).join(' ') || member?.studentId || member?.email || 'Unknown';
+                    const role = member?.role || 'student';
+                    const status = member?.status || member?.accountStatus || 'Active';
+                    return `${name} (${role}, ${status})`;
+                });
             const resourceTitles = resources
                 .map(item => item?.title || item?.name || item?.resource_title || '')
                 .filter(Boolean)
@@ -186,11 +203,14 @@
                 `Resources: ${resources.length}.`,
                 resourceTitles.length ? `Recent resource titles: ${resourceTitles.join('; ')}.` : 'Recent resource titles: none available.',
                 `Members: ${members.length}. Active/approved members: ${activeMembers}.`,
+                `Registered students: ${students.length}. Pending student statuses: ${pendingStudents}.`,
+                `Pending officer role requests: ${pendingRoleRequests.length}.`,
+                recentRegistrations.length ? `Recent registrations: ${recentRegistrations.join('; ')}.` : 'Recent registrations: none available.',
                 `Events: ${events.length}. Event registrations: ${registrations.length}.`,
                 `Welfare requests: ${welfare.length}. Pending welfare requests: ${pendingWelfare}.`,
                 `Donations: ${donations.length}. Payments: ${payments.length}.`,
                 `Saved research history items: ${researchHistory.length}.`,
-                'Use these counts directly when the user asks how many records/resources/items are in this workspace. Do not give navigation steps for a count question.'
+                'Use these counts and recent records directly when the user asks how many records/resources/items are in this workspace or whether a registration/request is present. Do not give navigation steps for workspace data questions.'
             ].join('\n');
         };
 

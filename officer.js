@@ -683,6 +683,10 @@ function registerOfficerStudentRecord(userId, data) {
     const formData = new FormData();
     Object.entries({
         user_id: userId,
+        role: data.role,
+        status: 'Pending',
+        account_status: 'Pending Approval',
+        membership_status: 'Pending Approval',
         first_name: data.first_name,
         last_name: data.last_name,
         student_id: data.student_id,

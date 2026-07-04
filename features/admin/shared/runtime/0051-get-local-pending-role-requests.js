@@ -1,7 +1,10 @@
 // Runtime slice from admin.js: getLocalPendingRoleRequests.
 function getLocalPendingRoleRequests() {
     return readStore('allMembers')
-        .filter(member => isSpecialRole(member.role) && String(member.status || '').toLowerCase() !== 'active')
+        .filter(member => {
+            const status = String(member.status || member.accountStatus || '').toLowerCase();
+            return isSpecialRole(member.role) && !['active', 'approved', 'rejected', 'suspended'].includes(status);
+        })
         .map(member => ({
             id: member.dbUserId || member.user_id || member.id || member.studentId || member.username,
             username: member.username || member.studentId || '',
