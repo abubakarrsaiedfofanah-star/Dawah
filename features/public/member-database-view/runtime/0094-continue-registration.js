@@ -2,10 +2,6 @@
 function continueRegistration(newUser, fullName, password) {
     if (frontendOnly && window.SupabaseBackend?.enabled) {
         window.SupabaseBackend.registerEmail(newUser.email, password)
-            .then(() => window.SupabaseBackend.ensureRealtimeAuth?.(newUser.email, password).catch(error => {
-                console.warn('Realtime auth unavailable after registration; using live refresh fallback:', error);
-            }))
-            .then(() => loadSharedMemberStore())
             .then(() => {
                 if (getRegisteredUser(newUser.studentId) || getRegisteredUser(newUser.email)) {
                     throw new Error('A user with this Student ID or email is already registered.');

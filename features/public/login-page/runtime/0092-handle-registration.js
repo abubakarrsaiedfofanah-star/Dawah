@@ -1,7 +1,6 @@
 // Runtime slice from daawah.js: handleRegistration.
 async function handleRegistration(e) {
     e.preventDefault();
-    await cloudStoresReadyPromise;
 
     const fullName = document.getElementById('fullName').value.trim();
     const studentId = normalizeStudentId(document.getElementById('studentId').value);

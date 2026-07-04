@@ -1259,7 +1259,6 @@ async function initializeApp() {
     allMembers = readList('allMembers');
     allEvents = readList('allEvents');
     cloudStoresReadyPromise = loadSharedMemberStore();
-    await cloudStoresReadyPromise;
     clearCachedStudentAccountsOnce();
 
     if (new URLSearchParams(location.search).get('dashboard') === '1' && window.SupabaseBackend?.enabled && window.SupabaseBackend.hasAuthSession()) {
@@ -1284,6 +1283,9 @@ async function initializeApp() {
             refreshUserSessionToken().catch(() => {});
         }
         showDashboard();
+        cloudStoresReadyPromise.catch(error => {
+            console.warn('Background member refresh failed during startup:', error);
+        });
     } else {
         document.documentElement.classList.remove('pending-auth-route');
         if (!showPublicHashSection()) {
@@ -1295,19 +1297,10 @@ async function initializeApp() {
 // Runtime slice from daawah.js: loadSharedMemberStore.
 async function loadSharedMemberStore() {
     if (!window.SupabaseBackend?.enabled || !window.SupabaseBackend.hasAuthSession()) return;
-    let member = null;
-    for (let attempt = 1; attempt <= 3; attempt++) {
-        member = await window.SupabaseBackend.loadMyMember().catch(error => {
-            if (attempt === 3) {
-                console.warn('Supabase member profile load failed:', error);
-            }
-            return null;
-        });
-        if (member) break;
-        if (attempt < 3) {
-            await new Promise(resolve => setTimeout(resolve, attempt * 600));
-        }
-    }
+    const member = await window.SupabaseBackend.loadMyMember().catch(error => {
+        console.warn('Supabase member profile load failed:', error);
+        return null;
+    });
     if (member) {
         allMembers = mergeMemberIntoList(allMembers, member);
         localStorage.setItem('allMembers', JSON.stringify(allMembers));
@@ -1757,12 +1750,14 @@ async function handleLogin(e) {
     if (frontendOnly && window.SupabaseBackend?.enabled) {
         try {
             await window.SupabaseBackend.loginEmail(username, password);
-            await window.SupabaseBackend.ensureRealtimeAuth?.(username, password).catch(error => {
-                console.warn('Realtime auth unavailable; using live refresh fallback:', error);
-            });
-            await loadSharedMemberStore();
+            if (!getRegisteredUser(username)) {
+                await loadSharedMemberStore();
+            }
         } catch (error) {
-            recordFailedLoginAttempt(error.message || 'Login failed. Use your registered email address.');
+            const message = /invalid path specified|failed to construct|invalid url/i.test(error.message || '')
+                ? 'Supabase URL is not the project API URL. In Vercel set SUPABASE_URL to https://PROJECT_REF.supabase.co, then redeploy.'
+                : (error.message || 'Login failed. Use your registered email address.');
+            recordFailedLoginAttempt(message);
             return;
         }
     } else {
@@ -1801,6 +1796,9 @@ async function handleLogin(e) {
 
     document.getElementById('loginForm').reset();
     showDashboard();
+    loadSharedMemberStore().catch(error => {
+        console.warn('Background member refresh failed after login:', error);
+    });
 }
 
 // Runtime slice from daawah.js: loginWithServerSession.
@@ -1898,7 +1896,6 @@ function updateLoginLockoutButton() {
 // Runtime slice from daawah.js: handleRegistration.
 async function handleRegistration(e) {
     e.preventDefault();
-    await cloudStoresReadyPromise;
 
     const fullName = document.getElementById('fullName').value.trim();
     const studentId = normalizeStudentId(document.getElementById('studentId').value);
@@ -2003,10 +2000,6 @@ function readImageAsDataUrl(file) {
 function continueRegistration(newUser, fullName, password) {
     if (frontendOnly && window.SupabaseBackend?.enabled) {
         window.SupabaseBackend.registerEmail(newUser.email, password)
-            .then(() => window.SupabaseBackend.ensureRealtimeAuth?.(newUser.email, password).catch(error => {
-                console.warn('Realtime auth unavailable after registration; using live refresh fallback:', error);
-            }))
-            .then(() => loadSharedMemberStore())
             .then(() => {
                 if (getRegisteredUser(newUser.studentId) || getRegisteredUser(newUser.email)) {
                     throw new Error('A user with this Student ID or email is already registered.');

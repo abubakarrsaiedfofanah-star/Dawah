@@ -2506,6 +2506,8 @@ async function handleAdminLogin(event) {
         let friendlyMessage = rawMessage || 'Unable to verify admin login. Please check the server and database.';
         if (/invalid login credentials/i.test(rawMessage)) {
             friendlyMessage = 'Supabase rejected this email or password. Check the password saved for this Auth user, or send a password reset email from Supabase/Auth.';
+        } else if (/invalid path specified|failed to construct|invalid url/i.test(rawMessage)) {
+            friendlyMessage = 'Supabase URL is not the project API URL. In Vercel set SUPABASE_URL to https://PROJECT_REF.supabase.co, then redeploy.';
         } else if (/email not confirmed|confirm/i.test(rawMessage)) {
             friendlyMessage = 'This Supabase email is not confirmed yet. Confirm the user in Supabase Auth, then try again.';
         } else if (/not registered as an admin/i.test(rawMessage)) {

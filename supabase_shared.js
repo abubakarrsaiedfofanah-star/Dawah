@@ -21,13 +21,45 @@ const SupabaseBackendApi = (() => {
         }
     }
 
+    function normalizeSupabaseUrl(url) {
+        const value = String(url || '').trim();
+        if (!value) return '';
+        if (/^[a-z0-9-]{15,}$/i.test(value) && !value.includes('.')) {
+            return `https://${value}.supabase.co`;
+        }
+        try {
+            const parsed = new URL(value.includes('://') ? value : `https://${value}`);
+            const dashboardRef = parsed.hostname === 'supabase.com'
+                ? parsed.pathname.match(/\/project\/([a-z0-9-]+)/i)?.[1]
+                : '';
+            if (dashboardRef) return `https://${dashboardRef}.supabase.co`;
+            if (parsed.hostname.endsWith('.supabase.co')) {
+                return `https://${parsed.hostname}`;
+            }
+        } catch (error) {
+            return value;
+        }
+        return value;
+    }
+
+    config.url = normalizeSupabaseUrl(config.url);
     const enabledHosts = (config.enabledHosts || []).map(normalizeEnabledHost).filter(Boolean);
     const currentHost = location.hostname.toLowerCase();
     const enabledByHost = enabledHosts.length
         ? enabledHosts.some(host => currentHost === host || currentHost.endsWith(`.${host}`))
         : true;
     const hasPlaceholderConfig = /YOUR_|YOUR-|PROJECT_REF|ANON_PUBLIC_KEY/i.test(`${config.url || ''} ${config.anonKey || ''}`);
-    const enabled = Boolean(config.url && config.anonKey && enabledByHost && !hasPlaceholderConfig);
+    const hasValidSupabaseUrl = /^https:\/\/[a-z0-9-]+\.supabase\.co$/i.test(config.url || '');
+    const enabled = Boolean(config.url && config.anonKey && enabledByHost && !hasPlaceholderConfig && hasValidSupabaseUrl);
+    const configError = !config.url
+        ? 'SUPABASE_URL is missing.'
+        : hasPlaceholderConfig
+            ? 'SUPABASE_URL or SUPABASE_ANON_KEY still contains a placeholder value.'
+            : !hasValidSupabaseUrl
+                ? 'SUPABASE_URL must look like https://PROJECT_REF.supabase.co. Copy Project URL from Supabase Project Settings > Data API.'
+                : !enabledByHost
+                    ? 'This domain is not listed in DAWAH_SUPABASE_ENABLED_HOSTS.'
+                    : '';
     const sdkUrl = 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2';
     let sdkPromise = null;
     let clientPromise = null;
@@ -54,7 +86,7 @@ const SupabaseBackendApi = (() => {
     }
 
     async function ensureSdk() {
-        if (!enabled) throw new Error('Supabase is not configured for this host.');
+        if (!enabled) throw new Error(configError || 'Supabase is not configured for this host.');
         if (sdkPromise) return sdkPromise;
         sdkPromise = loadExternalScript(sdkUrl).then(() => {
             if (!window.supabase?.createClient) throw new Error('Supabase SDK is unavailable.');
@@ -293,6 +325,22 @@ const SupabaseBackendApi = (() => {
         return (data || []).map(recordFromRow);
     }
 
+    async function findRecordByJsonField(collection, field, value) {
+        const lookup = String(value || '').trim();
+        if (!lookup) return null;
+        const db = await client();
+        const { data, error } = await db
+            .from('app_records')
+            .select('*')
+            .eq('collection', collectionName(collection))
+            .contains('data', { [field]: lookup })
+            .order('created_at', { ascending: false })
+            .limit(1)
+            .maybeSingle();
+        if (error) throw error;
+        return data ? recordFromRow(data) : null;
+    }
+
     async function loadRecord(collection, docId) {
         const db = await client();
         const { data, error } = await db
@@ -459,6 +507,16 @@ const SupabaseBackendApi = (() => {
     async function loadMyMember() {
         const uid = currentUid();
         const email = currentEmail();
+        const lookups = [
+            ['authUid', uid],
+            ['uid', uid],
+            ['authEmail', email],
+            ['email', email]
+        ].filter(([, value]) => value);
+        for (const [field, value] of lookups) {
+            const member = await findRecordByJsonField('members', field, value).catch(() => null);
+            if (member) return member;
+        }
         const records = await listRecords('members');
         return records.find(item => item.authUid === uid || item.uid === uid || item.authEmail === email || item.email === email) || null;
     }

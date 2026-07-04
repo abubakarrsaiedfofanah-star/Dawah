@@ -11,7 +11,6 @@ async function initializeApp() {
     allMembers = readList('allMembers');
     allEvents = readList('allEvents');
     cloudStoresReadyPromise = loadSharedMemberStore();
-    await cloudStoresReadyPromise;
     clearCachedStudentAccountsOnce();
 
     if (new URLSearchParams(location.search).get('dashboard') === '1' && window.SupabaseBackend?.enabled && window.SupabaseBackend.hasAuthSession()) {
@@ -36,6 +35,9 @@ async function initializeApp() {
             refreshUserSessionToken().catch(() => {});
         }
         showDashboard();
+        cloudStoresReadyPromise.catch(error => {
+            console.warn('Background member refresh failed during startup:', error);
+        });
     } else {
         document.documentElement.classList.remove('pending-auth-route');
         if (!showPublicHashSection()) {

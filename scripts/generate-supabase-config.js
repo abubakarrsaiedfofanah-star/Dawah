@@ -13,12 +13,33 @@ function normalizeEnabledHost(host) {
   }
 }
 
+function normalizeSupabaseUrl(url) {
+  const value = String(url || '').trim();
+  if (!value) return '';
+  if (/^[a-z0-9-]{15,}$/i.test(value) && !value.includes('.')) {
+    return `https://${value}.supabase.co`;
+  }
+  try {
+    const parsed = new URL(value.includes('://') ? value : `https://${value}`);
+    const dashboardRef = parsed.hostname === 'supabase.com'
+      ? parsed.pathname.match(/\/project\/([a-z0-9-]+)/i)?.[1]
+      : '';
+    if (dashboardRef) return `https://${dashboardRef}.supabase.co`;
+    if (parsed.hostname.endsWith('.supabase.co')) {
+      return `https://${parsed.hostname}`;
+    }
+  } catch (error) {
+    return value;
+  }
+  return value;
+}
+
 const config = {
-  url: process.env.DAWAH_SUPABASE_URL
+  url: normalizeSupabaseUrl(process.env.DAWAH_SUPABASE_URL
     || process.env.SUPABASE_URL
     || process.env.VITE_SUPABASE_URL
     || process.env.NEXT_PUBLIC_SUPABASE_URL
-    || '',
+    || ''),
   anonKey: process.env.DAWAH_SUPABASE_ANON_KEY
     || process.env.SUPABASE_ANON_KEY
     || process.env.VITE_SUPABASE_ANON_KEY

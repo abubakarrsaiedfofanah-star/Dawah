@@ -35,7 +35,10 @@ async function handleOfficerLogin(event) {
             localStorage.setItem('DawaahAccountClearVersion', '20260526-supabase-reset-v1');
             window.location.href = 'index.html?dashboard=1';
         } catch (error) {
-            showOfficerAlert(error.message || 'Officer login failed.', 'danger');
+            const message = /invalid path specified|failed to construct|invalid url/i.test(error.message || '')
+                ? 'Supabase URL is not the project API URL. In Vercel set SUPABASE_URL to https://PROJECT_REF.supabase.co, then redeploy.'
+                : (error.message || 'Officer login failed.');
+            showOfficerAlert(message, 'danger');
         } finally {
             setButtonLoading(button, false, '<i class="fas fa-right-to-bracket"></i> Login as Officer');
         }

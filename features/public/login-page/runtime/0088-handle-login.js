@@ -24,12 +24,14 @@ async function handleLogin(e) {
     if (frontendOnly && window.SupabaseBackend?.enabled) {
         try {
             await window.SupabaseBackend.loginEmail(username, password);
-            await window.SupabaseBackend.ensureRealtimeAuth?.(username, password).catch(error => {
-                console.warn('Realtime auth unavailable; using live refresh fallback:', error);
-            });
-            await loadSharedMemberStore();
+            if (!getRegisteredUser(username)) {
+                await loadSharedMemberStore();
+            }
         } catch (error) {
-            recordFailedLoginAttempt(error.message || 'Login failed. Use your registered email address.');
+            const message = /invalid path specified|failed to construct|invalid url/i.test(error.message || '')
+                ? 'Supabase URL is not the project API URL. In Vercel set SUPABASE_URL to https://PROJECT_REF.supabase.co, then redeploy.'
+                : (error.message || 'Login failed. Use your registered email address.');
+            recordFailedLoginAttempt(message);
             return;
         }
     } else {
@@ -68,4 +70,7 @@ async function handleLogin(e) {
 
     document.getElementById('loginForm').reset();
     showDashboard();
+    loadSharedMemberStore().catch(error => {
+        console.warn('Background member refresh failed after login:', error);
+    });
 }
