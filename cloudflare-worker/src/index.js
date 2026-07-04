@@ -205,8 +205,21 @@ function isCurrentWorldCupQuestion(question) {
     && /\b(today|tonight|now|live|score|scores|fixture|fixtures|game|games|match|matches|schedule)\b/.test(text);
 }
 
+function formatDateInTimeZone(date = new Date(), timeZone = 'Africa/Nairobi') {
+  const parts = new Intl.DateTimeFormat('en-CA', {
+    timeZone,
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit'
+  }).formatToParts(date).reduce((result, part) => {
+    result[part.type] = part.value;
+    return result;
+  }, {});
+  return `${parts.year}-${parts.month}-${parts.day}`;
+}
+
 function formatScoreboardDate(date = new Date()) {
-  return date.toISOString().slice(0, 10).replace(/-/g, '');
+  return formatDateInTimeZone(date).replace(/-/g, '');
 }
 
 function getTeamScore(competitor) {
@@ -251,6 +264,7 @@ function formatWorldCupEvent(event) {
 async function worldCupScoreboardAnswer(question) {
   if (!isCurrentWorldCupQuestion(question)) return null;
   const currentDate = new Date();
+  const localDate = formatDateInTimeZone(currentDate);
   const dateKey = formatScoreboardDate(currentDate);
   const scoreboardUrl = `https://site.api.espn.com/apis/site/v2/sports/soccer/fifa.world/scoreboard?dates=${dateKey}`;
   const response = await fetch(scoreboardUrl, { headers: { accept: 'application/json' } });
@@ -260,12 +274,12 @@ async function worldCupScoreboardAnswer(question) {
   const sourceBase = {
     title: 'ESPN FIFA World Cup scoreboard',
     url: 'https://www.espn.com/soccer/scoreboard/_/league/fifa.world',
-    description: `FIFA World Cup scoreboard for ${json?.day?.date || currentDate.toISOString().slice(0, 10)}.`,
+    description: `FIFA World Cup scoreboard for ${json?.day?.date || localDate}.`,
     age: ''
   };
   if (!events.length) {
     return {
-      answer: `I checked the live FIFA World Cup scoreboard for ${json?.day?.date || currentDate.toISOString().slice(0, 10)} and did not find any listed games for today. Verify on the official FIFA match centre or ESPN scoreboard in case fixtures have changed.`,
+      answer: `I checked the live FIFA World Cup scoreboard for ${json?.day?.date || localDate} and did not find any listed games for today. Verify on the official FIFA match centre or ESPN scoreboard in case fixtures have changed.`,
       model: 'espn-scoreboard',
       sources: [sourceBase],
       live_search: true,
@@ -274,7 +288,7 @@ async function worldCupScoreboardAnswer(question) {
   }
   const formatted = events.map(formatWorldCupEvent);
   const answer = [
-    `Today's FIFA World Cup games from the live scoreboard (${json?.day?.date || currentDate.toISOString().slice(0, 10)}):`,
+    `Today's FIFA World Cup games from the live scoreboard (${json?.day?.date || localDate}):`,
     '',
     ...formatted.map(item => `- ${item.line}`),
     '',
