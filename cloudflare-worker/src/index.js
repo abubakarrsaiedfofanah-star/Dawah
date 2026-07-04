@@ -126,9 +126,22 @@ function shouldUseLiveSearch(question, mode) {
   return mode === 'deep' || wantsFreshInformation(question);
 }
 
+function liveSearchQuery(question) {
+  const query = String(question || '').replace(/\s+/g, ' ').trim();
+  const lower = query.toLowerCase();
+  if (/\bworld cup\b/.test(lower) && /\b(today|tonight|now|live|score|scores|fixture|fixtures|game|games|match|matches|schedule)\b/.test(lower)) {
+    const year = new Date().getUTCFullYear();
+    return `${query} football soccer FIFA World Cup fixtures scores ${year}`.slice(0, 300);
+  }
+  if (/\b(world cup|fifa|football|soccer|afcon|uefa|premier league|laliga|nba|nfl|cricket|rugby)\b/.test(lower) && /\b(today|tonight|now|live|score|scores|fixture|fixtures|game|games|match|matches|schedule)\b/.test(lower)) {
+    return `${query} official fixtures scores today`.slice(0, 300);
+  }
+  return query.slice(0, 300);
+}
+
 function searchFreshnessWindow(question) {
   const text = String(question || '').toLowerCase();
-  if (/\b(today|now|right now|live|real[-\s]?time|breaking|latest news|news|price|prices|score|scores)\b/.test(text)) return 'pd';
+  if (/\b(today|tonight|now|right now|live|real[-\s]?time|breaking|latest news|news|price|prices|score|scores|fixture|fixtures|game|games|match|matches)\b/.test(text)) return 'pd';
   if (/\b(this week|weekly|recent|deadline|schedule)\b/.test(text)) return 'pw';
   if (/\b(this month|monthly|current law|current laws|law|laws|legal|regulation|regulations|statistics|stats|data|2026)\b/.test(text)) return 'py';
   return '';
@@ -138,7 +151,7 @@ async function liveWebSearch(question, env) {
   const key = String(env.BRAVE_SEARCH_API_KEY || '').trim();
   if (!key) return { enabled: false, sources: [], note: 'Live source lookup is unavailable for this answer.' };
 
-  const query = String(question || '').replace(/\s+/g, ' ').trim().slice(0, 300);
+  const query = liveSearchQuery(question);
   if (!query) return { enabled: true, sources: [], note: 'No search query was provided.' };
 
   const url = new URL('https://api.search.brave.com/res/v1/web/search');
@@ -186,11 +199,103 @@ function formatLiveSourcesForPrompt(sources) {
   }).join('\n\n');
 }
 
+function isCurrentWorldCupQuestion(question) {
+  const text = String(question || '').toLowerCase();
+  return /\bworld cup\b/.test(text)
+    && /\b(today|tonight|now|live|score|scores|fixture|fixtures|game|games|match|matches|schedule)\b/.test(text);
+}
+
+function formatScoreboardDate(date = new Date()) {
+  return date.toISOString().slice(0, 10).replace(/-/g, '');
+}
+
+function getTeamScore(competitor) {
+  if (!competitor) return '';
+  if (competitor.score !== undefined && competitor.score !== null) return String(competitor.score);
+  if (competitor.curatedRank?.current !== undefined && competitor.curatedRank?.current !== null) return '';
+  return '';
+}
+
+function getEventLink(event) {
+  const links = Array.isArray(event?.links) ? event.links : [];
+  const preferred = links.find(link => /summary|gamecast|live/i.test(String(link?.text || link?.shortText || '')))
+    || links.find(link => link?.href);
+  return preferred?.href || 'https://www.espn.com/soccer/scoreboard/_/league/fifa.world';
+}
+
+function formatWorldCupEvent(event) {
+  const competition = Array.isArray(event?.competitions) ? event.competitions[0] : null;
+  const competitors = Array.isArray(competition?.competitors) ? competition.competitors : [];
+  const away = competitors.find(item => item.homeAway === 'away') || competitors[0] || {};
+  const home = competitors.find(item => item.homeAway === 'home') || competitors[1] || {};
+  const awayName = away.team?.displayName || away.team?.shortDisplayName || event?.name?.split(' at ')?.[0] || 'Away team';
+  const homeName = home.team?.displayName || home.team?.shortDisplayName || event?.name?.split(' at ')?.[1] || 'Home team';
+  const awayScore = getTeamScore(away);
+  const homeScore = getTeamScore(home);
+  const scoreText = awayScore !== '' && homeScore !== '' ? `, ${awayName} ${awayScore} - ${homeScore} ${homeName}` : '';
+  const status = event?.status?.type?.shortDetail || event?.status?.type?.detail || event?.status?.type?.description || 'Scheduled';
+  const venue = competition?.venue?.fullName || event?.venue?.displayName || '';
+  const start = event?.date ? new Date(event.date).toISOString().replace('T', ' ').slice(0, 16) + ' UTC' : 'time not listed';
+  const note = competition?.notes?.[0]?.headline || competition?.altGameNote || '';
+  return {
+    line: `${awayName} vs ${homeName}: ${status}${scoreText}. Start: ${start}${venue ? `. Venue: ${venue}` : ''}${note ? `. ${note}` : ''}`,
+    source: {
+      title: `${awayName} vs ${homeName} - FIFA World Cup`,
+      url: getEventLink(event),
+      description: `${status}${scoreText}. ${start}${venue ? ` at ${venue}` : ''}`.trim(),
+      age: ''
+    }
+  };
+}
+
+async function worldCupScoreboardAnswer(question) {
+  if (!isCurrentWorldCupQuestion(question)) return null;
+  const currentDate = new Date();
+  const dateKey = formatScoreboardDate(currentDate);
+  const scoreboardUrl = `https://site.api.espn.com/apis/site/v2/sports/soccer/fifa.world/scoreboard?dates=${dateKey}`;
+  const response = await fetch(scoreboardUrl, { headers: { accept: 'application/json' } });
+  if (!response.ok) return null;
+  const json = await response.json();
+  const events = Array.isArray(json?.events) ? json.events : [];
+  const sourceBase = {
+    title: 'ESPN FIFA World Cup scoreboard',
+    url: 'https://www.espn.com/soccer/scoreboard/_/league/fifa.world',
+    description: `FIFA World Cup scoreboard for ${json?.day?.date || currentDate.toISOString().slice(0, 10)}.`,
+    age: ''
+  };
+  if (!events.length) {
+    return {
+      answer: `I checked the live FIFA World Cup scoreboard for ${json?.day?.date || currentDate.toISOString().slice(0, 10)} and did not find any listed games for today. Verify on the official FIFA match centre or ESPN scoreboard in case fixtures have changed.`,
+      model: 'espn-scoreboard',
+      sources: [sourceBase],
+      live_search: true,
+      live_search_note: ''
+    };
+  }
+  const formatted = events.map(formatWorldCupEvent);
+  const answer = [
+    `Today's FIFA World Cup games from the live scoreboard (${json?.day?.date || currentDate.toISOString().slice(0, 10)}):`,
+    '',
+    ...formatted.map(item => `- ${item.line}`),
+    '',
+    'Source: ESPN FIFA World Cup scoreboard. For official confirmation, also check FIFA.com.'
+  ].join('\n');
+  return {
+    answer,
+    model: 'espn-scoreboard',
+    sources: [sourceBase, ...formatted.map(item => item.source)],
+    live_search: true,
+    live_search_note: ''
+  };
+}
+
 async function answerQuestion(question, context, mode, env) {
   const wantsLong = wantsLongAnswer(question, mode);
   const wantsFresh = wantsFreshInformation(question);
   const instant = instantAnswer(question, mode);
   if (instant && !wantsLong) return { answer: instant, model: 'instant-cache' };
+  const sportsAnswer = await worldCupScoreboardAnswer(question).catch(() => null);
+  if (sportsAnswer && !wantsLong) return sportsAnswer;
 
   const model = env.GROQ_CHAT_MODEL || 'llama-3.1-8b-instant';
   const currentDate = new Date().toISOString().slice(0, 10);
@@ -226,9 +331,10 @@ async function answerQuestion(question, context, mode, env) {
     'The portals include Student Login/Register, Officer Access, and Admin Login.',
     'Student workspace tasks include profile and registration details, resources/research, welfare requests, activities, reports, settings, and the digital membership card.',
     'Officer/admin workspaces include managing members, activities, welfare, resources, gallery/media, hadith content, reports, settings, and system checks depending on role.',
+    'Pending officer role requests are reviewed by the main admin in the Admin Panel. Open admin.html, log in as the main admin, then check Role Requests, Pending Role Requests, or Members & Roles. Officers cannot approve pending roles from the Officer Portal, and there is no Officer Access Portal > Settings approval flow.',
     'When users ask how to use the website, give clear step-by-step navigation using the labels they can see on the page. Do not invent unavailable buttons or private permissions.',
     'When users ask for counts, totals, current records, or what is in the workspace now, use the Workspace context as the authoritative source and answer directly. Do not give navigation steps for count questions.',
-    'When users ask about external live facts such as sports fixtures, scores, news, prices, or schedules, use live sources if provided. If no live sources are provided, say you cannot verify the live/current answer from sources here, give the official source to check, and do not route the user through the UMMA website unless they specifically asked about website navigation.'
+    'When users ask about external live facts such as sports fixtures, scores, news, prices, or schedules, treat it as a general live-information request, not a UMMA website-content request. Use live sources if provided. If no live sources are provided, say you cannot verify the live/current answer from sources here, give the official source to check, and do not route the user through the UMMA website unless they specifically asked about website navigation.'
   ].join(' ');
 
   const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
@@ -251,6 +357,8 @@ async function answerQuestion(question, context, mode, env) {
             'Use provided live search results when present. If no live search results are provided, do not claim live browsing or real-time updates.',
             'Prefer a direct answer over navigation instructions when the user asks a direct factual or count question.',
             'Never claim the UMMA website contains external sports schedules or current world event data unless the workspace context explicitly says so.',
+            'For pending officer role requests, always direct the user to the Admin Panel for main-admin review; never say officers approve them from Officer Access Portal settings.',
+            'For sports, news, prices, schedules, and other live external facts, do not answer as if the user asked what is on the UMMA website.',
             'If Islamic rulings are involved, be careful and remind the user to verify with qualified scholars.'
           ].join(' ')
         },
@@ -364,7 +472,7 @@ function wantsLongAnswer(question, mode) {
 
 function wantsFreshInformation(question) {
   const text = String(question || '').toLowerCase();
-  return /\b(latest|current|currently|today|now|right now|this week|this month|this year|update|updates|news|recent|live|real[-\s]?time|price|prices|score|scores|schedule|deadline|law|laws|legal|regulation|regulations|source|sources|link|links|research|statistics|stats|data|dataset|datasets|2026)\b/.test(text);
+  return /\b(latest|current|currently|today|tonight|now|right now|this week|this month|this year|update|updates|news|recent|live|real[-\s]?time|price|prices|score|scores|fixture|fixtures|game|games|match|matches|schedule|deadline|law|laws|legal|regulation|regulations|source|sources|link|links|research|statistics|stats|data|dataset|datasets|2026)\b/.test(text);
 }
 
 export default {

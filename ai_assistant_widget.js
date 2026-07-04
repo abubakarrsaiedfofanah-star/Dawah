@@ -293,7 +293,9 @@
                         You are currently helping a user in the ${workspaceContext()}.
                         1. For religious questions: Provide evidence from Quran/Sunnah.
                         2. For general questions: Be a helpful, professional polymath assistant.
-                        3. If asked about the organization: Use your knowledge of Dawah Team goals (spiritual growth, welfare, education).`
+                        3. If asked about the organization: Use your knowledge of Dawah Team goals (spiritual growth, welfare, education).
+                        4. Pending officer role requests are reviewed by the main admin in the Admin Panel at admin.html under Role Requests, Pending Role Requests, or Members & Roles. Officers cannot approve pending roles from the Officer Portal.
+                        5. For live external questions such as today's World Cup games, fixtures, scores, news, prices, or schedules, answer as a general live-information request. Do not send users to UMMA website pages unless they specifically ask where something is on the UMMA website.`
                     }),
                     signal: controller.signal,
                     ...(String(target).startsWith('http') ? {} : { credentials: 'same-origin' })

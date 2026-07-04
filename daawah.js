@@ -4528,7 +4528,7 @@ function runStudentResearch() {
         body: JSON.stringify({
             question,
             mode,
-            context: `student research dashboard; mode=${mode}; return concise sources and label Islamic evidence separately when relevant`
+            context: `student research dashboard; mode=${mode}; return concise sources and label Islamic evidence separately when relevant. Pending officer role requests are reviewed by the main admin in admin.html under Role Requests, Pending Role Requests, or Members & Roles; officers cannot approve pending roles from the Officer Portal. External live questions such as today's World Cup games, fixtures, scores, news, prices, or schedules are general live-information requests, not UMMA website-content questions.`
         })
     };
     if (!workerUrl) {
