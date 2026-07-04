@@ -29,6 +29,18 @@ alter table public.app_stores enable row level security;
 alter table public.app_records enable row level security;
 alter table public.admin_roles enable row level security;
 
+drop policy if exists "Authenticated users can read app stores" on public.app_stores;
+drop policy if exists "Public users can read app stores" on public.app_stores;
+drop policy if exists "Authenticated users can write app stores" on public.app_stores;
+drop policy if exists "Authenticated users can read app records" on public.app_records;
+drop policy if exists "Public users can verify receipts and members" on public.app_records;
+drop policy if exists "Authenticated users can write app records" on public.app_records;
+drop policy if exists "Users can read their own admin role" on public.admin_roles;
+drop policy if exists "First authenticated user can create main admin role" on public.admin_roles;
+drop policy if exists "Authenticated admins can manage admin roles" on public.admin_roles;
+drop policy if exists "Authenticated users can read admin roles" on public.admin_roles;
+drop policy if exists "Authenticated users can write admin roles" on public.admin_roles;
+
 create policy "Authenticated users can read app stores"
     on public.app_stores for select
     to authenticated
@@ -66,26 +78,16 @@ create policy "Users can read their own admin role"
     to authenticated
     using (uid = auth.uid());
 
-create policy "First authenticated user can create main admin role"
-    on public.admin_roles for insert
+create policy "Authenticated users can read admin roles"
+    on public.admin_roles for select
     to authenticated
-    with check (
-        uid = auth.uid()
-        and not exists (select 1 from public.admin_roles)
-    );
+    using (true);
 
-create policy "Authenticated admins can manage admin roles"
+create policy "Authenticated users can write admin roles"
     on public.admin_roles for all
     to authenticated
-    using (exists (
-        select 1 from public.admin_roles roles
-        where roles.uid = auth.uid()
-    ))
-    with check (exists (
-        select 1 from public.admin_roles roles
-        where roles.uid = auth.uid()
-    ));
+    using (true)
+    with check (true);
 
 alter publication supabase_realtime add table public.app_stores;
 alter publication supabase_realtime add table public.app_records;
-
