@@ -199,6 +199,28 @@ function formatLiveSourcesForPrompt(sources) {
   }).join('\n\n');
 }
 
+function workspaceDirectAnswer(question, context) {
+  const text = String(question || '').toLowerCase();
+  const snapshot = String(context || '');
+  if (/\bpending\b/.test(text) && /\b(officer|role request|role requests)\b/.test(text)) {
+    const match = snapshot.match(/Pending officer role requests:\s*(\d+)/i);
+    if (match) {
+      const count = Number(match[1] || 0);
+      return count > 0
+        ? `Yes, you have ${count} pending officer role request${count === 1 ? '' : 's'} in this workspace.`
+        : 'No, you have 0 pending officer role requests in this workspace.';
+    }
+  }
+  if (/\b(student|students|registration|registrations)\b/.test(text) && /\bhow many|count|total|registered|do i have|any\b/.test(text)) {
+    const match = snapshot.match(/Registered students:\s*(\d+)/i);
+    if (match) {
+      const count = Number(match[1] || 0);
+      return `You have ${count} registered student${count === 1 ? '' : 's'} in this workspace.`;
+    }
+  }
+  return '';
+}
+
 function isCurrentWorldCupQuestion(question) {
   const text = String(question || '').toLowerCase();
   return /\bworld cup\b/.test(text)
@@ -306,6 +328,8 @@ async function worldCupScoreboardAnswer(question) {
 async function answerQuestion(question, context, mode, env) {
   const wantsLong = wantsLongAnswer(question, mode);
   const wantsFresh = wantsFreshInformation(question);
+  const workspaceAnswer = workspaceDirectAnswer(question, context);
+  if (workspaceAnswer && !wantsLong) return { answer: workspaceAnswer, model: 'workspace-snapshot' };
   const instant = instantAnswer(question, mode);
   if (instant && !wantsLong) return { answer: instant, model: 'instant-cache' };
   const sportsAnswer = await worldCupScoreboardAnswer(question).catch(() => null);
@@ -347,7 +371,7 @@ async function answerQuestion(question, context, mode, env) {
     'Officer/admin workspaces include managing members, activities, welfare, resources, gallery/media, hadith content, reports, settings, and system checks depending on role.',
     'Pending officer role requests are reviewed by the main admin in the Admin Panel. Open admin.html, log in as the main admin, then check Role Requests, Pending Role Requests, or Members & Roles. Officers cannot approve pending roles from the Officer Portal, and there is no Officer Access Portal > Settings approval flow.',
     'When users ask how to use the website, give clear step-by-step navigation using the labels they can see on the page. Do not invent unavailable buttons or private permissions.',
-    'When users ask for counts, totals, current records, or what is in the workspace now, use the Workspace context as the authoritative source and answer directly. Do not give navigation steps for count questions.',
+    'When users ask for counts, totals, current records, pending requests, or what is in the workspace now, use the Workspace context as the authoritative source and answer directly in the first sentence. If the count is zero, say that plainly. Do not give navigation steps, portal instructions, or how-to guidance unless the user explicitly asks how or where to check.',
     'When users ask about external live facts such as sports fixtures, scores, news, prices, or schedules, treat it as a general live-information request, not a UMMA website-content request. Use live sources if provided. If no live sources are provided, say you cannot verify the live/current answer from sources here, give the official source to check, and do not route the user through the UMMA website unless they specifically asked about website navigation.'
   ].join(' ');
 
@@ -369,7 +393,7 @@ async function answerQuestion(question, context, mode, env) {
             'Prefer high-quality structured answers over very short replies.',
             'Use headings, bullet points, examples, and action steps when useful.',
             'Use provided live search results when present. If no live search results are provided, do not claim live browsing or real-time updates.',
-            'Prefer a direct answer over navigation instructions when the user asks a direct factual or count question.',
+            'For direct workspace status questions, answer with the current count/status first and keep it brief. Do not include admin navigation unless the user asks how or where to check.',
             'Never claim the UMMA website contains external sports schedules or current world event data unless the workspace context explicitly says so.',
             'For pending officer role requests, always direct the user to the Admin Panel for main-admin review; never say officers approve them from Officer Access Portal settings.',
             'For sports, news, prices, schedules, and other live external facts, do not answer as if the user asked what is on the UMMA website.',

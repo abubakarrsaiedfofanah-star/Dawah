@@ -481,11 +481,22 @@ const SupabaseBackendApi = (() => {
     }
 
     async function saveMember(member) {
-        return createRecord('members', {
+        const payload = {
             ...member,
             authUid: member?.authUid || currentUid(),
             authEmail: member?.authEmail || currentEmail()
-        });
+        };
+        const ownedLookups = [
+            ['authUid', payload.authUid],
+            ['uid', payload.authUid],
+            ['authEmail', payload.authEmail],
+            ['email', payload.authEmail]
+        ].filter(([, value]) => value);
+        for (const [field, value] of ownedLookups) {
+            const existing = await findRecordByJsonField('members', field, value).catch(() => null);
+            if (existing?.supabaseId) return updateRecord('members', existing.supabaseId, payload);
+        }
+        return createRecord('members', payload);
     }
 
     async function updateMemberProfile(uid, member) {

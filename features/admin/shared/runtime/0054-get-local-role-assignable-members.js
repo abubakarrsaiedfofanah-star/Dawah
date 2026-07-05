@@ -1,7 +1,7 @@
 // Runtime slice from admin.js: getLocalRoleAssignableMembers.
 function getLocalRoleAssignableMembers() {
     return readStore('allMembers').map(member => ({
-        id: member.dbUserId || member.user_id || member.id || member.studentId || member.username,
+        id: getLocalMemberAdminId(member),
         username: member.username || member.studentId || '',
         email: member.email || '',
         role: member.role || 'student',

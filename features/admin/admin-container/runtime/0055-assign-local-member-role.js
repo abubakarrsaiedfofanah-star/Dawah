@@ -4,7 +4,7 @@ async function assignLocalMemberRole(request) {
     const role = String(request.role || 'student').toLowerCase();
     const status = String(request.status || 'active').toLowerCase() === 'inactive' ? 'Inactive' : 'Active';
     const members = readStore('allMembers');
-    const target = members.find(member => String(member.dbUserId || member.user_id || member.id || member.studentId || member.username) === String(userId));
+    const target = findLocalMemberByAdminId(members, userId);
     if (!target) {
         return { success: false, message: 'Member not found.' };
     }
@@ -22,8 +22,9 @@ async function assignLocalMemberRole(request) {
     writeStore('allMembers', members.map(member =>
         member === target ? updatedTarget : member
     ));
-    if (window.SupabaseBackend?.enabled && window.SupabaseBackend.updateMemberProfile && (target.uid || target.id)) {
-        await window.SupabaseBackend.updateMemberProfile(target.uid || target.id, updatedTarget);
+    const cloudUserId = target.uid || target.authUid || target.id || target.supabaseId;
+    if (window.SupabaseBackend?.enabled && window.SupabaseBackend.updateMemberProfile && cloudUserId) {
+        await window.SupabaseBackend.updateMemberProfile(cloudUserId, updatedTarget);
     }
     logLocalAdminActivity('assignMemberRole', { user_id: userId, role, status, username: target.username || target.studentId || '' });
     return { success: true, message: 'Member role updated' };

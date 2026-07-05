@@ -1,4 +1,15 @@
 // Runtime slice from admin.js: clearStoredAdminAccountsOnce.
+const FULL_LOCAL_STORAGE_RESET_VERSION = '20260705-full-local-reset-v1';
+
+function clearAllLocalAppStorageOnce() {
+    if (localStorage.getItem('DawaahFullLocalStorageResetVersion') === FULL_LOCAL_STORAGE_RESET_VERSION) return;
+    localStorage.clear();
+    sessionStorage.clear();
+    localStorage.setItem('DawaahFullLocalStorageResetVersion', FULL_LOCAL_STORAGE_RESET_VERSION);
+}
+
+clearAllLocalAppStorageOnce();
+
 function clearStoredAdminAccountsOnce() {
     if (localStorage.getItem(LOCAL_ADMIN_ACCOUNT_CLEAR_KEY) === '1') return;
     [

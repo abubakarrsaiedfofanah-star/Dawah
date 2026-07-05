@@ -140,7 +140,13 @@ test.describe('portal workflow audit', () => {
 
     async function cleanupPilotAccounts() {
       if (page.isClosed()) return;
+      await page.goto('/index.html', { waitUntil: 'domcontentloaded' }).catch(() => {});
       await page.evaluate(emails => {
+        try {
+          void localStorage.length;
+        } catch (error) {
+          return;
+        }
         const removePilotRows = key => {
           const rows = JSON.parse(localStorage.getItem(key) || '[]');
           if (!Array.isArray(rows)) return;
@@ -174,8 +180,9 @@ test.describe('portal workflow audit', () => {
         const before = JSON.parse(localStorage.getItem('allMembers') || '[]');
         const officerRecord = before.find(member => member.email === officerEmail);
         const studentRecord = before.find(member => member.email === studentEmail);
-        const officerUserId = officerRecord?.dbUserId || officerRecord?.user_id || officerRecord?.id || officerRecord?.studentId || officerRecord?.username;
-        const studentUserId = studentRecord?.dbUserId || studentRecord?.user_id || studentRecord?.id || studentRecord?.studentId || studentRecord?.username;
+        const idFor = member => member?.uid || member?.authUid || member?.supabaseId || member?.dbUserId || member?.user_id || member?.id || member?.studentId || member?.username;
+        const officerUserId = idFor(officerRecord);
+        const studentUserId = idFor(studentRecord);
         const approve = await window.handleStaticAdminApi('approveRoleRequest', 'POST', { user_id: officerUserId });
         const assign = await window.handleStaticAdminApi('assignMemberRole', 'POST', { user_id: studentUserId, role: 'organizer', status: 'active' });
         return {

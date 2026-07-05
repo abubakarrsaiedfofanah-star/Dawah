@@ -85,6 +85,17 @@ let adminSessionWarningId = null;
 let adminRealtimeUnsubscribers = [];
 
 // Runtime slice from admin.js: clearStoredAdminAccountsOnce.
+const FULL_LOCAL_STORAGE_RESET_VERSION = '20260705-full-local-reset-v1';
+
+function clearAllLocalAppStorageOnce() {
+    if (localStorage.getItem('DawaahFullLocalStorageResetVersion') === FULL_LOCAL_STORAGE_RESET_VERSION) return;
+    localStorage.clear();
+    sessionStorage.clear();
+    localStorage.setItem('DawaahFullLocalStorageResetVersion', FULL_LOCAL_STORAGE_RESET_VERSION);
+}
+
+clearAllLocalAppStorageOnce();
+
 function clearStoredAdminAccountsOnce() {
     if (localStorage.getItem(LOCAL_ADMIN_ACCOUNT_CLEAR_KEY) === '1') return;
     [
@@ -841,6 +852,31 @@ function isSpecialRole(role) {
 }
 
 // Runtime slice from admin.js: getLocalPendingRoleRequests.
+function getLocalMemberAdminId(member = {}) {
+    return member.dbUserId || member.user_id || member.uid || member.authUid || member.id || member.supabaseId || member.studentId || member.username || member.email || '';
+}
+
+function localMemberMatchesAdminId(member = {}, userId = '') {
+    const lookup = String(userId || '').trim().toLowerCase();
+    if (!lookup) return false;
+    return [
+        member.dbUserId,
+        member.user_id,
+        member.uid,
+        member.authUid,
+        member.id,
+        member.supabaseId,
+        member.studentId,
+        member.username,
+        member.email,
+        member.authEmail
+    ].some(value => String(value || '').trim().toLowerCase() === lookup);
+}
+
+function findLocalMemberByAdminId(members = [], userId = '') {
+    return members.find(member => localMemberMatchesAdminId(member, userId));
+}
+
 function getLocalPendingRoleRequests() {
     return readStore('allMembers')
         .filter(member => {
@@ -848,7 +884,7 @@ function getLocalPendingRoleRequests() {
             return isSpecialRole(member.role) && !['active', 'approved', 'rejected', 'suspended'].includes(status);
         })
         .map(member => ({
-            id: member.dbUserId || member.user_id || member.id || member.studentId || member.username,
+            id: getLocalMemberAdminId(member),
             username: member.username || member.studentId || '',
             email: member.email || '',
             role: member.role || 'student',
@@ -866,7 +902,7 @@ function getLocalPendingRoleRequests() {
 // Runtime slice from admin.js: approveLocalRoleRequest.
 async function approveLocalRoleRequest(userId) {
     const members = readStore('allMembers');
-    const target = members.find(member => String(member.dbUserId || member.user_id || member.id || member.studentId || member.username) === String(userId));
+    const target = findLocalMemberByAdminId(members, userId);
     if (!target || !isSpecialRole(target.role)) {
         return { success: false, message: 'Role request not found.' };
     }
@@ -880,8 +916,9 @@ async function approveLocalRoleRequest(userId) {
     }
     const updatedTarget = { ...target, status: 'Active', approvedBy: currentAdmin?.email || currentAdmin?.username || 'Main Admin', approvedAt: new Date().toISOString() };
     writeStore('allMembers', members.map(member => member === target ? updatedTarget : member));
-    if (window.SupabaseBackend?.enabled && window.SupabaseBackend.updateMemberProfile && (target.uid || target.id)) {
-        await window.SupabaseBackend.updateMemberProfile(target.uid || target.id, updatedTarget);
+    const cloudUserId = target.uid || target.authUid || target.id || target.supabaseId;
+    if (window.SupabaseBackend?.enabled && window.SupabaseBackend.updateMemberProfile && cloudUserId) {
+        await window.SupabaseBackend.updateMemberProfile(cloudUserId, updatedTarget);
     }
     logLocalAdminActivity('approveRoleRequest', { user_id: userId, role: target.role, username: target.username || target.studentId || '' });
     return { success: true, message: 'Role request approved' };
@@ -890,14 +927,15 @@ async function approveLocalRoleRequest(userId) {
 // Runtime slice from admin.js: rejectLocalRoleRequest.
 async function rejectLocalRoleRequest(userId) {
     const members = readStore('allMembers');
-    const target = members.find(member => String(member.dbUserId || member.user_id || member.id || member.studentId || member.username) === String(userId));
+    const target = findLocalMemberByAdminId(members, userId);
     if (!target || !isSpecialRole(target.role)) {
         return { success: false, message: 'Role request not found.' };
     }
     const updatedTarget = { ...target, rejectedRole: target.role, role: 'student', status: 'Suspended', rejectedBy: currentAdmin?.email || currentAdmin?.username || 'Main Admin', rejectedAt: new Date().toISOString() };
     writeStore('allMembers', members.map(member => member === target ? updatedTarget : member));
-    if (window.SupabaseBackend?.enabled && window.SupabaseBackend.updateMemberProfile && (target.uid || target.id)) {
-        await window.SupabaseBackend.updateMemberProfile(target.uid || target.id, updatedTarget);
+    const cloudUserId = target.uid || target.authUid || target.id || target.supabaseId;
+    if (window.SupabaseBackend?.enabled && window.SupabaseBackend.updateMemberProfile && cloudUserId) {
+        await window.SupabaseBackend.updateMemberProfile(cloudUserId, updatedTarget);
     }
     logLocalAdminActivity('rejectRoleRequest', { user_id: userId, role: target.role, username: target.username || target.studentId || '' });
     return { success: true, message: 'Role request rejected' };
@@ -906,7 +944,7 @@ async function rejectLocalRoleRequest(userId) {
 // Runtime slice from admin.js: getLocalRoleAssignableMembers.
 function getLocalRoleAssignableMembers() {
     return readStore('allMembers').map(member => ({
-        id: member.dbUserId || member.user_id || member.id || member.studentId || member.username,
+        id: getLocalMemberAdminId(member),
         username: member.username || member.studentId || '',
         email: member.email || '',
         role: member.role || 'student',
@@ -926,7 +964,7 @@ async function assignLocalMemberRole(request) {
     const role = String(request.role || 'student').toLowerCase();
     const status = String(request.status || 'active').toLowerCase() === 'inactive' ? 'Inactive' : 'Active';
     const members = readStore('allMembers');
-    const target = members.find(member => String(member.dbUserId || member.user_id || member.id || member.studentId || member.username) === String(userId));
+    const target = findLocalMemberByAdminId(members, userId);
     if (!target) {
         return { success: false, message: 'Member not found.' };
     }
@@ -944,8 +982,9 @@ async function assignLocalMemberRole(request) {
     writeStore('allMembers', members.map(member =>
         member === target ? updatedTarget : member
     ));
-    if (window.SupabaseBackend?.enabled && window.SupabaseBackend.updateMemberProfile && (target.uid || target.id)) {
-        await window.SupabaseBackend.updateMemberProfile(target.uid || target.id, updatedTarget);
+    const cloudUserId = target.uid || target.authUid || target.id || target.supabaseId;
+    if (window.SupabaseBackend?.enabled && window.SupabaseBackend.updateMemberProfile && cloudUserId) {
+        await window.SupabaseBackend.updateMemberProfile(cloudUserId, updatedTarget);
     }
     logLocalAdminActivity('assignMemberRole', { user_id: userId, role, status, username: target.username || target.studentId || '' });
     return { success: true, message: 'Member role updated' };

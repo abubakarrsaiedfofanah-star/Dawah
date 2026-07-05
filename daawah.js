@@ -150,6 +150,17 @@ let contactVoiceChunks = [];
 let contactVoiceBlob = null;
 
 // Runtime slice from daawah.js: clearStoredAccountsOnce.
+const FULL_LOCAL_STORAGE_RESET_VERSION = '20260705-full-local-reset-v1';
+
+function clearAllLocalAppStorageOnce() {
+    if (localStorage.getItem('DawaahFullLocalStorageResetVersion') === FULL_LOCAL_STORAGE_RESET_VERSION) return;
+    localStorage.clear();
+    sessionStorage.clear();
+    localStorage.setItem('DawaahFullLocalStorageResetVersion', FULL_LOCAL_STORAGE_RESET_VERSION);
+}
+
+clearAllLocalAppStorageOnce();
+
 function clearStoredAccountsOnce() {
     if (localStorage.getItem('DawaahAccountClearVersion') === ACCOUNT_CLEAR_VERSION) return;
     const savedUser = getStoredCurrentUser();
@@ -1921,19 +1932,21 @@ async function handleRegistration(e) {
         return;
     }
 
-    if (getRegisteredUser(studentId) || getRegisteredUser(email)) {
+    const supabaseRegistration = Boolean(frontendOnly && window.SupabaseBackend?.enabled);
+
+    if (!supabaseRegistration && (getRegisteredUser(studentId) || getRegisteredUser(email))) {
         recordSuspiciousActivity('duplicate_registration_attempt', { studentId, email, reason: 'registered user match' });
         alert('A user with this Student ID or email is already registered. Please login or use forgot password.');
         return;
     }
 
-    if (allMembers.some(member => normalizeStudentId(member.studentId || member.username) === studentId || String(member.email || '').toLowerCase() === email || (phone && String(member.phone || '').trim() === phone))) {
+    if (!supabaseRegistration && allMembers.some(member => normalizeStudentId(member.studentId || member.username) === studentId || String(member.email || '').toLowerCase() === email || (phone && String(member.phone || '').trim() === phone))) {
         recordSuspiciousActivity('duplicate_registration_attempt', { studentId, email, phone, reason: 'student/email/phone match' });
         alert('This Student ID, email, or phone number is already registered. Please login or contact admin.');
         return;
     }
 
-    if (frontendOnly && allMembers.some(member => member.password && member.password === password)) {
+    if (frontendOnly && !supabaseRegistration && allMembers.some(member => member.password && member.password === password)) {
         alert('Please choose a different password. Each student must use a unique password.');
         return;
     }
@@ -2000,9 +2013,24 @@ function readImageAsDataUrl(file) {
 function continueRegistration(newUser, fullName, password) {
     if (frontendOnly && window.SupabaseBackend?.enabled) {
         window.SupabaseBackend.registerEmail(newUser.email, password)
-            .then(() => {
-                if (getRegisteredUser(newUser.studentId) || getRegisteredUser(newUser.email)) {
-                    throw new Error('A user with this Student ID or email is already registered.');
+            .then(async () => {
+                const cloudMembers = await window.SupabaseBackend.listMembers?.().catch(error => {
+                    console.warn('Could not verify cloud duplicate members before profile save:', error);
+                    return null;
+                });
+                if (Array.isArray(cloudMembers)) {
+                    const studentId = normalizeStudentId(newUser.studentId || newUser.username);
+                    const email = String(newUser.email || '').trim().toLowerCase();
+                    const currentUid = window.SupabaseBackend.currentUid?.() || '';
+                    const duplicate = cloudMembers.find(member => {
+                        const sameCurrentUser = currentUid && String(member.authUid || member.uid || '').trim() === currentUid;
+                        if (sameCurrentUser) return false;
+                        return normalizeStudentId(member.studentId || member.username) === studentId
+                            || String(member.email || member.authEmail || '').trim().toLowerCase() === email;
+                    });
+                    if (duplicate) {
+                        throw new Error('A user with this Student ID or email is already registered.');
+                    }
                 }
                 return completeLocalRegistration(newUser);
             })

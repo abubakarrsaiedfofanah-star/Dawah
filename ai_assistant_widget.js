@@ -210,7 +210,7 @@
                 `Welfare requests: ${welfare.length}. Pending welfare requests: ${pendingWelfare}.`,
                 `Donations: ${donations.length}. Payments: ${payments.length}.`,
                 `Saved research history items: ${researchHistory.length}.`,
-                'Use these counts and recent records directly when the user asks how many records/resources/items are in this workspace or whether a registration/request is present. Do not give navigation steps for workspace data questions.'
+                'For workspace data questions, answer the data directly in the first sentence using these counts and recent records. If the answer is zero, say that plainly. Do not give navigation steps, portal instructions, or how-to guidance unless the user explicitly asks how or where to check.'
             ].join('\n');
         };
 
@@ -315,7 +315,8 @@
                         2. For general questions: Be a helpful, professional polymath assistant.
                         3. If asked about the organization: Use your knowledge of Dawah Team goals (spiritual growth, welfare, education).
                         4. Pending officer role requests are reviewed by the main admin in the Admin Panel at admin.html under Role Requests, Pending Role Requests, or Members & Roles. Officers cannot approve pending roles from the Officer Portal.
-                        5. For live external questions such as today's World Cup games, fixtures, scores, news, prices, or schedules, answer as a general live-information request. Do not send users to UMMA website pages unless they specifically ask where something is on the UMMA website.`
+                        5. For direct workspace status questions like "do I have pending officers", "how many students", or "any pending requests", answer with the current count/status first and do not explain navigation unless the user asks how to check.
+                        6. For live external questions such as today's World Cup games, fixtures, scores, news, prices, or schedules, answer as a general live-information request. Do not send users to UMMA website pages unless they specifically ask where something is on the UMMA website.`
                     }),
                     signal: controller.signal,
                     ...(String(target).startsWith('http') ? {} : { credentials: 'same-origin' })

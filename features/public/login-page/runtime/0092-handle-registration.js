@@ -26,19 +26,21 @@ async function handleRegistration(e) {
         return;
     }
 
-    if (getRegisteredUser(studentId) || getRegisteredUser(email)) {
+    const supabaseRegistration = Boolean(frontendOnly && window.SupabaseBackend?.enabled);
+
+    if (!supabaseRegistration && (getRegisteredUser(studentId) || getRegisteredUser(email))) {
         recordSuspiciousActivity('duplicate_registration_attempt', { studentId, email, reason: 'registered user match' });
         alert('A user with this Student ID or email is already registered. Please login or use forgot password.');
         return;
     }
 
-    if (allMembers.some(member => normalizeStudentId(member.studentId || member.username) === studentId || String(member.email || '').toLowerCase() === email || (phone && String(member.phone || '').trim() === phone))) {
+    if (!supabaseRegistration && allMembers.some(member => normalizeStudentId(member.studentId || member.username) === studentId || String(member.email || '').toLowerCase() === email || (phone && String(member.phone || '').trim() === phone))) {
         recordSuspiciousActivity('duplicate_registration_attempt', { studentId, email, phone, reason: 'student/email/phone match' });
         alert('This Student ID, email, or phone number is already registered. Please login or contact admin.');
         return;
     }
 
-    if (frontendOnly && allMembers.some(member => member.password && member.password === password)) {
+    if (frontendOnly && !supabaseRegistration && allMembers.some(member => member.password && member.password === password)) {
         alert('Please choose a different password. Each student must use a unique password.');
         return;
     }

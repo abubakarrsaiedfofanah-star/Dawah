@@ -1,4 +1,15 @@
 // Runtime slice from daawah.js: clearStoredAccountsOnce.
+const FULL_LOCAL_STORAGE_RESET_VERSION = '20260705-full-local-reset-v1';
+
+function clearAllLocalAppStorageOnce() {
+    if (localStorage.getItem('DawaahFullLocalStorageResetVersion') === FULL_LOCAL_STORAGE_RESET_VERSION) return;
+    localStorage.clear();
+    sessionStorage.clear();
+    localStorage.setItem('DawaahFullLocalStorageResetVersion', FULL_LOCAL_STORAGE_RESET_VERSION);
+}
+
+clearAllLocalAppStorageOnce();
+
 function clearStoredAccountsOnce() {
     if (localStorage.getItem('DawaahAccountClearVersion') === ACCOUNT_CLEAR_VERSION) return;
     const savedUser = getStoredCurrentUser();
