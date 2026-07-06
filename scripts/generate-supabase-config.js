@@ -39,11 +39,16 @@ const config = {
     || process.env.SUPABASE_URL
     || process.env.VITE_SUPABASE_URL
     || process.env.NEXT_PUBLIC_SUPABASE_URL
+    || process.env.PUBLIC_SUPABASE_URL
+    || process.env.SUPABASE_PROJECT_URL
     || ''),
   anonKey: process.env.DAWAH_SUPABASE_ANON_KEY
     || process.env.SUPABASE_ANON_KEY
     || process.env.VITE_SUPABASE_ANON_KEY
     || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+    || process.env.PUBLIC_SUPABASE_ANON_KEY
+    || process.env.SUPABASE_PUBLIC_ANON_KEY
+    || process.env.SUPABASE_ANON_PUBLIC_KEY
     || '',
   enabledHosts: (process.env.DAWAH_SUPABASE_ENABLED_HOSTS || 'localhost,127.0.0.1,vercel.app,dawah-six.vercel.app,www.dawah-six.vercel.app,66ghz.com,www.66ghz.com')
     .split(',')
@@ -54,7 +59,11 @@ const config = {
 
 const isHostedBuild = process.env.VERCEL || process.env.CI;
 if (isHostedBuild && (!config.url || !config.anonKey)) {
-  console.error('Supabase config is missing. Set SUPABASE_URL and SUPABASE_ANON_KEY in Vercel, then redeploy.');
+  const missing = [
+    !config.url ? 'SUPABASE_URL' : '',
+    !config.anonKey ? 'SUPABASE_ANON_KEY' : ''
+  ].filter(Boolean).join(' and ');
+  console.error(`Supabase config is missing ${missing}. Set SUPABASE_URL and SUPABASE_ANON_KEY in Vercel, then redeploy.`);
   process.exit(1);
 }
 

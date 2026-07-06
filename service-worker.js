@@ -1,4 +1,4 @@
-const DAWAAH_CACHE = 'dawah-shell-supabase-v3'; // Supabase: bump cache after Vercel backend readiness update.
+const DAWAAH_CACHE = 'dawah-shell-supabase-v4'; // Supabase: bump cache after config cache-bust update.
 const SHELL_ASSETS = [
   './',
   './index.html',
@@ -12,6 +12,7 @@ const SHELL_ASSETS = [
   './ai_worker_config.js',
   './ai_assistant_widget.js',
   './ai_assistant_widget.css', // Supabase: Removed Supabase_shared.js
+  './supabase_config.js',
   './supabase_shared.js', // Supabase: Added supabase_shared.js
   './admin.html',
   './admin.js',
@@ -64,7 +65,7 @@ self.addEventListener('fetch', event => {
   if (request.method !== 'GET' || url.origin !== self.location.origin || url.pathname.endsWith('.php')) return;
 
   const isShellAsset = request.mode === 'navigate' ||
-    /\/(index\.html|install\.html|offline\.html|verify-receipt\.html|verify-member\.html|daawah\.css|daawah\.js|admin\.js|officer\.js|supabase_shared\.js|canonical_redirect\.js|ai_worker_config\.js|ai_assistant_widget\.js|ai_assistant_widget\.css|manifest\.webmanifest|version\.json|service-worker\.js)$/i.test(url.pathname); // Supabase: Updated regex for supabase_shared.js
+    /\/(index\.html|install\.html|offline\.html|verify-receipt\.html|verify-member\.html|daawah\.css|daawah\.js|admin\.js|officer\.js|supabase_config\.js|supabase_shared\.js|canonical_redirect\.js|ai_worker_config\.js|ai_assistant_widget\.js|ai_assistant_widget\.css|manifest\.webmanifest|version\.json|service-worker\.js)$/i.test(url.pathname); // Supabase: Updated regex for Supabase runtime files.
 
   if (isShellAsset) {
     event.respondWith(

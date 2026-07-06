@@ -121,7 +121,7 @@ const schoolCourseCatalog = {
 const schoolOptions = Object.keys(schoolCourseCatalog);
 const yearOptions = ['1', '2', '3', '4', '5', '6'];
 const semesterOptions = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12'];
-const localStudentClearVersion = '2026-05-17-clear-student-accounts';
+const localStudentClearVersion = '2026-07-07-clear-student-local-accounts';
 const defaultActivities = [];
 const defaultVolunteerOpportunities = [];
 
@@ -142,7 +142,7 @@ const frontendOnly = STATIC_FRONTEND_HOSTS.some(host =>
 );
 let cloudStoresReadyPromise = Promise.resolve();
 const realAppFetch = window.fetch.bind(window);
-const ACCOUNT_CLEAR_VERSION = '20260706-supabase-local-cache-reset-v2';
+const ACCOUNT_CLEAR_VERSION = '20260707-supabase-local-cache-reset-v3';
 let contactVoiceRecorder = null;
 let contactVoiceStream = null;
 let contactVoiceChunks = [];

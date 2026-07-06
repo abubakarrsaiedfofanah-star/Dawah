@@ -20,7 +20,7 @@ const OFFICER_RESET_CODE_STORE = 'dawaahPasswordResetCodes';
 const OFFICER_RESET_CODE_TTL_MS = 15 * 60 * 1000;
 const PORTAL_AUDIENCE_KEY = 'dawaahPortalAudience';
 const OFFICER_LOCAL_API_BASES = ['http://localhost/dawaah/', 'http://127.0.0.1:8000/'];
-const FULL_LOCAL_STORAGE_RESET_VERSION = '20260705-full-local-reset-v1';
+const FULL_LOCAL_STORAGE_RESET_VERSION = '20260707-full-local-reset-v2';
 
 function clearAllLocalAppStorageOnce() {
     if (localStorage.getItem('DawaahFullLocalStorageResetVersion') === FULL_LOCAL_STORAGE_RESET_VERSION) return;

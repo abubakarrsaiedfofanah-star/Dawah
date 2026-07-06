@@ -1,5 +1,5 @@
 // Runtime slice from daawah.js: clearStoredAccountsOnce.
-const FULL_LOCAL_STORAGE_RESET_VERSION = '20260705-full-local-reset-v1';
+const FULL_LOCAL_STORAGE_RESET_VERSION = '20260707-full-local-reset-v2';
 
 function clearAllLocalAppStorageOnce() {
     if (localStorage.getItem('DawaahFullLocalStorageResetVersion') === FULL_LOCAL_STORAGE_RESET_VERSION) return;
@@ -12,9 +12,6 @@ clearAllLocalAppStorageOnce();
 
 function clearStoredAccountsOnce() {
     if (localStorage.getItem('DawaahAccountClearVersion') === ACCOUNT_CLEAR_VERSION) return;
-    const savedUser = getStoredCurrentUser();
-    const savedRole = localStorage.getItem('currentRole');
-    const shouldKeepServerSession = savedUser && (savedUser.csrf_token || savedUser.dbUserId || savedUser.dbStudentId);
     [
         'currentUser',
         'currentRole',
@@ -28,9 +25,5 @@ function clearStoredAccountsOnce() {
         'volunteerRecords'
     ].forEach(key => localStorage.removeItem(key));
     ['dawahSupabaseAccessToken', 'dawahSupabaseEmail', 'dawahSupabaseUid', 'dawahSupabaseAccessToken', 'dawahSupabaseEmail', 'dawahSupabaseUid'].forEach(key => sessionStorage.removeItem(key));
-    if (shouldKeepServerSession) {
-        localStorage.setItem('currentUser', JSON.stringify(savedUser));
-        if (savedRole || savedUser.role) localStorage.setItem('currentRole', savedRole || savedUser.role);
-    }
     localStorage.setItem('DawaahAccountClearVersion', ACCOUNT_CLEAR_VERSION);
 }
