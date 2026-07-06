@@ -9,9 +9,9 @@ async function initializeApp() {
     payments = readList('payments');
     leadershipRoles = readList('leadershipRoles');
     allMembers = readList('allMembers');
+    clearCachedStudentAccountsOnce();
     allEvents = readList('allEvents');
     cloudStoresReadyPromise = loadSharedMemberStore();
-    clearCachedStudentAccountsOnce();
 
     if (new URLSearchParams(location.search).get('dashboard') === '1' && window.SupabaseBackend?.enabled && window.SupabaseBackend.hasAuthSession()) {
         const cloudMember = await window.SupabaseBackend.loadMyMember().catch(() => null);

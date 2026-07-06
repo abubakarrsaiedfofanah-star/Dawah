@@ -14,9 +14,20 @@ This folder is a copy of the existing Dawah app with the source features preserv
 
 1. Connect your GitHub repository to Vercel.
 2. Set the **Build Command** to `npm run build`.
-3. Set the **Root Directory** to this `supabase-ready` folder.
+3. Leave **Root Directory** empty/default when importing `abubakarrsaiedfofanah-star/Dawah`. Use `Dawah` only if you import a parent repository that contains this app as a subfolder.
 4. Leave the **Output Directory** as `.` or let `vercel.json` provide it.
 5. Add your `SUPABASE_URL` and `SUPABASE_ANON_KEY` as environment variables so the build can generate `supabase_config.js`.
+
+If the admin login says Supabase is not configured, check these values first:
+
+- In Supabase, copy **Project URL** from Project Settings > Data API. It must look like `https://PROJECT_REF.supabase.co`.
+- In Supabase, copy the public **anon** key from Project Settings > API Keys.
+- In Vercel, add both variables for Production, Preview, and Development if needed:
+  - `SUPABASE_URL`
+  - `SUPABASE_ANON_KEY`
+- Redeploy after adding the variables. Vercel does not automatically rebuild old deployments when environment variables are added.
+- After deployment, open `/supabase_config.js` on the live site and confirm `url` and `anonKey` are not empty.
+- If login succeeds but admin access is denied, create or update the matching row in `public.admin_roles` for the user id from Supabase Auth.
 
 The app still uses the old `window.SupabaseBackend` API name so the existing feature code can run without a full rewrite. Internally, that API now talks to Supabase Auth, Postgres tables, and Realtime.
 

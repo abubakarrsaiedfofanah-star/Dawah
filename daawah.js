@@ -143,7 +143,7 @@ const frontendOnly = STATIC_FRONTEND_HOSTS.some(host =>
 );
 let cloudStoresReadyPromise = Promise.resolve();
 const realAppFetch = window.fetch.bind(window);
-const ACCOUNT_CLEAR_VERSION = '20260526-supabase-reset-v1';
+const ACCOUNT_CLEAR_VERSION = '20260706-supabase-local-cache-reset-v2';
 let contactVoiceRecorder = null;
 let contactVoiceStream = null;
 let contactVoiceChunks = [];
@@ -1268,9 +1268,9 @@ async function initializeApp() {
     payments = readList('payments');
     leadershipRoles = readList('leadershipRoles');
     allMembers = readList('allMembers');
+    clearCachedStudentAccountsOnce();
     allEvents = readList('allEvents');
     cloudStoresReadyPromise = loadSharedMemberStore();
-    clearCachedStudentAccountsOnce();
 
     if (new URLSearchParams(location.search).get('dashboard') === '1' && window.SupabaseBackend?.enabled && window.SupabaseBackend.hasAuthSession()) {
         const cloudMember = await window.SupabaseBackend.loadMyMember().catch(() => null);
@@ -1313,9 +1313,10 @@ async function loadSharedMemberStore() {
         return null;
     });
     if (member) {
-        allMembers = mergeMemberIntoList(allMembers, member);
+        allMembers = window.SupabaseBackend?.enabled ? [member] : mergeMemberIntoList(allMembers, member);
         localStorage.setItem('allMembers', JSON.stringify(allMembers));
     }
+    return member || null;
 }
 
 // Runtime slice from daawah.js: memberIdentityValue.
@@ -1400,7 +1401,24 @@ function updateCloudRecord(collection, record, patch) {
 
 // Runtime slice from daawah.js: clearCachedStudentAccountsOnce.
 function clearCachedStudentAccountsOnce() {
-    if (window.SupabaseBackend?.enabled) return;
+    if (window.SupabaseBackend?.enabled) {
+        if (localStorage.getItem('DawaahSupabaseLocalMemberResetVersion') === ACCOUNT_CLEAR_VERSION) {
+            return;
+        }
+        [
+            'allMembers',
+            'currentUser',
+            'currentRole',
+            'profileData',
+            LOCAL_RESET_CODE_STORE
+        ].forEach(key => localStorage.removeItem(key));
+        allMembers = [];
+        currentUser = null;
+        currentRole = null;
+        localStorage.setItem('DawaahSupabaseLocalMemberResetVersion', ACCOUNT_CLEAR_VERSION);
+        localStorage.setItem('DawaahAccountClearVersion', ACCOUNT_CLEAR_VERSION);
+        return;
+    }
     if (localStorage.getItem('localStudentClearVersion') === localStudentClearVersion) {
         return;
     }
@@ -1761,8 +1779,10 @@ async function handleLogin(e) {
     if (frontendOnly && window.SupabaseBackend?.enabled) {
         try {
             await window.SupabaseBackend.loginEmail(username, password);
-            if (!getRegisteredUser(username)) {
-                await loadSharedMemberStore();
+            const cloudMember = await loadSharedMemberStore();
+            if (!cloudMember) {
+                recordFailedLoginAttempt('Supabase login worked, but no student profile was found. Please register your student profile or contact admin.');
+                return;
             }
         } catch (error) {
             const message = /invalid path specified|failed to construct|invalid url/i.test(error.message || '')

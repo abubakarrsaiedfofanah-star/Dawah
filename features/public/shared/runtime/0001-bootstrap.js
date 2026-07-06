@@ -142,7 +142,7 @@ const frontendOnly = STATIC_FRONTEND_HOSTS.some(host =>
 );
 let cloudStoresReadyPromise = Promise.resolve();
 const realAppFetch = window.fetch.bind(window);
-const ACCOUNT_CLEAR_VERSION = '20260526-supabase-reset-v1';
+const ACCOUNT_CLEAR_VERSION = '20260706-supabase-local-cache-reset-v2';
 let contactVoiceRecorder = null;
 let contactVoiceStream = null;
 let contactVoiceChunks = [];

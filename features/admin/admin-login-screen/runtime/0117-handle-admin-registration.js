@@ -26,7 +26,8 @@ async function handleAdminRegistration(event) {
 
     try {
         if (isHostedStaticAdminPage && !window.SupabaseBackend?.enabled) {
-            showAdminLogin('Supabase is not configured for this hosted admin page. Add SUPABASE_URL and SUPABASE_ANON_KEY in Vercel, then redeploy before registering an admin.');
+            const detail = window.SupabaseBackend?.configError || 'Add SUPABASE_URL and SUPABASE_ANON_KEY in Vercel, then redeploy before registering an admin.';
+            showAdminLogin(`Supabase is not configured for this hosted admin page. ${detail}`);
             return;
         }
         if (useStaticAdminApi && window.SupabaseBackend?.enabled) {

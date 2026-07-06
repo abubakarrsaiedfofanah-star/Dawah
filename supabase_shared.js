@@ -612,6 +612,7 @@ const SupabaseBackendApi = (() => {
 
     return {
         enabled,
+        configError,
         hasAuthSession,
         currentUid,
         currentEmail,

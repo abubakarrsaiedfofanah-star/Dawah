@@ -24,8 +24,10 @@ async function handleLogin(e) {
     if (frontendOnly && window.SupabaseBackend?.enabled) {
         try {
             await window.SupabaseBackend.loginEmail(username, password);
-            if (!getRegisteredUser(username)) {
-                await loadSharedMemberStore();
+            const cloudMember = await loadSharedMemberStore();
+            if (!cloudMember) {
+                recordFailedLoginAttempt('Supabase login worked, but no student profile was found. Please register your student profile or contact admin.');
+                return;
             }
         } catch (error) {
             const message = /invalid path specified|failed to construct|invalid url/i.test(error.message || '')

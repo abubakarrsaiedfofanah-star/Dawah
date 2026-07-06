@@ -22,7 +22,8 @@ async function handleAdminLogin(event) {
     try {
         if (isHostedStaticAdminPage && !window.SupabaseBackend?.enabled) {
             recordAdminLoginFailure();
-            showAdminLogin('Supabase is not configured for this hosted admin page. Add SUPABASE_URL and SUPABASE_ANON_KEY in Vercel, make sure the live domain is allowed, then redeploy.');
+            const detail = window.SupabaseBackend?.configError || 'Add SUPABASE_URL and SUPABASE_ANON_KEY in Vercel, make sure the live domain is allowed, then redeploy.';
+            showAdminLogin(`Supabase is not configured for this hosted admin page. ${detail}`);
             return;
         }
         if (useStaticAdminApi && window.SupabaseBackend?.enabled) {

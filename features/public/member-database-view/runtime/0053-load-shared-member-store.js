@@ -6,7 +6,8 @@ async function loadSharedMemberStore() {
         return null;
     });
     if (member) {
-        allMembers = mergeMemberIntoList(allMembers, member);
+        allMembers = window.SupabaseBackend?.enabled ? [member] : mergeMemberIntoList(allMembers, member);
         localStorage.setItem('allMembers', JSON.stringify(allMembers));
     }
+    return member || null;
 }

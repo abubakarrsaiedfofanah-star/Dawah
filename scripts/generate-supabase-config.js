@@ -52,6 +52,12 @@ const config = {
   realtime: process.env.DAWAH_SUPABASE_REALTIME !== 'false'
 };
 
+const isHostedBuild = process.env.VERCEL || process.env.CI;
+if (isHostedBuild && (!config.url || !config.anonKey)) {
+  console.error('Supabase config is missing. Set SUPABASE_URL and SUPABASE_ANON_KEY in Vercel, then redeploy.');
+  process.exit(1);
+}
+
 const output = `window.DAWAH_SUPABASE_CONFIG = ${JSON.stringify(config, null, 4)};\nwindow.DAWAAH_SUPABASE_CONFIG = window.DAWAH_SUPABASE_CONFIG;\n`;
 fs.writeFileSync(path.join(root, 'supabase_config.js'), output);
 console.log(`Generated supabase_config.js (${config.url && config.anonKey ? 'configured' : 'placeholders empty'}).`);
