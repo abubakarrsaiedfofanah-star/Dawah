@@ -58,7 +58,7 @@
     <meta name="theme-color" content="#003040">
     <link href="vendor/bootstrap/css/bootstrap.min.css?v=local-20260523" rel="stylesheet">
     <link rel="stylesheet" href="vendor/fontawesome/css/all.min.css?v=local-20260523">
-    <link rel="stylesheet" href="daawah.css?v=dawah-supabase-vercel-20260613-2">
+    <link rel="stylesheet" href="daawah.css?v=dawah-responsive-storage-20260708">
     <link rel="stylesheet" href="ai_assistant_widget.css?v=login-only-20260522">
 </head>
 <body>
@@ -118,7 +118,7 @@
                     <img src="assets/umma-university-logo-color.png?v=20260522-logo2" alt="UMMA University logo" class="hero-logo">
                     <span>UMMA University Dawah Team</span>
                 </h1>
-                <p class="hero-description">Building a compassionate community of Muslim healthcare professionals</p>
+                <p class="hero-description">Building a compassionate community of Muslims.</p>
                 <div class="hero-highlights" aria-label="UMMA University Dawah Team highlights">
                     <span><i class="fas fa-mosque"></i> Prayer & Guidance</span>
                     <span><i class="fas fa-hands-helping"></i> Welfare & Service</span>
@@ -379,7 +379,6 @@
                         <div class="footer-brand-lockup brand-logo" aria-label="UMMA University Dawah Team">
                             <img src="assets/umma-university-logo-color.png" alt="UMMA University logo" class="footer-brand__image brand-logo__image">
                             <div class="footer-brand-copy">
-                                <span class="footer-brand-kicker">UMMA University logo</span>
                                 <h6 class="footer-brand-title">UMMA University Dawah Team</h6>
                             </div>
                         </div>
@@ -826,10 +825,16 @@
             </div>
         </nav>
 
+        <button type="button" id="dashboardSidebarToggle" class="dashboard-sidebar-toggle" onclick="toggleDashboardSidebar()" aria-expanded="false" aria-controls="dashboardSidebar">
+            <i class="fas fa-bars"></i>
+            <span>Side Menu</span>
+        </button>
+        <button type="button" class="dashboard-sidebar-backdrop" onclick="toggleDashboardSidebar()" aria-label="Close side menu"></button>
+
         <div class="container-fluid">
             <div class="row">
                 <!-- Sidebar Navigation -->
-                <div class="col-md-3 col-lg-2 sidebar-menu">
+                <div id="dashboardSidebar" class="col-md-3 col-lg-2 sidebar-menu">
                     <div class="menu-section">
                         <h6 class="menu-title">NAVIGATION</h6>
                         <nav class="nav flex-column">
@@ -3361,6 +3366,6 @@
             document.addEventListener('DOMContentLoaded', updateFooterInstallButton);
         })();
     </script>
-    <script src="daawah.js?v=dawah-supabase-vercel-20260613-2"></script>
+    <script src="daawah.js?v=dawah-responsive-storage-20260708"></script>
 </body>
 </html>

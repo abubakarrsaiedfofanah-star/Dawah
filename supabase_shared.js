@@ -625,6 +625,7 @@ const SupabaseBackendApi = (() => {
         saveAdminRoleForUid,
         listAdminRoles,
         deleteAdminRole,
+        isSystemBootstrapped,
         updateCurrentPassword,
         loadStore,
         saveStore,

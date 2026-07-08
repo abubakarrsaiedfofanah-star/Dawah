@@ -21,12 +21,38 @@ function switchView(viewName) {
     }
 
     const activeEvent = typeof event !== 'undefined' ? event : null;
-    if (activeEvent && activeEvent.target && activeEvent.target.classList) {
-        activeEvent.target.classList.add('active');
+    const clickedLink = activeEvent?.target?.closest?.('.sidebar-menu .nav-link, .navbar .nav-link');
+    const matchingLink = clickedLink || document.querySelector(`.sidebar-menu .nav-link[onclick*="switchView('${viewName}')"]`);
+    if (matchingLink) {
+        matchingLink.classList.add('active');
     }
 
+    closeDashboardSidebarOnSmallScreens();
     loadViewData(viewName);
 }
 
 window.showDashboard = showDashboard;
 window.switchView = switchView;
+
+function setDashboardSidebarOpen(isOpen) {
+    const dashboardPage = document.getElementById('dashboardPage');
+    if (!dashboardPage) return;
+    dashboardPage.classList.toggle('dashboard-sidebar-open', isOpen);
+    const toggle = document.getElementById('dashboardSidebarToggle');
+    if (toggle) {
+        toggle.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
+    }
+}
+
+function toggleDashboardSidebar() {
+    const dashboardPage = document.getElementById('dashboardPage');
+    setDashboardSidebarOpen(!dashboardPage?.classList.contains('dashboard-sidebar-open'));
+}
+
+function closeDashboardSidebarOnSmallScreens() {
+    if (window.matchMedia('(max-width: 991.98px)').matches) {
+        setDashboardSidebarOpen(false);
+    }
+}
+
+window.toggleDashboardSidebar = toggleDashboardSidebar;

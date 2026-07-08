@@ -1371,6 +1371,147 @@
                 border-radius: 8px;
             }
         }
+
+        .admin-sidebar-toggle,
+        .admin-sidebar-backdrop {
+            display: none;
+        }
+
+        @media (max-width: 991.98px) {
+            .admin-container {
+                display: block;
+            }
+
+            .admin-sidebar-toggle {
+                position: sticky;
+                top: 10px;
+                z-index: 1035;
+                display: inline-flex;
+                align-items: center;
+                gap: 8px;
+                min-height: 42px;
+                margin: 12px;
+                padding: 9px 14px;
+                border: 1px solid rgba(245, 215, 110, 0.42);
+                border-radius: 8px;
+                background: #d4af37;
+                color: #080808;
+                font-weight: 900;
+                box-shadow: 0 10px 24px rgba(0, 0, 0, 0.28);
+            }
+
+            .admin-container .sidebar {
+                position: fixed !important;
+                top: 0;
+                bottom: 0;
+                left: 0;
+                z-index: 1045;
+                width: min(84vw, 320px) !important;
+                max-width: min(84vw, 320px);
+                height: 100vh !important;
+                max-height: 100vh !important;
+                padding: 18px 0 !important;
+                overflow-y: auto !important;
+                transform: translateX(-105%);
+                transition: transform 180ms ease;
+                border-right: 1px solid var(--admin-border) !important;
+                border-bottom: 0 !important;
+            }
+
+            .admin-container.admin-sidebar-open .sidebar {
+                transform: translateX(0);
+            }
+
+            .admin-sidebar-backdrop {
+                position: fixed;
+                inset: 0;
+                z-index: 1040;
+                border: 0;
+                background: rgba(0, 0, 0, 0.58);
+            }
+
+            .admin-container.admin-sidebar-open .admin-sidebar-backdrop {
+                display: block;
+            }
+
+            .admin-container .nav-menu {
+                display: grid;
+                grid-template-columns: 1fr;
+                gap: 8px;
+                padding: 0 12px 18px;
+            }
+
+            .admin-container .main-content {
+                width: 100%;
+                max-width: 100%;
+                margin-left: 0 !important;
+                padding: 16px;
+            }
+        }
+
+        @media (max-width: 576px) {
+            html,
+            body {
+                max-width: 100%;
+                overflow-x: hidden;
+            }
+
+            .admin-login-screen {
+                padding: 14px;
+            }
+
+            .admin-login-card {
+                width: min(100%, 420px);
+                padding: 18px;
+            }
+
+            .admin-auth-tabs {
+                flex-wrap: wrap;
+            }
+
+            .admin-header,
+            .admin-user-chip,
+            .dashboard-panel-footer,
+            .pending-role-card__footer,
+            .modal-footer {
+                flex-wrap: wrap;
+                gap: 8px;
+            }
+
+            .admin-header h2,
+            #pageTitle {
+                max-width: 100%;
+                font-size: 1.15rem;
+                overflow-wrap: anywhere;
+            }
+
+            .admin-user-chip .form-control,
+            .admin-user-chip input,
+            .admin-user-chip button,
+            .modal-footer .btn,
+            .dashboard-panel-footer .btn {
+                width: 100%;
+                max-width: 100% !important;
+            }
+
+            .table-responsive,
+            .admin-table-wrapper {
+                width: 100%;
+                overflow-x: auto;
+                -webkit-overflow-scrolling: touch;
+            }
+
+            table {
+                min-width: 680px;
+            }
+
+            img,
+            video,
+            canvas {
+                max-width: 100%;
+                height: auto;
+            }
+        }
     </style>
 </head>
 <body>
@@ -1496,8 +1637,13 @@
     </div>
 
     <div id="adminContainer" class="admin-container locked">
+        <button type="button" id="adminSidebarToggle" class="admin-sidebar-toggle" onclick="toggleAdminSidebar()" aria-expanded="false" aria-controls="adminSidebar">
+            <i class="fas fa-bars"></i>
+            <span>Side Menu</span>
+        </button>
+        <button type="button" class="admin-sidebar-backdrop" onclick="toggleAdminSidebar()" aria-label="Close side menu"></button>
         <!-- Sidebar -->
-        <div class="sidebar">
+        <div id="adminSidebar" class="sidebar">
             <div class="sidebar-header">
                 <img src="assets/umma-university-logo-color.png?v=20260522-logo2" alt="UMMA University logo" class="sidebar-logo">
                 <h3>UMMA University Dawah Team</h3>
@@ -2684,6 +2830,6 @@
             document.addEventListener('DOMContentLoaded', updateAdminInstallButton);
         })();
     </script>
-    <script src="admin.js?v=dawah-supabase-vercel-20260613-2"></script>
+    <script src="admin.js?v=dawah-responsive-storage-20260708"></script>
 </body>
 </html>

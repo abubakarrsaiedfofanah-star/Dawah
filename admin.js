@@ -85,12 +85,23 @@ let adminSessionWarningId = null;
 let adminRealtimeUnsubscribers = [];
 
 // Runtime slice from admin.js: clearStoredAdminAccountsOnce.
-const FULL_LOCAL_STORAGE_RESET_VERSION = '20260705-full-local-reset-v1';
+const FULL_LOCAL_STORAGE_RESET_VERSION = '20260708-full-local-reset-v3';
 
 function clearAllLocalAppStorageOnce() {
     if (localStorage.getItem('DawaahFullLocalStorageResetVersion') === FULL_LOCAL_STORAGE_RESET_VERSION) return;
-    localStorage.clear();
-    sessionStorage.clear();
+    [
+        LOCAL_ADMIN_ACCOUNTS_KEY,
+        LOCAL_ADMIN_CLEANUP_KEY,
+        LOCAL_ADMIN_FULL_RESET_KEY,
+        ADMIN_LOGIN_FAILURE_KEY,
+        'currentAdmin',
+        'adminUser',
+        'DawaahAdminSession',
+        'currentAdminUser'
+    ].forEach(key => {
+        localStorage.removeItem(key);
+        sessionStorage.removeItem(key);
+    });
     localStorage.setItem('DawaahFullLocalStorageResetVersion', FULL_LOCAL_STORAGE_RESET_VERSION);
 }
 
@@ -2050,8 +2061,26 @@ function isCurrentLocalMainAdmin() {
 async function resolveAdminUser(username) {
     if (!window.SupabaseBackend?.enabled || !window.SupabaseBackend.hasAuthSession?.()) return null;
     const email = window.SupabaseBackend.currentEmail?.() || username;
+    const uid = window.SupabaseBackend.currentUid?.();
     let adminRole = await window.SupabaseBackend.loadMyAdminRole?.().catch(() => null);
     const isTruthyFlag = value => value === true || ['true', '1', 'yes'].includes(String(value || '').toLowerCase());
+    if (!adminRole && uid && typeof window.SupabaseBackend.isSystemBootstrapped === 'function') {
+        const bootstrapped = await window.SupabaseBackend.isSystemBootstrapped().catch(() => true);
+        if (!bootstrapped) {
+            const usernameFromEmail = String(email || username || 'main-admin').split('@')[0] || 'main-admin';
+            await window.SupabaseBackend.saveAdminRoleForUid?.(uid, {
+                uid,
+                username: usernameFromEmail,
+                email,
+                fullName: usernameFromEmail,
+                role: 'admin',
+                isMainAdmin: true,
+                status: 'active',
+                createdAt: new Date().toISOString()
+            });
+            adminRole = await window.SupabaseBackend.loadMyAdminRole?.().catch(() => null);
+        }
+    }
     if (!adminRole && String(email).toLowerCase() === 'abubakarrsaiedfofanah@gmail.com') {
         await window.SupabaseBackend.saveAdminRole?.({
             username: 'iman',
@@ -2499,6 +2528,12 @@ async function handleAdminLogin(event) {
             showAdminLogin(`Supabase is not configured for this hosted admin page. ${detail}`);
             return;
         }
+        if (useStaticAdminApi && !window.SupabaseBackend?.enabled && username.includes('@') && getLocalAdminAccounts().length === 0) {
+            recordAdminLoginFailure();
+            const detail = window.SupabaseBackend?.configError || 'Add your Supabase Project URL and anon public key in supabase_config.js, then refresh.';
+            showAdminLogin(`Supabase Auth is not connected yet. ${detail}`);
+            return;
+        }
         if (useStaticAdminApi && window.SupabaseBackend?.enabled) {
             await window.SupabaseBackend.loginEmail(username, password);
             await window.SupabaseBackend.ensureRealtimeAuth?.(username, password).catch(error => {
@@ -2920,8 +2955,10 @@ function switchAdminView(viewName) {
         
         // Add active class to nav link
         const activeEvent = typeof event !== 'undefined' ? event : null;
-        if (activeEvent && activeEvent.target) {
-            activeEvent.target.closest('a')?.classList.add('active');
+        const clickedLink = activeEvent?.target?.closest?.('.nav-menu a');
+        const matchingLink = clickedLink || document.querySelector(`.nav-menu a[onclick*="switchAdminView('${viewName}')"]`);
+        if (matchingLink) {
+            matchingLink.classList.add('active');
         }
         
         // Update page title
@@ -2942,9 +2979,33 @@ function switchAdminView(viewName) {
         document.getElementById('pageTitle').innerHTML = titles[viewName] || '';
         
         // Load view-specific data
+        closeAdminSidebarOnSmallScreens();
         loadViewData(viewName);
     }
 }
+
+function setAdminSidebarOpen(isOpen) {
+    const adminContainer = document.getElementById('adminContainer');
+    if (!adminContainer) return;
+    adminContainer.classList.toggle('admin-sidebar-open', isOpen);
+    const toggle = document.getElementById('adminSidebarToggle');
+    if (toggle) {
+        toggle.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
+    }
+}
+
+function toggleAdminSidebar() {
+    const adminContainer = document.getElementById('adminContainer');
+    setAdminSidebarOpen(!adminContainer?.classList.contains('admin-sidebar-open'));
+}
+
+function closeAdminSidebarOnSmallScreens() {
+    if (window.matchMedia('(max-width: 991.98px)').matches) {
+        setAdminSidebarOpen(false);
+    }
+}
+
+window.toggleAdminSidebar = toggleAdminSidebar;
 
 // Runtime slice from admin.js: showReligiousAdminSection.
 function showReligiousAdminSection(sectionId) {

@@ -2,3 +2,82 @@
    Source: index.html#dashboardPage
    Move styles for this feature here from daawah.css, dawaah.css, or inline page styles as the feature is edited.
 */
+
+.dashboard-sidebar-toggle,
+.dashboard-sidebar-backdrop {
+    display: none;
+}
+
+@media (max-width: 991.98px) {
+    #dashboardPage > .container-fluid > .row {
+        display: block;
+    }
+
+    #dashboardPage .main-content {
+        width: 100%;
+        max-width: 100%;
+        padding: 16px;
+    }
+
+    .dashboard-sidebar-toggle {
+        position: sticky;
+        top: 64px;
+        z-index: 1035;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        min-height: 42px;
+        margin: 10px 12px 0;
+        padding: 9px 14px;
+        border: 0;
+        border-radius: 8px;
+        background: #40b050;
+        color: #ffffff;
+        font-weight: 800;
+        box-shadow: 0 10px 22px rgba(0, 48, 64, 0.18);
+    }
+
+    .sidebar-menu {
+        position: fixed !important;
+        top: 0;
+        bottom: 0;
+        left: 0;
+        z-index: 1045;
+        width: min(84vw, 320px) !important;
+        max-width: min(84vw, 320px);
+        max-height: 100vh !important;
+        padding: 18px 0 !important;
+        overflow-y: auto !important;
+        transform: translateX(-105%);
+        transition: transform 180ms ease;
+        border-right: 3px solid #40b050 !important;
+        border-bottom: 0 !important;
+    }
+
+    .dashboard-container.dashboard-sidebar-open .sidebar-menu {
+        transform: translateX(0);
+    }
+
+    .dashboard-sidebar-backdrop {
+        position: fixed;
+        inset: 0;
+        z-index: 1040;
+        border: 0;
+        background: rgba(0, 20, 28, 0.5);
+    }
+
+    .dashboard-container.dashboard-sidebar-open .dashboard-sidebar-backdrop {
+        display: block;
+    }
+
+    .sidebar-menu .nav {
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 8px;
+    }
+
+    .sidebar-menu .nav-link {
+        min-height: 46px;
+        white-space: normal;
+    }
+}
