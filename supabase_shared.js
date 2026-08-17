@@ -193,6 +193,33 @@ const SupabaseBackendApi = (() => {
         return String(name || '').trim();
     }
 
+    const CLOUD_SECRET_FIELDS = new Set([
+        'password',
+        'confirmPassword',
+        'passwordHash',
+        'passwordSalt',
+        'passwordIterations',
+        'passwordAlgorithm'
+    ]);
+
+    const USER_OWNED_COLLECTIONS = new Set([
+        'members',
+        'payments',
+        'donations',
+        'welfareRequests',
+        'eventRegistrations',
+        'volunteerRegistrations',
+        'auditLogs'
+    ]);
+
+    function sanitizeCloudValue(value) {
+        if (Array.isArray(value)) return value.map(sanitizeCloudValue);
+        if (!value || typeof value !== 'object') return value;
+        return Object.fromEntries(Object.entries(value)
+            .filter(([key]) => !CLOUD_SECRET_FIELDS.has(key))
+            .map(([key, item]) => [key, sanitizeCloudValue(item)]));
+    }
+
     function recordFromRow(row) {
         return {
             ...(row?.data || {}),
@@ -278,7 +305,8 @@ const SupabaseBackendApi = (() => {
 
     async function saveStore(key, items) {
         const db = await client();
-        const payload = { key, data: Array.isArray(items) ? { items } : items, updated_at: new Date().toISOString() };
+        const safeItems = sanitizeCloudValue(items);
+        const payload = { key, data: Array.isArray(safeItems) ? { items: safeItems } : safeItems, updated_at: new Date().toISOString() };
         const { error } = await db.from('app_stores').upsert(payload, { onConflict: 'key' });
         if (error) throw error;
         return items;
@@ -303,9 +331,15 @@ const SupabaseBackendApi = (() => {
 
     async function createRecord(collection, record) {
         const db = await client();
+        const safeRecord = sanitizeCloudValue(record || {});
+        const safeCollection = collectionName(collection);
+        if (USER_OWNED_COLLECTIONS.has(safeCollection)) {
+            safeRecord.ownerUid = safeRecord.ownerUid || currentUid();
+            safeRecord.ownerEmail = safeRecord.ownerEmail || currentEmail();
+        }
         const { data, error } = await db
             .from('app_records')
-            .insert({ collection: collectionName(collection), data: record || {} })
+            .insert({ collection: safeCollection, data: safeRecord })
             .select()
             .single();
         if (error) throw error;
@@ -354,7 +388,7 @@ const SupabaseBackendApi = (() => {
 
     async function updateRecord(collection, docId, patch) {
         const current = (await loadRecord(collection, docId)) || {};
-        const nextData = { ...current, ...(patch || {}) };
+        const nextData = sanitizeCloudValue({ ...current, ...(patch || {}) });
         delete nextData.supabaseId;
         delete nextData.supabaseId;
         const db = await client();
