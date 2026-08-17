@@ -5,8 +5,7 @@ const SupabaseBackendApi = (() => {
         enabledHosts: [
             'localhost',
             '127.0.0.1',
-            '66ghz.com',
-            'www.66ghz.com'
+            'dawah-six.vercel.app'
         ],
         realtime: true
     };
