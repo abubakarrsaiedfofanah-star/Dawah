@@ -2,8 +2,8 @@
 function updatePaymentInstructions(context) {
     const isDonation = context === 'donation';
     const prefix = isDonation ? 'donation' : 'payment';
-    const select = document.getElementById(`${prefix}PaymentMethod`);
-    const box = document.getElementById(`${prefix}PaymentInstructions`);
+    const select = document.getElementById(isDonation ? 'donationPaymentMethod' : 'paymentMethod');
+    const box = document.getElementById(isDonation ? 'donationPaymentInstructions' : 'paymentInstructions');
 
     if (!select || !box) return;
 
