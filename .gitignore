@@ -2,6 +2,10 @@ node_modules/
 test-results/
 playwright-report/
 ui-debug.log
+ai_health.txt
+cmd-test-*.txt
+play_output.txt
+test-output*.txt
 .env
 .env.*
 !functions/.env.example
