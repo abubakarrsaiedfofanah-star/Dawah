@@ -1,29 +1,4 @@
 // Runtime slice from admin.js: getLocalPendingRoleRequests.
-function getLocalMemberAdminId(member = {}) {
-    return member.dbUserId || member.user_id || member.uid || member.authUid || member.id || member.supabaseId || member.studentId || member.username || member.email || '';
-}
-
-function localMemberMatchesAdminId(member = {}, userId = '') {
-    const lookup = String(userId || '').trim().toLowerCase();
-    if (!lookup) return false;
-    return [
-        member.dbUserId,
-        member.user_id,
-        member.uid,
-        member.authUid,
-        member.id,
-        member.supabaseId,
-        member.studentId,
-        member.username,
-        member.email,
-        member.authEmail
-    ].some(value => String(value || '').trim().toLowerCase() === lookup);
-}
-
-function findLocalMemberByAdminId(members = [], userId = '') {
-    return members.find(member => localMemberMatchesAdminId(member, userId));
-}
-
 function getLocalPendingRoleRequests() {
     return readStore('allMembers')
         .filter(member => {

@@ -1,0 +1,37 @@
+/* Runtime slice from daawah.css: Preserve the official UMMA green-and-blue logo on sign-in screens.. */
+/* Preserve the official UMMA green-and-blue logo on sign-in screens. */
+body .auth-page .auth-logo,
+body .auth-page .brand-logo__image {
+    filter: none !important;
+}
+
+body .auth-page .auth-logo,
+body .auth-page .brand-logo__image {
+    filter: grayscale(1) sepia(1) saturate(5) hue-rotate(160deg) brightness(0.78) !important;
+}
+
+.social-links {
+    display: flex;
+    gap: 15px;
+    flex-wrap: wrap;
+}
+
+.social-links a {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    height: 40px;
+    background: linear-gradient(135deg, var(--gold-light), var(--gold-color));
+    border: 1px solid rgba(255, 248, 220, 0.7);
+    border-radius: 50%;
+    color: #0b3d2a;
+    text-decoration: none;
+    transition: all 0.3s ease;
+}
+
+.social-links a:hover {
+    background: #fff8dc;
+    color: var(--primary-color);
+    transform: translateY(-3px);
+}

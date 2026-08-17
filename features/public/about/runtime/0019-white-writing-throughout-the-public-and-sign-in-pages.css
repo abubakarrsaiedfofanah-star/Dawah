@@ -1,0 +1,26 @@
+/* Runtime slice from daawah.css: White writing throughout the public and sign-in pages.. */
+/* White writing throughout the public and sign-in pages. */
+body .landing-page,
+body .landing-page :is(h1, h2, h3, h4, h5, h6, p, a, li, span, label, small, strong, div),
+body .auth-page,
+body .auth-page :is(h1, h2, h3, h4, h5, h6, p, a, label, small, span, strong, div) {
+    color: #ffffff !important;
+}
+
+body .landing-page :is(.about-content, .mission-card, .leadership-card, .activity-card, .gallery-card, .contact-info, .contact-form, .portal-card),
+body .auth-page :is(.auth-card, .form-control, .form-select) {
+    background: rgba(0, 59, 92, 0.72) !important;
+    border-color: rgba(255, 255, 255, 0.52) !important;
+}
+
+body .landing-page :is(.form-control, .form-select, textarea, input),
+body .auth-page :is(.form-control, .form-select, textarea, input) {
+    background: rgba(0, 59, 92, 0.72) !important;
+    border-color: rgba(255, 255, 255, 0.6) !important;
+    color: #ffffff !important;
+}
+
+body .landing-page :is(input, textarea)::placeholder,
+body .auth-page :is(input, textarea)::placeholder {
+    color: rgba(255, 255, 255, 0.82) !important;
+}

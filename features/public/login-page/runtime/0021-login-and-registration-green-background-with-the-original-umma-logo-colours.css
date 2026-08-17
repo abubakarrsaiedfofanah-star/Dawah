@@ -1,0 +1,38 @@
+/* Runtime slice from daawah.css: Login and registration: green background with the original UMMA logo colours.. */
+/* Login and registration: green background with the original UMMA logo colours. */
+body .auth-page,
+body #loginPage {
+    background: #40b050 !important;
+}
+
+body .auth-page .auth-islamic-motion {
+    display: none !important;
+}
+
+body .auth-page::after {
+    display: none !important;
+}
+
+body .auth-page .auth-card {
+    background: linear-gradient(135deg, #003b5c 0%, #006494 100%) !important;
+    border-color: rgba(255, 255, 255, 0.5) !important;
+}
+
+body .auth-page .alert-info {
+    background: rgba(0, 48, 64, 0.48) !important;
+    border-color: rgba(255, 255, 255, 0.28) !important;
+}
+
+body .auth-page .alert-info a:not(.btn) {
+    color: #ffffff !important;
+    font-weight: 800;
+    text-decoration: underline !important;
+    text-underline-offset: 3px;
+}
+
+body .auth-page .alert-info .btn {
+    background: #ffffff !important;
+    border-color: #ffffff !important;
+    color: #003b5c !important;
+    font-weight: 800;
+}

@@ -1,0 +1,18 @@
+/* Runtime slice from daawah.css: Shared public/auth palette: bright UMMA green and university blue.. */
+/* Shared public/auth palette: bright UMMA green and university blue. */
+body .landing-page .brand-logo__image,
+body .landing-page .hero-logo,
+body .landing-page .portal-icon img,
+body .landing-footer .footer-brand__image,
+body .auth-page img.auth-logo {
+    filter: none !important;
+}
+
+body .auth-page,
+body #loginPage {
+    background: #40b050 !important;
+}
+
+body .auth-page .auth-card {
+    background: linear-gradient(135deg, #003040 0%, #004e70 52%, #40b050 118%) !important;
+}

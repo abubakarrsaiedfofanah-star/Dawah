@@ -82,3 +82,5 @@ const EDITABLE_ROLE_PERMISSIONS = [
 let adminSessionTimeoutId = null;
 let adminSessionWarningId = null;
 let adminRealtimeUnsubscribers = [];
+
+const FULL_LOCAL_STORAGE_RESET_VERSION = '20260708-full-local-reset-v4';

@@ -1,0 +1,5 @@
+/* Runtime slice from daawah.css: Keep the login emblem in its original green-and-blue colours.. */
+/* Keep the login emblem in its original green-and-blue colours. */
+body .auth-page img.auth-logo {
+    filter: none !important;
+}

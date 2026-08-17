@@ -176,6 +176,13 @@ test.describe('portal workflow audit', () => {
       await registerOfficer(page, officer);
       await registerAndLoginAdmin(page, admin);
 
+      await expect(page.locator('#dashboardPendingRoleRequestsList')).toContainText(officer.email, { timeout: 15000 });
+      await expect(page.locator('#dashboardPendingOfficersCard')).toBeVisible();
+      expect(await page.locator('#dashboardPendingOfficersCard').evaluate(element => ({
+        insideDashboard: Boolean(element.closest('#dashboardView')),
+        position: getComputedStyle(element).position
+      }))).toEqual({ insideDashboard: true, position: 'static' });
+
       const adminResult = await page.evaluate(async ({ officerEmail, studentEmail }) => {
         const before = JSON.parse(localStorage.getItem('allMembers') || '[]');
         const officerRecord = before.find(member => member.email === officerEmail);
