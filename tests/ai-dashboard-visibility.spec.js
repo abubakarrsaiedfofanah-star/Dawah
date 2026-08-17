@@ -12,6 +12,9 @@ test.describe('Research AI dashboard visibility', () => {
 
   test('Research AI appears inside the logged-in student dashboard', async ({ page }) => {
     await page.addInitScript(() => {
+      localStorage.setItem('DawaahFullLocalStorageResetVersion', '20260708-full-local-reset-v4');
+      localStorage.setItem('DawaahAccountClearVersion', '20260708-supabase-local-cache-reset-v4');
+      localStorage.setItem('localStudentClearVersion', '2026-07-08-clear-student-local-accounts-v2');
       localStorage.setItem('currentRole', 'student');
       localStorage.setItem('currentUser', JSON.stringify({
         email: 'student.visibility@localhost',

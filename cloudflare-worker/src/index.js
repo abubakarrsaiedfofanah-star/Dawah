@@ -2,6 +2,7 @@ const JSON_HEADERS = {
   'content-type': 'application/json; charset=utf-8',
   'cache-control': 'no-store'
 };
+const DEFAULT_GROQ_CHAT_MODEL = 'openai/gpt-oss-20b';
 
 function corsHeaders(request, env) {
   const origin = request.headers.get('origin') || '';
@@ -335,7 +336,7 @@ async function answerQuestion(question, context, mode, env) {
   const sportsAnswer = await worldCupScoreboardAnswer(question).catch(() => null);
   if (sportsAnswer && !wantsLong) return sportsAnswer;
 
-  const model = env.GROQ_CHAT_MODEL || 'llama-3.1-8b-instant';
+  const model = env.GROQ_CHAT_MODEL || DEFAULT_GROQ_CHAT_MODEL;
   const currentDate = new Date().toISOString().slice(0, 10);
   const modeText = {
     quick: 'Give a useful answer with a short summary, key points, and practical next steps.',
@@ -431,7 +432,7 @@ async function suggestHadithArabic(english, reference, env) {
   if (!cleanEnglish) throw new Error('English translation is required.');
   if (cleanEnglish.length > 4000) throw new Error('English text is too long for one suggestion.');
 
-  const model = env.GROQ_CHAT_MODEL || 'llama-3.1-8b-instant';
+  const model = env.GROQ_CHAT_MODEL || DEFAULT_GROQ_CHAT_MODEL;
   const prompt = [
     'Suggest a polished Arabic rendering of this English hadith translation for review by the Imam, Amir/Director, or admin.',
     '',
@@ -464,7 +465,9 @@ async function suggestHadithArabic(english, reference, env) {
         { role: 'user', content: prompt }
       ],
       temperature: 0.2,
-      max_completion_tokens: 220
+      max_completion_tokens: 1024,
+      reasoning_effort: 'low',
+      include_reasoning: false
     })
   });
   const text = await response.text();
@@ -524,7 +527,7 @@ export default {
         message: 'AI Worker online',
         data: {
           ok: true,
-          model: env.GROQ_CHAT_MODEL || 'llama-3.1-8b-instant',
+          model: env.GROQ_CHAT_MODEL || DEFAULT_GROQ_CHAT_MODEL,
           rate_limit: Boolean(env.AI_RATE_LIMIT),
           live_search: liveSearchEnabled(env)
         }
