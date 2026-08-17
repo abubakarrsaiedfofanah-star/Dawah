@@ -1,0 +1,53 @@
+
+> dawah-ui-smoke@1.0.0 test:ui
+> playwright test tests/ui-smoke.spec.js --reporter=list --workers=1
+
+
+Running 14 tests using 1 worker
+
+  ✓   1 [desktop] › tests\ui-smoke.spec.js:13:5 › visual smoke › /index.html renders without broken layout (5.6s)
+  ✓   2 [desktop] › tests\ui-smoke.spec.js:13:5 › visual smoke › /officer.html renders without broken layout (2.6s)
+  ✓   3 [desktop] › tests\ui-smoke.spec.js:13:5 › visual smoke › /admin.html renders without broken layout (2.5s)
+  ✓   4 [desktop] › tests\ui-smoke.spec.js:13:5 › visual smoke › /verify-member.html renders without broken layout (1.6s)
+  ✓   5 [desktop] › tests\ui-smoke.spec.js:13:5 › visual smoke › /verify-receipt.html renders without broken layout (1.3s)
+  ✓   6 [desktop] › tests\ui-smoke.spec.js:41:3 › visual smoke › /index.html recovers from corrupted browser storage (2.5s)
+  ✓   7 [desktop] › tests\ui-smoke.spec.js:67:3 › visual smoke › /index.html contact phone and email are clickable (3.2s)
+  ✘   8 [mobile] › tests\ui-smoke.spec.js:13:5 › visual smoke › /index.html renders without broken layout (3.9s)
+  ✓   9 [mobile] › tests\ui-smoke.spec.js:13:5 › visual smoke › /officer.html renders without broken layout (2.9s)
+  ✓  10 [mobile] › tests\ui-smoke.spec.js:13:5 › visual smoke › /admin.html renders without broken layout (2.3s)
+  ✓  11 [mobile] › tests\ui-smoke.spec.js:13:5 › visual smoke › /verify-member.html renders without broken layout (1.5s)
+  ✓  12 [mobile] › tests\ui-smoke.spec.js:13:5 › visual smoke › /verify-receipt.html renders without broken layout (1.6s)
+  ✓  13 [mobile] › tests\ui-smoke.spec.js:41:3 › visual smoke › /index.html recovers from corrupted browser storage (3.0s)
+  ✓  14 [mobile] › tests\ui-smoke.spec.js:67:3 › visual smoke › /index.html contact phone and email are clickable (3.0s)
+
+
+  1) [mobile] › tests\ui-smoke.spec.js:13:5 › visual smoke › /index.html renders without broken layout 
+
+    Error: page.evaluate: Execution context was destroyed, most likely because of a navigation
+
+      26 |       expect(bodyBox.height).toBeGreaterThan(300);
+      27 |
+    > 28 |       const horizontalOverflow = await page.evaluate(() => document.documentElement.scrollWidth > window.innerWidth + 4);
+         |                                             ^
+      29 |       expect(horizontalOverflow).toBeFalsy();
+      30 |
+      31 |       const visibleText = await page.locator('body').innerText();
+        at C:\Users\gues\Desktop\love\Dawah\tests\ui-smoke.spec.js:28:45
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    test-results\ui-smoke-visual-smoke-inde-526bd-nders-without-broken-layout-mobile\test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: test-results\ui-smoke-visual-smoke-inde-526bd-nders-without-broken-layout-mobile\error-context.md
+
+    attachment #3: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results\ui-smoke-visual-smoke-inde-526bd-nders-without-broken-layout-mobile\trace.zip
+    Usage:
+
+        npx playwright show-trace test-results\ui-smoke-visual-smoke-inde-526bd-nders-without-broken-layout-mobile\trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  1 failed
+    [mobile] › tests\ui-smoke.spec.js:13:5 › visual smoke › /index.html renders without broken layout 
+  13 passed (48.7s)

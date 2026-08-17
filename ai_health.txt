@@ -1,0 +1,1 @@
+{"success":true,"message":"AI Worker online","data":{"ok":true,"model":"llama-3.1-8b-instant","rate_limit":true,"live_search":false},"timestamp":"2026-07-01T20:43:13.308Z"}please 

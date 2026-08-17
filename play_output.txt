@@ -1,0 +1,7 @@
+
+Running 2 tests using 1 worker
+
+  ✓  1 [desktop] › tests\local-registration.spec.js:40:3 › local registration flows › student registration saves a local student account (12.8s)
+  ✓  2 [desktop] › tests\local-registration.spec.js:80:3 › local registration flows › officer registration saves a pending local officer account (4.2s)
+
+  2 passed (21.1s)
