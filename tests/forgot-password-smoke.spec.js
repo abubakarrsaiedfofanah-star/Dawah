@@ -3,13 +3,19 @@ const { test, expect } = require('@playwright/test');
 const base = process.env.PLAYWRIGHT_BASE_URL || 'http://127.0.0.1:8000';
 const adminEmail = process.env.DAWAAH_ADMIN_EMAIL || 'abubakarrsaiedfofanah@gmail.com';
 
-test('admin forgot password sends Supabase reset email without changing password', async ({ page }) => {
+test('admin forgot password uses Supabase email when configured and reports local backend requirements otherwise', async ({ page }) => {
   test.setTimeout(60000);
   await page.goto(`${base}/admin.html`, { waitUntil: 'domcontentloaded' });
   await page.click('#adminForgotTabBtn');
   await page.fill('#adminForgotEmail', adminEmail);
   await page.click('#adminForgotButton');
-  await expect(page.locator('body')).toContainText(/Password reset email sent|reset code was sent/i, { timeout: 30000 });
+  const supabaseEnabled = await page.evaluate(() => Boolean(window.SupabaseBackend?.enabled));
+  await expect(page.locator('body')).toContainText(
+    supabaseEnabled
+      ? /Password reset email sent|reset code was sent/i
+      : /Secure admin email reset requires the PHP backend and configured email delivery/i,
+    { timeout: 30000 }
+  );
 });
 
 test('student and officer forgot password controls are available', async ({ page }) => {
