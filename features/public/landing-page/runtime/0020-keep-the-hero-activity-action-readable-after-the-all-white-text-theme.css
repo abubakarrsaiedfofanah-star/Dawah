@@ -1,0 +1,15 @@
+/* Runtime slice from daawah.css: Keep the hero activity action readable after the all-white-text theme.. */
+/* Keep the hero activity action readable after the all-white-text theme. */
+body .landing-page .hero-buttons .btn-light,
+body .landing-page .hero-buttons .visit-dawaah-link {
+    background: #006494 !important;
+    border-color: #ffffff !important;
+    color: #ffffff !important;
+    box-shadow: 0 8px 18px rgba(0, 32, 43, 0.25);
+}
+
+body .landing-page .hero-buttons .btn-light:hover,
+body .landing-page .hero-buttons .visit-dawaah-link:hover {
+    background: #003b5c !important;
+    color: #ffffff !important;
+}

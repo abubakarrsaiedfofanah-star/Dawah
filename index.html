@@ -28,7 +28,7 @@
                 event.preventDefault();
                 window.__dawaahDeferredInstallPrompt = event;
                 if (window.__dawaahPendingInstallClick && typeof window.installDawaahApp === 'function') {
-                    window.__dawaahPendingInstallClick = false;
+                    window.__dawaahPendingInstallClick = false
                     setTimeout(window.installDawaahApp, 100);
                 }
             });
@@ -58,7 +58,7 @@
     <meta name="theme-color" content="#003040">
     <link href="vendor/bootstrap/css/bootstrap.min.css?v=local-20260523" rel="stylesheet">
     <link rel="stylesheet" href="vendor/fontawesome/css/all.min.css?v=local-20260523">
-    <link rel="stylesheet" href="daawah.css?v=dawah-responsive-storage-20260708">
+    <link rel="stylesheet" href="daawah.css?v=exact-public-auth-gradient-20260813-v1">
     <link rel="stylesheet" href="ai_assistant_widget.css?v=login-only-20260522">
 </head>
 <body>
@@ -172,7 +172,7 @@
         </section>
 
         <!-- About Us Section -->
-        <section id="about" class="landing-section">
+        <section id="about" class="landing-section public-story-section public-story-section-learn">
             <div class="container">
                 <h2 class="section-title" id="publicAboutTitle">About Us</h2>
                 <div class="row">
@@ -199,7 +199,7 @@
         </section>
 
         <!-- Mission & Vision Section -->
-        <section id="mission" class="landing-section bg-light">
+        <section id="mission" class="landing-section bg-light public-story-section public-story-section-service">
             <div class="container">
                 <h2 class="section-title" id="publicWhatWeDoTitle">What We Do</h2>
                 <div class="row">
@@ -250,7 +250,7 @@
         </section>
 
         <!-- Leadership Section -->
-        <section id="leadership" class="landing-section">
+        <section id="leadership" class="landing-section public-story-section public-story-section-lead">
             <div class="container">
                 <h2 class="section-title">Our Leadership</h2>
                 <div id="leadershipContainer" class="row">
@@ -260,7 +260,7 @@
         </section>
 
         <!-- Activities Section -->
-        <section id="activities" class="landing-section bg-light">
+        <section id="activities" class="landing-section bg-light public-story-section public-story-section-activity">
             <div class="container">
                 <h2 class="section-title">Activities</h2>
                 <div class="activity-public-intro">
@@ -273,7 +273,7 @@
         </section>
 
         <!-- Gallery Section -->
-        <section id="gallery" class="landing-section bg-light">
+        <section id="gallery" class="landing-section bg-light public-story-section public-story-section-gallery">
             <div class="container">
                 <h2 class="section-title">Gallery</h2>
                 <div id="galleryContainer" class="row">
@@ -283,7 +283,7 @@
         </section>
 
         <!-- Contact Section -->
-        <section id="contact" class="landing-section">
+        <section id="contact" class="landing-section public-story-section public-story-section-contact">
             <div class="container">
                 <h2 class="section-title">Contact Us</h2>
                 <div class="row">
@@ -420,6 +420,23 @@
 
     <!-- Login Page -->
     <div id="loginPage" class="auth-page">
+        <div class="auth-islamic-motion" aria-hidden="true">
+            <div class="islamic-motion islamic-motion-auth">
+                <div class="islamic-motion__sky"></div>
+                <div class="islamic-motion__pattern islamic-motion__pattern-one"></div>
+                <div class="islamic-motion__pattern islamic-motion__pattern-two"></div>
+                <div class="islamic-motion__moon"></div>
+                <div class="islamic-motion__star islamic-motion__star-one"></div>
+                <div class="islamic-motion__star islamic-motion__star-two"></div>
+                <div class="islamic-motion__star islamic-motion__star-three"></div>
+                <div class="islamic-motion__star islamic-motion__star-four"></div>
+                <div class="islamic-motion__mosque islamic-motion__mosque-back"></div>
+                <div class="islamic-motion__mosque islamic-motion__mosque-front"></div>
+                <div class="islamic-motion__light islamic-motion__light-one"></div>
+                <div class="islamic-motion__light islamic-motion__light-two"></div>
+            </div>
+
+        </div>
         <div class="auth-container">
             <div class="auth-card">
                 <div class="text-center mb-4">
@@ -3366,6 +3383,6 @@
             document.addEventListener('DOMContentLoaded', updateFooterInstallButton);
         })();
     </script>
-    <script src="daawah.js?v=dawah-responsive-storage-20260708"></script>
+    <script src="daawah.js?v=dawah-responsive-storage-20260708-v4"></script>
 </body>
 </html>

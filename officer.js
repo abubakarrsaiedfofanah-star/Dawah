@@ -21,12 +21,22 @@ const OFFICER_RESET_CODE_STORE = 'dawaahPasswordResetCodes';
 const OFFICER_RESET_CODE_TTL_MS = 15 * 60 * 1000;
 const PORTAL_AUDIENCE_KEY = 'dawaahPortalAudience';
 const OFFICER_LOCAL_API_BASES = ['http://localhost/dawaah/', 'http://127.0.0.1:8000/'];
-const FULL_LOCAL_STORAGE_RESET_VERSION = '20260707-full-local-reset-v2';
+const FULL_LOCAL_STORAGE_RESET_VERSION = '20260708-full-local-reset-v4';
+const ACCOUNT_CLEAR_VERSION = '20260708-supabase-local-cache-reset-v4';
 
+// Runtime slice from officer.js: clearAllLocalAppStorageOnce.
 function clearAllLocalAppStorageOnce() {
     if (localStorage.getItem('DawaahFullLocalStorageResetVersion') === FULL_LOCAL_STORAGE_RESET_VERSION) return;
-    localStorage.clear();
-    sessionStorage.clear();
+    [
+        'currentOfficerUser',
+        'officerUser',
+        'officerSession',
+        'currentAdminUser',
+        'DawaahAdminSession'
+    ].forEach(key => {
+        localStorage.removeItem(key);
+        sessionStorage.removeItem(key);
+    });
     localStorage.setItem('DawaahFullLocalStorageResetVersion', FULL_LOCAL_STORAGE_RESET_VERSION);
 }
 
@@ -764,7 +774,7 @@ async function handleOfficerLogin(event) {
             const user = loginOfficerLocally(username, password, { authenticatedBySupabase: Boolean(window.SupabaseBackend?.enabled) });
             localStorage.setItem('currentUser', JSON.stringify(user));
             localStorage.setItem('currentRole', user.role);
-            localStorage.setItem('DawaahAccountClearVersion', '20260526-supabase-reset-v1');
+            localStorage.setItem('DawaahAccountClearVersion', ACCOUNT_CLEAR_VERSION);
             window.location.href = 'index.html?dashboard=1';
         } catch (error) {
             const message = /invalid path specified|failed to construct|invalid url/i.test(error.message || '')

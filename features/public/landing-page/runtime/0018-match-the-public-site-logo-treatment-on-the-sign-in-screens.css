@@ -1,0 +1,20 @@
+/* Runtime slice from daawah.css: Match the public-site logo treatment on the sign-in screens.. */
+/* Match the public-site logo treatment on the sign-in screens. */
+body .auth-page .auth-logo,
+body .auth-page .brand-logo__image {
+    filter: grayscale(1) sepia(1) saturate(5) hue-rotate(160deg) brightness(0.78) !important;
+}
+
+body .auth-page .brand-title {
+    display: none !important;
+}
+
+body .landing-page .navbar .navbar-brand,
+body .landing-page .navbar .nav-link,
+body .landing-footer,
+body .landing-footer h6,
+body .landing-footer p,
+body .landing-footer a,
+body .landing-footer span {
+    color: #ffffff !important;
+}

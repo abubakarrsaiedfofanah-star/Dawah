@@ -1,14 +1,19 @@
 // Runtime slice from admin.js: renderPendingRoleRequests.
 function renderPendingRoleRequests(requests) {
-    const container = document.getElementById('pendingRoleRequestsList');
-    if (!container) return;
+    const containers = [
+        document.getElementById('pendingRoleRequestsList'),
+        document.getElementById('dashboardPendingRoleRequestsList')
+    ].filter(Boolean);
+    if (!containers.length) return;
 
     if (!requests.length) {
-        container.innerHTML = '<div class="admin-empty-state"><i class="fas fa-circle-check"></i><h5>No pending role requests</h5><p class="text-muted mb-0">Special role approvals will appear here.</p></div>';
+        containers.forEach(container => {
+            container.innerHTML = '<div class="admin-empty-state"><i class="fas fa-circle-check"></i><h5>No pending role requests</h5><p class="text-muted mb-0">Special role approvals will appear here.</p></div>';
+        });
         return;
     }
 
-    container.innerHTML = `
+    const markup = `
         <div class="pending-role-grid">
             ${requests.map(request => {
                 const name = [request.first_name, request.last_name].filter(Boolean).join(' ') || request.username || request.student_id || 'Member';
@@ -48,4 +53,7 @@ function renderPendingRoleRequests(requests) {
             }).join('')}
         </div>
     `;
+    containers.forEach(container => {
+        container.innerHTML = markup;
+    });
 }

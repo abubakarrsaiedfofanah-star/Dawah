@@ -1,0 +1,48 @@
+/* Runtime slice from daawah.css: Clean green public theme: keep the UMMA logo, remove interface icons.. */
+/* Clean green public theme: keep the UMMA logo, remove interface icons. */
+body,
+.landing-page,
+.landing-section,
+.landing-section.bg-light {
+    background: #40b050 !important;
+}
+
+.landing-page .navbar.bg-dark,
+.landing-footer {
+    background: linear-gradient(135deg, #003b5c 0%, #006494 100%) !important;
+}
+
+.brand-logo__image,
+.hero-logo,
+.portal-icon img,
+.footer-brand__image,
+.auth-logo {
+    filter: grayscale(1) sepia(1) saturate(5) hue-rotate(160deg) brightness(0.78) !important;
+}
+
+.landing-page .landing-section::before,
+.landing-page .landing-section::after,
+.landing-page .auth-islamic-motion,
+.landing-page .section-community-motion {
+    display: none !important;
+}
+
+i[class*='fa-'] {
+    display: none !important;
+}
+
+@media (max-width: 575.98px) {
+    .footer-brand-column {
+        transform: none;
+    }
+
+    .footer-brand-lockup {
+        align-items: flex-start;
+        padding-right: 0;
+    }
+
+    .footer-quick-column {
+        padding-left: 0;
+        border-left: 0;
+    }
+}

@@ -84,9 +84,9 @@ let adminSessionTimeoutId = null;
 let adminSessionWarningId = null;
 let adminRealtimeUnsubscribers = [];
 
-// Runtime slice from admin.js: clearStoredAdminAccountsOnce.
-const FULL_LOCAL_STORAGE_RESET_VERSION = '20260708-full-local-reset-v3';
+const FULL_LOCAL_STORAGE_RESET_VERSION = '20260708-full-local-reset-v4';
 
+// Runtime slice from admin.js: clearAllLocalAppStorageOnce.
 function clearAllLocalAppStorageOnce() {
     if (localStorage.getItem('DawaahFullLocalStorageResetVersion') === FULL_LOCAL_STORAGE_RESET_VERSION) return;
     [
@@ -107,6 +107,7 @@ function clearAllLocalAppStorageOnce() {
 
 clearAllLocalAppStorageOnce();
 
+// Runtime slice from admin.js: clearStoredAdminAccountsOnce.
 function clearStoredAdminAccountsOnce() {
     if (localStorage.getItem(LOCAL_ADMIN_ACCOUNT_CLEAR_KEY) === '1') return;
     [
@@ -118,7 +119,7 @@ function clearStoredAdminAccountsOnce() {
         'adminUser',
         'DawaahAdminSession'
     ].forEach(key => localStorage.removeItem(key));
-    ['currentAdminUser', 'dawahSupabaseAccessToken', 'dawahSupabaseEmail', 'dawahSupabaseUid', 'dawahSupabaseAccessToken', 'dawahSupabaseEmail', 'dawahSupabaseUid'].forEach(key => sessionStorage.removeItem(key));
+    sessionStorage.removeItem('currentAdminUser');
     localStorage.setItem(LOCAL_ADMIN_ACCOUNT_CLEAR_KEY, '1');
 }
 
@@ -862,11 +863,12 @@ function isSpecialRole(role) {
     return !['student', 'admin'].includes(String(role || 'student').toLowerCase());
 }
 
-// Runtime slice from admin.js: getLocalPendingRoleRequests.
+// Runtime slice from admin.js: getLocalMemberAdminId.
 function getLocalMemberAdminId(member = {}) {
     return member.dbUserId || member.user_id || member.uid || member.authUid || member.id || member.supabaseId || member.studentId || member.username || member.email || '';
 }
 
+// Runtime slice from admin.js: localMemberMatchesAdminId.
 function localMemberMatchesAdminId(member = {}, userId = '') {
     const lookup = String(userId || '').trim().toLowerCase();
     if (!lookup) return false;
@@ -884,10 +886,12 @@ function localMemberMatchesAdminId(member = {}, userId = '') {
     ].some(value => String(value || '').trim().toLowerCase() === lookup);
 }
 
+// Runtime slice from admin.js: findLocalMemberByAdminId.
 function findLocalMemberByAdminId(members = [], userId = '') {
     return members.find(member => localMemberMatchesAdminId(member, userId));
 }
 
+// Runtime slice from admin.js: getLocalPendingRoleRequests.
 function getLocalPendingRoleRequests() {
     return readStore('allMembers')
         .filter(member => {
@@ -2955,10 +2959,8 @@ function switchAdminView(viewName) {
         
         // Add active class to nav link
         const activeEvent = typeof event !== 'undefined' ? event : null;
-        const clickedLink = activeEvent?.target?.closest?.('.nav-menu a');
-        const matchingLink = clickedLink || document.querySelector(`.nav-menu a[onclick*="switchAdminView('${viewName}')"]`);
-        if (matchingLink) {
-            matchingLink.classList.add('active');
+        if (activeEvent && activeEvent.target) {
+            activeEvent.target.closest('a')?.classList.add('active');
         }
         
         // Update page title
@@ -2979,33 +2981,9 @@ function switchAdminView(viewName) {
         document.getElementById('pageTitle').innerHTML = titles[viewName] || '';
         
         // Load view-specific data
-        closeAdminSidebarOnSmallScreens();
         loadViewData(viewName);
     }
 }
-
-function setAdminSidebarOpen(isOpen) {
-    const adminContainer = document.getElementById('adminContainer');
-    if (!adminContainer) return;
-    adminContainer.classList.toggle('admin-sidebar-open', isOpen);
-    const toggle = document.getElementById('adminSidebarToggle');
-    if (toggle) {
-        toggle.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
-    }
-}
-
-function toggleAdminSidebar() {
-    const adminContainer = document.getElementById('adminContainer');
-    setAdminSidebarOpen(!adminContainer?.classList.contains('admin-sidebar-open'));
-}
-
-function closeAdminSidebarOnSmallScreens() {
-    if (window.matchMedia('(max-width: 991.98px)').matches) {
-        setAdminSidebarOpen(false);
-    }
-}
-
-window.toggleAdminSidebar = toggleAdminSidebar;
 
 // Runtime slice from admin.js: showReligiousAdminSection.
 function showReligiousAdminSection(sectionId) {
@@ -3071,6 +3049,9 @@ function loadViewData(viewName) {
 function loadAllData() {
     renderBackupStatus();
     loadDashboardStats();
+    if (currentAdmin?.isMainAdmin) {
+        loadPendingRoleRequests();
+    }
     runSystemHealthCheck({ silent: true });
 }
 
@@ -3422,9 +3403,14 @@ function handleMemberPasswordReset(event) {
 
 // Runtime slice from admin.js: loadPendingRoleRequests.
 function loadPendingRoleRequests() {
-    const container = document.getElementById('pendingRoleRequestsList');
-    if (!container) return;
-    container.innerHTML = '<p class="text-muted">Loading pending role requests...</p>';
+    const containers = [
+        document.getElementById('pendingRoleRequestsList'),
+        document.getElementById('dashboardPendingRoleRequestsList')
+    ].filter(Boolean);
+    if (!containers.length) return;
+    containers.forEach(container => {
+        container.innerHTML = '<p class="text-muted">Loading pending role requests...</p>';
+    });
 
     refreshCloudAdminStores(true)
     .then(() => fetch(`${API_URL}?action=getPendingRoleRequests`))
@@ -3436,21 +3422,28 @@ function loadPendingRoleRequests() {
         renderPendingRoleRequests(result.data || []);
     })
     .catch(error => {
-        container.innerHTML = `<p class="text-danger">${escapeAdminText(error.message || 'Could not load role requests')}</p>`;
+        containers.forEach(container => {
+            container.innerHTML = `<p class="text-danger">${escapeAdminText(error.message || 'Could not load role requests')}</p>`;
+        });
     });
 }
 
 // Runtime slice from admin.js: renderPendingRoleRequests.
 function renderPendingRoleRequests(requests) {
-    const container = document.getElementById('pendingRoleRequestsList');
-    if (!container) return;
+    const containers = [
+        document.getElementById('pendingRoleRequestsList'),
+        document.getElementById('dashboardPendingRoleRequestsList')
+    ].filter(Boolean);
+    if (!containers.length) return;
 
     if (!requests.length) {
-        container.innerHTML = '<div class="admin-empty-state"><i class="fas fa-circle-check"></i><h5>No pending role requests</h5><p class="text-muted mb-0">Special role approvals will appear here.</p></div>';
+        containers.forEach(container => {
+            container.innerHTML = '<div class="admin-empty-state"><i class="fas fa-circle-check"></i><h5>No pending role requests</h5><p class="text-muted mb-0">Special role approvals will appear here.</p></div>';
+        });
         return;
     }
 
-    container.innerHTML = `
+    const markup = `
         <div class="pending-role-grid">
             ${requests.map(request => {
                 const name = [request.first_name, request.last_name].filter(Boolean).join(' ') || request.username || request.student_id || 'Member';
@@ -3490,6 +3483,9 @@ function renderPendingRoleRequests(requests) {
             }).join('')}
         </div>
     `;
+    containers.forEach(container => {
+        container.innerHTML = markup;
+    });
 }
 
 // Runtime slice from admin.js: approveRoleRequest.
@@ -7007,6 +7003,8 @@ function applyReligiousActivityRequest(request) {
 /**
  * Exports all religious activities to CSV within a date range.
  */
+
+// Runtime slice from admin.js: exportReligiousActivitiesCSV.
 function exportReligiousActivitiesCSV(startDate, endDate) {
     const data = getReligiousActivities();
     let allRecords = [];

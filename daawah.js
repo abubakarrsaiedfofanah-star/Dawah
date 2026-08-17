@@ -149,18 +149,28 @@ let contactVoiceStream = null;
 let contactVoiceChunks = [];
 let contactVoiceBlob = null;
 
-// Runtime slice from daawah.js: clearStoredAccountsOnce.
-const FULL_LOCAL_STORAGE_RESET_VERSION = '20260708-full-local-reset-v3';
+const FULL_LOCAL_STORAGE_RESET_VERSION = '20260708-full-local-reset-v4';
 
+// Runtime slice from daawah.js: clearAllLocalAppStorageOnce.
 function clearAllLocalAppStorageOnce() {
     if (localStorage.getItem('DawaahFullLocalStorageResetVersion') === FULL_LOCAL_STORAGE_RESET_VERSION) return;
-    localStorage.clear();
-    sessionStorage.clear();
+    [
+        'currentUser',
+        'currentRole',
+        'profileData',
+        'registeredEvents',
+        'DawaahLocalAccounts',
+        'DawaahAccountClearVersion'
+    ].forEach(key => {
+        localStorage.removeItem(key);
+        sessionStorage.removeItem(key);
+    });
     localStorage.setItem('DawaahFullLocalStorageResetVersion', FULL_LOCAL_STORAGE_RESET_VERSION);
 }
 
 clearAllLocalAppStorageOnce();
 
+// Runtime slice from daawah.js: clearStoredAccountsOnce.
 function clearStoredAccountsOnce() {
     if (localStorage.getItem('DawaahAccountClearVersion') === ACCOUNT_CLEAR_VERSION) return;
     [
@@ -175,7 +185,6 @@ function clearStoredAccountsOnce() {
         'leadershipRoles',
         'volunteerRecords'
     ].forEach(key => localStorage.removeItem(key));
-    ['dawahSupabaseAccessToken', 'dawahSupabaseEmail', 'dawahSupabaseUid', 'dawahSupabaseAccessToken', 'dawahSupabaseEmail', 'dawahSupabaseUid'].forEach(key => sessionStorage.removeItem(key));
     localStorage.setItem('DawaahAccountClearVersion', ACCOUNT_CLEAR_VERSION);
 }
 
@@ -2788,6 +2797,7 @@ function switchView(viewName) {
 window.showDashboard = showDashboard;
 window.switchView = switchView;
 
+// Runtime slice from daawah.js: setDashboardSidebarOpen.
 function setDashboardSidebarOpen(isOpen) {
     const dashboardPage = document.getElementById('dashboardPage');
     if (!dashboardPage) return;
@@ -2798,11 +2808,13 @@ function setDashboardSidebarOpen(isOpen) {
     }
 }
 
+// Runtime slice from daawah.js: toggleDashboardSidebar.
 function toggleDashboardSidebar() {
     const dashboardPage = document.getElementById('dashboardPage');
     setDashboardSidebarOpen(!dashboardPage?.classList.contains('dashboard-sidebar-open'));
 }
 
+// Runtime slice from daawah.js: closeDashboardSidebarOnSmallScreens.
 function closeDashboardSidebarOnSmallScreens() {
     if (window.matchMedia('(max-width: 991.98px)').matches) {
         setDashboardSidebarOpen(false);

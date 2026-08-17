@@ -76,6 +76,9 @@ test.describe('role menu permissions', () => {
     test(`${role} sees only assigned officer menu items`, async ({ page }) => {
       test.setTimeout(60000);
       await page.addInitScript(memberRole => {
+        localStorage.setItem('DawaahFullLocalStorageResetVersion', '20260708-full-local-reset-v4');
+        localStorage.setItem('DawaahAccountClearVersion', '20260708-supabase-local-cache-reset-v4');
+        localStorage.setItem('localStudentClearVersion', '2026-07-08-clear-student-local-accounts-v2');
         localStorage.setItem('currentRole', memberRole);
         localStorage.setItem('currentUser', JSON.stringify({
           email: `${memberRole}@localhost`,

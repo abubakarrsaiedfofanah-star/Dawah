@@ -26,6 +26,12 @@ async function handleAdminLogin(event) {
             showAdminLogin(`Supabase is not configured for this hosted admin page. ${detail}`);
             return;
         }
+        if (useStaticAdminApi && !window.SupabaseBackend?.enabled && username.includes('@') && getLocalAdminAccounts().length === 0) {
+            recordAdminLoginFailure();
+            const detail = window.SupabaseBackend?.configError || 'Add your Supabase Project URL and anon public key in supabase_config.js, then refresh.';
+            showAdminLogin(`Supabase Auth is not connected yet. ${detail}`);
+            return;
+        }
         if (useStaticAdminApi && window.SupabaseBackend?.enabled) {
             await window.SupabaseBackend.loginEmail(username, password);
             await window.SupabaseBackend.ensureRealtimeAuth?.(username, password).catch(error => {

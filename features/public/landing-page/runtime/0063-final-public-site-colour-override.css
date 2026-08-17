@@ -1,0 +1,17 @@
+/* Runtime slice from daawah.css: Final public-site colour override.. */
+/* Final public-site colour override. */
+body .landing-page .navbar.bg-dark,
+body .landing-footer {
+    background: linear-gradient(135deg, #003b5c 0%, #006494 100%) !important;
+}
+
+body .landing-page .brand-logo__image,
+body .landing-page .hero-logo,
+body .landing-page .portal-icon img,
+body .landing-footer .footer-brand__image {
+    filter: grayscale(1) sepia(1) saturate(5) hue-rotate(160deg) brightness(0.78) !important;
+}
+
+body .auth-page .auth-logo {
+    filter: grayscale(1) sepia(1) saturate(5) hue-rotate(160deg) brightness(0.78) !important;
+}
