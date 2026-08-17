@@ -2,7 +2,7 @@ const { test, expect } = require('@playwright/test');
 const fs = require('fs');
 const path = require('path');
 
-const base = process.env.PLAYWRIGHT_BASE_URL || 'https://66ghz.com';
+const base = process.env.PLAYWRIGHT_BASE_URL || 'https://dawah-six.vercel.app';
 const adminEmail = process.env.DAWAAH_ADMIN_EMAIL;
 const adminPassword = process.env.DAWAAH_ADMIN_PASSWORD;
 const stamp = Date.now();
@@ -257,7 +257,7 @@ async function testAiDirectWorkspaceAnswer(request) {
   ].join('\n');
 
   const response = await request.post('https://umma-dawah-groq-ai.abubakarrsaiedfofanah.workers.dev/chat', {
-    headers: { Origin: 'https://66ghz.com' },
+    headers: { Origin: 'https://dawah-six.vercel.app' },
     data: { question: 'do i have pending officer', mode: 'quick', context }
   });
   expect(response.status()).toBe(200);

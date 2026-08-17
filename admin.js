@@ -19,8 +19,7 @@ const STATIC_ADMIN_HOSTS = [
     'netlify.app',
     'vercel.app',
     'pages.dev',
-    '66ghz.com',
-    'www.66ghz.com'
+    'dawah-six.vercel.app'
 ];
 const useStaticAdminApi = location.protocol === 'file:'
     || STATIC_ADMIN_HOSTS.some(host => location.hostname === host || location.hostname.endsWith(`.${host}`));

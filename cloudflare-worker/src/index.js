@@ -17,8 +17,7 @@ function corsHeaders(request, env) {
 
 function allowedOrigins(env) {
   const defaults = [
-    'https://66ghz.com',
-    'https://www.66ghz.com',
+    'https://dawah-six.vercel.app',
     'http://localhost:8000',
     'http://127.0.0.1:8000'
   ];
@@ -34,9 +33,7 @@ function isAllowedOrigin(origin, env) {
   if (allowedOrigins(env).includes(origin)) return true;
   try {
     const host = new URL(origin).hostname;
-    return host === '66ghz.com'
-      || host === 'www.66ghz.com'
-      || host.endsWith('.vercel.app')
+    return host === 'dawah-six.vercel.app'
       || host === 'localhost'
       || host === '127.0.0.1';
   } catch (error) {

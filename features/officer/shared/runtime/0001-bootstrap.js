@@ -7,8 +7,7 @@ const OFFICER_STATIC_HOSTS = [
     'netlify.app',
     'vercel.app',
     'pages.dev',
-    '66ghz.com',
-    'www.66ghz.com'
+    'dawah-six.vercel.app'
 ];
 const frontendOnly = location.protocol === 'file:' || OFFICER_STATIC_HOSTS.some(host =>
     location.hostname === host || location.hostname.endsWith(`.${host}`)

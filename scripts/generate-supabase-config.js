@@ -50,7 +50,7 @@ const config = {
     || process.env.SUPABASE_PUBLIC_ANON_KEY
     || process.env.SUPABASE_ANON_PUBLIC_KEY
     || '',
-  enabledHosts: (process.env.DAWAH_SUPABASE_ENABLED_HOSTS || 'localhost,127.0.0.1,vercel.app,dawah-six.vercel.app,www.dawah-six.vercel.app,66ghz.com,www.66ghz.com')
+  enabledHosts: (process.env.DAWAH_SUPABASE_ENABLED_HOSTS || 'localhost,127.0.0.1,vercel.app,dawah-six.vercel.app')
     .split(',')
     .map(normalizeEnabledHost)
     .filter(Boolean),
