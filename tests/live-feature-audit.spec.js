@@ -48,7 +48,16 @@ async function activateAuth(page, tab) {
   for (let attempt = 0; attempt < 4; attempt += 1) {
     try {
       await waitForAppShell(page);
-      await page.evaluate(name => window.activateAuthTab(name), tab);
+      await page.evaluate(name => {
+        window.activateAuthTab(name);
+        document.getElementById('landingPage')?.classList.remove('active');
+        document.getElementById('dashboardPage')?.classList.remove('active');
+        document.getElementById('loginPage')?.classList.add('active');
+        const tabButton = document.getElementById(`${name}TabBtn`);
+        if (tabButton && window.bootstrap) {
+          window.bootstrap.Tab.getOrCreateInstance(tabButton).show();
+        }
+      }, tab);
       return;
     } catch (error) {
       if (!/Execution context was destroyed|navigation/i.test(String(error))) throw error;
@@ -57,7 +66,16 @@ async function activateAuth(page, tab) {
     }
   }
   await waitForAppShell(page);
-  await page.evaluate(name => window.activateAuthTab(name), tab);
+  await page.evaluate(name => {
+    window.activateAuthTab(name);
+    document.getElementById('landingPage')?.classList.remove('active');
+    document.getElementById('dashboardPage')?.classList.remove('active');
+    document.getElementById('loginPage')?.classList.add('active');
+    const tabButton = document.getElementById(`${name}TabBtn`);
+    if (tabButton && window.bootstrap) {
+      window.bootstrap.Tab.getOrCreateInstance(tabButton).show();
+    }
+  }, tab);
 }
 
 async function openAppModal(page, functionName, modalId, arg = null) {
