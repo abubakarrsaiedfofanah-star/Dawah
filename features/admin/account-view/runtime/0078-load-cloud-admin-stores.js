@@ -4,14 +4,6 @@ async function loadCloudAdminStores() {
     const members = await window.SupabaseBackend.listMembers().catch(() => null);
     if (Array.isArray(members)) {
         localStorage.setItem('allMembers', JSON.stringify(members));
-        members
-            .filter(member => String(member.status || '').toLowerCase() === 'active')
-            .slice(0, 150)
-            .forEach(member => {
-                window.SupabaseBackend.saveMemberVerification?.(member).catch(error => {
-                    console.error('Member verification backfill failed:', error);
-                });
-            });
     }
     const stores = await window.SupabaseBackend.loadStores([
         LOCAL_ADMIN_ACCOUNTS_KEY,

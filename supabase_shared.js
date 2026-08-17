@@ -487,6 +487,12 @@ const SupabaseBackendApi = (() => {
     }
 
     async function saveReceiptVerification(receipt) {
+        const receiptNumber = receipt?.receiptNumber || receipt?.receipt_number;
+        if (receiptNumber) {
+            const existing = await findRecordByJsonField('receiptVerifications', 'receiptNumber', receiptNumber).catch(() => null)
+                || await findRecordByJsonField('receiptVerifications', 'receipt_number', receiptNumber).catch(() => null);
+            if (existing?.supabaseId) return updateRecord('receiptVerifications', existing.supabaseId, receipt);
+        }
         return createRecord('receiptVerifications', receipt);
     }
 
@@ -496,6 +502,16 @@ const SupabaseBackendApi = (() => {
     }
 
     async function saveMemberVerification(member) {
+        const lookups = [
+            ['authUid', member?.authUid],
+            ['uid', member?.uid],
+            ['studentId', member?.studentId],
+            ['email', member?.email || member?.authEmail]
+        ].filter(([, value]) => value);
+        for (const [field, value] of lookups) {
+            const existing = await findRecordByJsonField('memberVerifications', field, value).catch(() => null);
+            if (existing?.supabaseId) return updateRecord('memberVerifications', existing.supabaseId, member);
+        }
         return createRecord('memberVerifications', member);
     }
 
