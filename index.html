@@ -58,7 +58,8 @@
     <meta name="theme-color" content="#003040">
     <link href="vendor/bootstrap/css/bootstrap.min.css?v=local-20260523" rel="stylesheet">
     <link rel="stylesheet" href="vendor/fontawesome/css/all.min.css?v=local-20260523">
-    <link rel="stylesheet" href="daawah.css?v=exact-public-auth-gradient-20260813-v1">
+    <link rel="stylesheet" href="daawah.css?v=password-eye-svg-20260918-v3">
+    <link rel="stylesheet" href="ui-refresh.css?v=responsive-ui-20260918-v5">
     <link rel="stylesheet" href="ai_assistant_widget.css?v=login-only-20260522">
 </head>
 <body>
@@ -106,6 +107,9 @@
                         <li class="nav-item">
                             <a class="nav-link" href="#contact" onclick="return showPublicSection('contact', this)"><i class="fas fa-bell"></i> Contact Us</a>
                         </li>
+                        <li class="nav-item nav-join-item">
+                            <a class="nav-link nav-join-link" href="#register" onclick="activateAuthTab('register'); return false;">Join Us</a>
+                        </li>
                     </ul>
                 </div>
             </div>
@@ -120,9 +124,9 @@
                 </h1>
                 <p class="hero-description">Building a compassionate community of Muslims.</p>
                 <div class="hero-highlights" aria-label="UMMA University Dawah Team highlights">
-                    <span><i class="fas fa-mosque"></i> Prayer & Guidance</span>
-                    <span><i class="fas fa-hands-helping"></i> Welfare & Service</span>
-                    <span><i class="fas fa-photo-film"></i> Events & Media</span>
+                    <span><strong>Faith</strong><small>Prayer & guidance</small></span>
+                    <span><strong>Community</strong><small>Welfare & service</small></span>
+                    <span><strong>Growth</strong><small>Events & learning</small></span>
                 </div>
                 <div class="hero-buttons">
                     <a href="#portals" onclick="return showPublicSection('portals', this)" class="btn btn-primary btn-lg"><i class="fas fa-door-open"></i> Open Portals</a>
@@ -405,7 +409,7 @@
                     <div class="col-lg-3 col-md-6">
                         <h6>Connect With Us</h6>
                         <div class="social-links" id="publicSocialLinks">
-                            <a href="https://api.whatsapp.com/send?phone=23231422167&text=Assalamu%20alaikum%2C%20I%20would%20like%20to%20contact%20Da%27awah%20Team." target="_blank" rel="noopener" aria-label="WhatsApp"><i class="fab fa-whatsapp"></i></a>
+                            <a href="https://api.whatsapp.com/send?phone=23231422167&text=Assalamu%20alaikum%2C%20I%20would%20like%20to%20contact%20Da%27awah%20Team." target="_blank" rel="noopener" aria-label="WhatsApp" title="WhatsApp"><span class="social-link-mark" aria-hidden="true">WA</span></a>
                         </div>
                     </div>
                 </div>
@@ -476,8 +480,8 @@
                                 <label class="form-label">Password</label>
                                 <div class="input-group">
                                     <input type="password" class="form-control" id="loginPassword" placeholder="Enter password" autocomplete="current-password" required>
-                                    <button class="btn btn-outline-secondary" type="button" id="togglePassword">
-                                        <i class="fas fa-eye"></i>
+                                    <button class="btn btn-outline-secondary password-visibility-toggle" type="button" id="togglePassword" aria-label="Show password" aria-pressed="false" title="Show password">
+                                        <svg class="password-visibility-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M2 12s3.5-6 10-6 10 6 10 6-3.5 6-10 6S2 12 2 12Z"/><circle cx="12" cy="12" r="2.75"/></svg>
                                     </button>
                                 </div>
                             </div>
@@ -642,8 +646,8 @@
                                 <label class="form-label">Password</label>
                                 <div class="input-group">
                                     <input type="password" class="form-control" id="regPassword" placeholder="Enter password" required>
-                                    <button class="btn btn-outline-secondary" type="button" id="toggleRegPassword" aria-label="Show registration password">
-                                        <i class="fas fa-eye"></i>
+                                    <button class="btn btn-outline-secondary password-visibility-toggle" type="button" id="toggleRegPassword" aria-label="Show password" aria-pressed="false" title="Show password">
+                                        <svg class="password-visibility-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M2 12s3.5-6 10-6 10 6 10 6-3.5 6-10 6S2 12 2 12Z"/><circle cx="12" cy="12" r="2.75"/></svg>
                                     </button>
                                 </div>
                                 <div class="password-strength mt-2" aria-live="polite">
@@ -656,8 +660,8 @@
                                 <label class="form-label">Confirm Password</label>
                                 <div class="input-group">
                                     <input type="password" class="form-control" id="confirmPassword" placeholder="Confirm password" required>
-                                    <button class="btn btn-outline-secondary" type="button" id="toggleConfirmPassword" aria-label="Show confirm password">
-                                        <i class="fas fa-eye"></i>
+                                    <button class="btn btn-outline-secondary password-visibility-toggle" type="button" id="toggleConfirmPassword" aria-label="Show confirm password" aria-pressed="false" title="Show confirm password">
+                                        <svg class="password-visibility-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M2 12s3.5-6 10-6 10 6 10 6-3.5 6-10 6S2 12 2 12Z"/><circle cx="12" cy="12" r="2.75"/></svg>
                                     </button>
                                 </div>
                             </div>

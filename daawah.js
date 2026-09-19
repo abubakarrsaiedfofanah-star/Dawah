@@ -828,21 +828,21 @@ function renderPublicSocialLinks(settings) {
     const container = document.getElementById('publicSocialLinks');
     if (!container) return;
     const links = [
-        ['social_whatsapp', 'WhatsApp', 'fab fa-whatsapp'],
-        ['contact_email', 'Email', 'fas fa-envelope', value => `mailto:${value}`],
-        ['social_facebook', 'Facebook', 'fab fa-facebook'],
-        ['social_x', 'X', 'fab fa-twitter'],
-        ['social_instagram', 'Instagram', 'fab fa-instagram'],
-        ['social_youtube', 'YouTube', 'fab fa-youtube'],
-        ['social_tiktok', 'TikTok', 'fab fa-tiktok'],
-        ['social_linkedin', 'LinkedIn', 'fab fa-linkedin']
+        ['social_whatsapp', 'WhatsApp', 'WA'],
+        ['contact_email', 'Email', '@', value => `mailto:${value}`],
+        ['social_facebook', 'Facebook', 'f'],
+        ['social_x', 'X', 'X'],
+        ['social_instagram', 'Instagram', 'IG'],
+        ['social_youtube', 'YouTube', '▶'],
+        ['social_tiktok', 'TikTok', '♪'],
+        ['social_linkedin', 'LinkedIn', 'in']
     ];
     container.innerHTML = links
         .filter(([key]) => settings[key])
-        .map(([key, label, icon, hrefBuilder]) => {
+        .map(([key, label, mark, hrefBuilder]) => {
             const href = hrefBuilder ? hrefBuilder(settings[key]) : settings[key];
             const targetAttrs = key === 'contact_email' ? '' : ' target="_blank" rel="noopener"';
-            return `<a href="${escapeHtml(href)}"${targetAttrs} aria-label="${escapeHtml(label)}"><i class="${icon}"></i></a>`;
+            return `<a href="${escapeHtml(href)}"${targetAttrs} aria-label="${escapeHtml(label)}" title="${escapeHtml(label)}"><span class="social-link-mark" aria-hidden="true">${mark}</span></a>`;
         })
         .join('');
 }
@@ -2302,6 +2302,11 @@ function togglePasswordVisibility() {
     togglePasswordField('loginPassword', 'togglePassword');
 }
 
+function passwordVisibilityIcon(isVisible) {
+    const slash = isVisible ? '<path d="M4 4 20 20"/>' : '';
+    return `<svg class="password-visibility-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M2 12s3.5-6 10-6 10 6 10 6-3.5 6-10 6S2 12 2 12Z"/><circle cx="12" cy="12" r="2.75"/>${slash}</svg>`;
+}
+
 // Runtime slice from daawah.js: togglePasswordField.
 function togglePasswordField(inputId, buttonId) {
     const passwordInput = document.getElementById(inputId);
@@ -2310,11 +2315,11 @@ function togglePasswordField(inputId, buttonId) {
 
     if (passwordInput.type === 'password') {
         passwordInput.type = 'text';
-        toggleBtn.innerHTML = '<i class="fas fa-eye-slash"></i>';
+        toggleBtn.innerHTML = passwordVisibilityIcon(true);
         toggleBtn.setAttribute('aria-label', 'Hide password');
     } else {
         passwordInput.type = 'password';
-        toggleBtn.innerHTML = '<i class="fas fa-eye"></i>';
+        toggleBtn.innerHTML = passwordVisibilityIcon(false);
         toggleBtn.setAttribute('aria-label', 'Show password');
     }
 }
