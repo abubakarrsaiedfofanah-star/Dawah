@@ -1,0 +1,40 @@
+/* Final registration logo treatment. Loaded after the bundled site stylesheet
+   so the official UMMA artwork remains clear on the student access screen. */
+body .auth-page img.auth-logo {
+    background: #ffffff !important;
+    width: min(440px, 88vw) !important;
+    height: auto !important;
+    padding: 0 !important;
+    border-radius: 12px !important;
+    filter: none !important;
+    opacity: 1 !important;
+}
+
+body .auth-page .password-visibility-toggle {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 52px;
+    background: #ffffff !important;
+    border-color: rgba(255, 255, 255, .6) !important;
+    color: #003b5c !important;
+}
+
+body .auth-page .password-visibility-toggle .password-visibility-icon {
+    width: 24px;
+    height: 24px;
+    color: #003b5c !important;
+    fill: none;
+    stroke: currentColor;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    stroke-width: 2;
+}
+
+body .auth-page .password-visibility-toggle:hover,
+body .auth-page .password-visibility-toggle:focus-visible {
+    background: #e6f5ea !important;
+    color: #006bb8 !important;
+    outline: 3px solid rgba(120, 217, 134, .55);
+    outline-offset: -3px;
+}
