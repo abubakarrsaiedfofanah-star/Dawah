@@ -218,7 +218,7 @@ img, svg, video, canvas { max-width: 100%; }
     .landing-section .row > * { margin-bottom: 1rem; }
     .auth-container { padding: .7rem !important; }
     .auth-card { width: 100% !important; padding: 1.1rem !important; border-radius: 16px !important; }
-    .auth-card .auth-logo { width: min(100%, 360px) !important; }
+    .auth-card .auth-logo { width: 100% !important; max-width: none !important; }
     .auth-card .auth-tabs .nav-link { min-width: 0; font-size: .92rem; }
     .registration-form .row > * { width: 100%; }
     .registration-form .input-group .btn { min-width: 58px; }
