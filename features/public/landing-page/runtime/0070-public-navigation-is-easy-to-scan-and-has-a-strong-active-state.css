@@ -1,0 +1,6 @@
+/* Runtime slice from daawah.css: Public navigation is easy to scan and has a strong active state.. */
+/* Public navigation is easy to scan and has a strong active state. */
+.landing-page .navbar.bg-dark { background: rgba(0, 48, 64, .94) !important; backdrop-filter: blur(14px); border-bottom: 1px solid rgba(255, 255, 255, .14); }
+.landing-page .navbar .nav-link { position: relative; border-radius: 999px; font-weight: 700; }
+.landing-page .navbar .nav-link::after { content: ''; position: absolute; bottom: 4px; left: 50%; width: 0; height: 2px; border-radius: 99px; background: #78d986; transition: width 180ms ease, left 180ms ease; }
+.landing-page .navbar .nav-link:hover::after, .landing-page .navbar .nav-link.active::after { width: 56%; left: 22%; }

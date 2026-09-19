@@ -1525,6 +1525,30 @@
                 height: auto;
             }
         }
+
+        /* Small-screen admin workspace refinements. */
+        @media (max-width: 575.98px) {
+            .admin-header { padding: 14px; }
+            .admin-content { padding: 14px; }
+            .admin-header h2, #pageTitle { font-size: 1.25rem; }
+            .admin-welcome-banner { padding: 18px !important; border-radius: 14px; }
+            .dashboard-stat-card { min-height: 0; }
+            .content-card { border-radius: 14px; }
+            .content-card .card-body, .content-card { padding: 14px; }
+            .form-control, .form-select { min-height: 46px; }
+            .btn { min-height: 44px; }
+            .admin-report-grid { grid-template-columns: 1fr 1fr; }
+            .table-responsive { border-radius: 10px; overflow-x: auto; -webkit-overflow-scrolling: touch; }
+            .table-responsive table { min-width: 620px; }
+        }
+
+        /* Modern, uncluttered admin entry surface. */
+        .admin-login-card { width: min(100%, 500px); padding: clamp(22px, 4vw, 36px); border-radius: 24px; border-color: rgba(212,175,55,.45); box-shadow: 0 30px 70px rgba(0,0,0,.46); }
+        .admin-login-logo { width: min(180px, 52vw); padding: 0; border: 0; border-radius: 0; background: transparent; box-shadow: none; filter: none; }
+        .admin-login-card h1 { font-size: clamp(1.35rem, 3.6vw, 2rem); line-height: 1.2; margin: .35rem auto 1.5rem; max-width: 390px; }
+        .admin-auth-tabs { display: flex; gap: .5rem; flex-wrap: nowrap; overflow-x: auto; border-bottom: 0; padding-bottom: .25rem; }
+        .admin-auth-tabs .nav-link { flex: 1 0 auto; min-height: 44px; border: 1px solid rgba(212,175,55,.28); border-radius: 999px; white-space: nowrap; }
+        .admin-login-card .form-control, .admin-login-card .form-select { min-height: 48px; border-radius: 10px; }
     </style>
     <link rel="stylesheet" href="ui-refresh.css?v=responsive-ui-20260918-v5">
 </head>
@@ -1536,8 +1560,7 @@
             </div>
             <div class="text-center">
                 <img src="assets/umma-university-logo-color.png?v=20260522-logo2" alt="UMMA University logo" class="admin-login-logo">
-                <h1>Admin Login</h1>
-                <p class="text-muted mb-4">Secure admin access for approved UMMA University Dawah Team administrators.</p>
+                <h1>UMMA University Dawah Team Admin Access</h1>
             </div>
             <div id="adminLoginError" class="alert alert-danger admin-login-error"></div>
             <ul class="nav nav-tabs admin-auth-tabs mb-3" role="tablist">

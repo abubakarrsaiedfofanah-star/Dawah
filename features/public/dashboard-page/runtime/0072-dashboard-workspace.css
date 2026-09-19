@@ -1,0 +1,39 @@
+/* Runtime slice from daawah.css: Dashboard workspace.. */
+/* Dashboard workspace. */
+.dashboard-container { background: radial-gradient(circle at 85% 2%, rgba(64,176,80,.12), transparent 24%), linear-gradient(145deg, #f5fbf8, #eaf5f2) !important; }
+.dashboard-container .navbar { position: sticky; top: 0; z-index: 1040; }
+.dashboard-sidebar-toggle { display: none; position: fixed; left: 14px; bottom: 16px; z-index: 1055; align-items: center; gap: .45rem; min-height: 46px; padding: 0 15px; border: 0; border-radius: 999px; background: #003040; color: #fff; box-shadow: 0 12px 26px rgba(0,48,64,.28); font-weight: 800; }
+.dashboard-sidebar-backdrop { display: none; }
+.dashboard-nav-search { position: sticky; top: 0; z-index: 2; display: flex; align-items: center; gap: .55rem; margin: 0 .8rem .7rem; padding: 0 .75rem; min-height: 42px; background: rgba(255,255,255,.1); border: 1px solid rgba(255,255,255,.14); border-radius: 10px; }
+.dashboard-nav-search i { color: #78d986; }
+.dashboard-nav-search input { width: 100%; min-width: 0; border: 0; outline: 0; background: transparent; color: #fff; font-size: .88rem; }
+.dashboard-nav-search input::placeholder { color: rgba(255,255,255,.65); }
+.sidebar-menu .nav.flex-column .nav-link { background: transparent !important; border: 1px solid transparent; border-left: 4px solid transparent; border-radius: 10px; margin-bottom: 3px; }
+.sidebar-menu .nav.flex-column .nav-link:hover, .sidebar-menu .nav.flex-column .nav-link:focus { background: rgba(255,255,255,.1) !important; color: #fff !important; transform: translateX(3px); }
+.sidebar-menu .nav.flex-column .nav-link.active { background: linear-gradient(90deg, rgba(64,176,80,.96), rgba(0,96,176,.82)) !important; color: #fff !important; border-left-color: #fff; }
+.sidebar-menu .menu-section.is-filtered-empty { display: none; }
+.main-content { position: relative; }
+.view-container.active { animation: workspaceEnter .35s cubic-bezier(.2,.8,.2,1); }
+.stats-card, .premium-dashboard-card { border: 1px solid rgba(0,48,64,.1); }
+
+@keyframes interfaceRise { to { opacity: 1; transform: translateY(0); } }
+@keyframes workspaceEnter { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+@media (max-width: 991.98px) {
+    .dashboard-sidebar-toggle { display: inline-flex; }
+    .dashboard-sidebar-backdrop { position: fixed; inset: 0; z-index: 1045; border: 0; background: rgba(0, 24, 32, .48); backdrop-filter: blur(2px); }
+    .sidebar-menu { position: fixed !important; z-index: 1050; top: 0 !important; left: 0; width: min(330px, 86vw); height: 100dvh; max-height: none; padding-top: 82px; transform: translateX(-105%); transition: transform .28s cubic-bezier(.2,.8,.2,1); overflow-y: auto; }
+    .dashboard-container.dashboard-sidebar-open .sidebar-menu { transform: translateX(0); }
+    .dashboard-container.dashboard-sidebar-open .dashboard-sidebar-backdrop { display: block; }
+    .dashboard-nav-search { top: 12px; }
+}
+@media (max-width: 767.98px) {
+    .landing-page .navbar .nav-link::after { display: none; }
+    .landing-page .navbar .nav-link.active { background: rgba(120,217,134,.18); }
+    .landing-section .mission-card, .landing-section .portal-card, .landing-section .leadership-card, .landing-section .gallery-item, .landing-section .activity-card, .landing-section .contact-info, .landing-section .contact-form { opacity: 1; transform: none; }
+    .landing-section.is-in-view .mission-card, .landing-section.is-in-view .portal-card, .landing-section.is-in-view .leadership-card, .landing-section.is-in-view .gallery-item, .landing-section.is-in-view .activity-card, .landing-section.is-in-view .contact-info, .landing-section.is-in-view .contact-form { animation: none; }
+}
+@media (prefers-reduced-motion: reduce) {
+    .landing-page::before, .sidebar-menu, .view-container.active { transition: none; animation: none; }
+    .landing-section .mission-card, .landing-section .portal-card, .landing-section .leadership-card, .landing-section .gallery-item, .landing-section .activity-card, .landing-section .contact-info, .landing-section .contact-form { opacity: 1; transform: none; }
+}

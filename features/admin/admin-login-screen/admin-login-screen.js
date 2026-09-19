@@ -32,9 +32,11 @@
         "adminResetCode",
         "adminResetNewPassword",
         "adminResetWithCodeButton",
-        "adminResetWithCodeForm"
+        "adminResetWithCodeForm",
+        "installAppButton"
     ],
     handlers: [
+        "installAdminApp",
         "togglePasswordVisibility"
     ]
   };

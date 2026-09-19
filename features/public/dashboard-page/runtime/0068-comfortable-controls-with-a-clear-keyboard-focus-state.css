@@ -1,0 +1,68 @@
+/* Runtime slice from daawah.css: Comfortable controls with a clear keyboard focus state.. */
+/* Comfortable controls with a clear keyboard focus state. */
+.btn { min-height: 44px; display: inline-flex; align-items: center; justify-content: center; gap: .45rem; font-weight: 700; }
+.form-control, .form-select { min-height: 46px; border-radius: var(--app-radius-sm); border-color: rgba(0, 48, 64, .2); }
+textarea.form-control { min-height: 110px; }
+.form-control:focus, .form-select:focus, .form-check-input:focus {
+    border-color: #40b050;
+    box-shadow: var(--app-ring);
+}
+.form-label { color: var(--app-ink); font-weight: 650; margin-bottom: .45rem; }
+
+.page-header, .content-header { gap: 1rem; }
+.page-header h2, .content-header h2 { font-size: clamp(1.35rem, 3vw, 2rem); }
+.section-title { font-size: clamp(1.7rem, 4vw, 2.5rem); line-height: 1.15; }
+.hero-title { font-size: clamp(2.15rem, 6vw, 4.5rem); line-height: 1.08; }
+.hero-description { font-size: clamp(1rem, 2.2vw, 1.2rem); }
+
+.modal-content { border-radius: var(--app-radius); overflow: hidden; }
+.modal-header { padding: 1rem 1.25rem; }
+.modal-footer { gap: .5rem; }
+.modal-body { padding: clamp(1rem, 3vw, 1.5rem); }
+
+.table-responsive, .dashboard-table, .data-table-wrap { border-radius: var(--app-radius-sm); border: 1px solid rgba(0, 48, 64, .12); }
+.table > :not(caption) > * > * { padding: .82rem .9rem; vertical-align: middle; }
+
+@media (max-width: 991.98px) {
+    .navbar-brand span { font-size: .82rem; }
+    .landing-hero { min-height: min(640px, 82svh); }
+    .hero-highlights { justify-content: center; }
+    .main-content { padding: clamp(1rem, 3vw, 1.5rem); }
+}
+
+@media (max-width: 767.98px) {
+    body { font-size: 15px; }
+    .landing-section { padding-block: 3.25rem; }
+    .landing-section .container, .landing-section .container-fluid { padding-inline: 1rem; }
+    .landing-hero { min-height: 0; padding: 4.5rem 1rem 5rem; }
+    .hero-highlights { display: grid; grid-template-columns: 1fr; width: min(360px, 100%); margin-inline: auto; }
+    .hero-buttons { display: grid; gap: .75rem; width: min(400px, 100%); margin-inline: auto; }
+    .hero-buttons .btn { width: 100%; margin: 0 !important; }
+    .navbar .navbar-collapse { max-height: calc(100svh - 76px); overflow-y: auto; }
+    .navbar .nav-tabs { gap: .25rem; }
+    .navbar .nav-link { min-height: 44px; display: flex; align-items: center; }
+    .page-header, .content-header, .dashboard-panel-footer, .dashboard-panel-footer__actions { align-items: stretch; flex-direction: column; }
+    .page-header .btn, .content-header .btn, .dashboard-panel-footer .btn { width: 100%; }
+    .dashboard-panel-footer { position: static; padding-inline: 0; }
+    .dashboard-panel-footer__actions { width: 100%; }
+    .sidebar-menu { padding-bottom: .75rem; }
+    .sidebar-menu .nav-link { font-size: .88rem; }
+    .card-body, .content-card { padding: 1rem; }
+    .modal-dialog { margin: .5rem; }
+    .modal-dialog-scrollable .modal-content { max-height: calc(100svh - 1rem); }
+    .modal-footer .btn { flex: 1 1 100%; }
+    .research-source-card { grid-template-columns: 30px minmax(0, 1fr); }
+    .research-source-card > :last-child { grid-column: 2; }
+}
+
+@media (max-width: 420px) {
+    .brand-logo__image { width: 80px; }
+    .navbar-brand span { font-size: .7rem; }
+    .premium-toggler { min-width: 82px; }
+    .sidebar-menu .nav { grid-template-columns: 1fr; }
+    .stats-card, .dashboard-card { min-width: 0; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    html { scroll-behavior: auto; }
+}

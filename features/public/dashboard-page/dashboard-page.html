@@ -65,6 +65,11 @@
             <div class="row">
                 <!-- Sidebar Navigation -->
                 <div id="dashboardSidebar" class="col-md-3 col-lg-2 sidebar-menu">
+                    <div class="dashboard-nav-search">
+                        <label class="visually-hidden" for="sidebarNavSearch">Search dashboard menu</label>
+                        <i class="fas fa-magnifying-glass" aria-hidden="true"></i>
+                        <input id="sidebarNavSearch" type="search" placeholder="Find a tool…" autocomplete="off">
+                    </div>
                     <div class="menu-section">
                         <h6 class="menu-title">NAVIGATION</h6>
                         <nav class="nav flex-column">
@@ -387,8 +392,12 @@
 
                     <!-- Profile View -->
                     <div id="profileView" class="view-container">
-                        <div class="page-header">
-                            <h2>My Profile</h2>
+                        <div class="page-header profile-page-header">
+                            <div>
+                                <span class="profile-page-kicker"><i class="fas fa-sparkles"></i> Personal workspace</span>
+                                <h2>My Profile</h2>
+                            </div>
+                            <button class="btn btn-primary" onclick="editProfile()"><i class="fas fa-pen"></i> Edit Profile</button>
                         </div>
 
                         <div class="row">
@@ -401,18 +410,20 @@
                                         </div>
                                         <h5 class="mt-3" id="profileName">Student Name</h5>
                                         <p class="text-muted" id="profileStudentId">Student ID</p>
-                                        <button class="btn btn-sm btn-primary" onclick="editProfile()">Edit Profile</button>
-                                        <button class="btn btn-sm btn-outline-success mt-2" onclick="openMemberDigitalCard()">
+                                        <div class="profile-card-actions">
+                                        <button class="btn btn-sm btn-primary" onclick="editProfile()"><i class="fas fa-pen"></i> Edit Profile</button>
+                                        <button class="btn btn-sm btn-outline-success" onclick="openMemberDigitalCard()">
                                             <i class="fas fa-id-card"></i> Digital Card
                                         </button>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
 
                             <div class="col-md-9">
-                                <div class="card">
+                                <div class="card profile-details-card">
                                     <div class="card-header">
-                                        <h5 class="mb-0">Personal Information</h5>
+                                        <h5 class="mb-0"><i class="fas fa-address-card"></i> Personal Information</h5>
                                     </div>
                                     <div class="card-body">
                                         <div class="row mb-3">
@@ -988,10 +999,21 @@
                                                 <i class="fas fa-file-audio"></i> Upload Audio
                                                 <input type="file" id="researchAudioUpload" accept="audio/*,video/webm" hidden onchange="uploadResearchAudio()">
                                             </label>
+                                            <label class="btn btn-outline-secondary mb-0">
+                                                <i class="fas fa-camera"></i> Camera
+                                                <input type="file" id="researchPhotoUpload" accept="image/*" capture="environment" hidden onchange="handleResearchPhotoUpload()">
+                                            </label>
                                             <button type="button" class="btn btn-primary" id="researchRunBtn" onclick="runStudentResearch()">
                                                 <i class="fas fa-magnifying-glass"></i> Research
                                             </button>
                                         </div>
+                                    </div>
+                                </div>
+                                <div class="research-photo-preview d-none" id="researchPhotoPreview">
+                                    <img id="researchPhotoPreviewImage" src="" alt="Research photo preview">
+                                    <div>
+                                        <strong id="researchPhotoName">Research photo attached</strong>
+                                        <button type="button" class="btn btn-sm btn-outline-danger ms-2" onclick="clearResearchPhoto()">Remove</button>
                                     </div>
                                 </div>
                                 <div class="alert alert-info mt-3 mb-0" id="researchStatus">Research can include source links when available. Verify religious rulings with qualified scholars.</div>
@@ -1001,9 +1023,14 @@
                         <div class="card mb-4">
                             <div class="card-header d-flex justify-content-between align-items-center">
                                 <h5 class="mb-0">Result</h5>
-                                <button type="button" class="btn btn-sm btn-outline-secondary" onclick="exportLatestResearch()">
-                                    <i class="fas fa-download"></i> Export
-                                </button>
+                                <div class="d-flex gap-2">
+                                    <button type="button" class="btn btn-sm btn-outline-secondary" onclick="exportLatestResearch()">
+                                        <i class="fas fa-download"></i> Export
+                                    </button>
+                                    <button type="button" class="btn btn-sm btn-outline-danger" onclick="clearResearchResult()">
+                                        <i class="fas fa-eraser"></i> Clear
+                                    </button>
+                                </div>
                             </div>
                             <div class="card-body" id="researchResult">
                                 <p class="text-muted mb-0">Your research answer will appear here.</p>

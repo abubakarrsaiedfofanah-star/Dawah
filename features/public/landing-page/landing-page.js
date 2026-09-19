@@ -23,6 +23,7 @@
         "footerContactLocation",
         "footerContactPhone",
         "footerContactWhatsapp",
+        "footerInstallWrapper",
         "gallery",
         "galleryContainer",
         "home",
@@ -67,6 +68,7 @@
     ],
     handlers: [
         "activateAuthTab",
+        "rememberPortalAudience",
         "return showPublicSection(",
         "showLanding"
     ]

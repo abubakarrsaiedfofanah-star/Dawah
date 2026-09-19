@@ -10,7 +10,9 @@
         "portals"
     ],
     handlers: [
-        "activateAuthTab"
+        "activateAuthTab",
+        "rememberPortalAudience",
+        "return showPublicSection("
     ]
   };
 }());

@@ -1,0 +1,29 @@
+/* Runtime slice from daawah.css: A calm, consistent surface for every content view.. */
+/* A calm, consistent surface for every content view. */
+.landing-section { padding-block: clamp(3.5rem, 7vw, 6.5rem); }
+.main-content { max-width: 1600px; margin-inline: auto; }
+.content-card, .dashboard-card, .premium-dashboard-card, .profile-card,
+.event-card, .resource-card, .leader-card, .mission-card, .portal-card,
+.contact-info, .contact-form, .card {
+    border-radius: var(--app-radius);
+    overflow: hidden;
+}
+
+.content-card, .dashboard-card, .premium-dashboard-card, .profile-card,
+.event-card, .resource-card, .leader-card, .card {
+    background: var(--app-surface);
+}
+
+.mission-card, .portal-card, .leader-card, .event-card, .resource-card,
+.activity-card, .gallery-item, .stats-card, .dashboard-card {
+    transition: transform 180ms ease, box-shadow 180ms ease, border-color 180ms ease;
+}
+
+@media (hover: hover) {
+    .mission-card:hover, .portal-card:hover, .leader-card:hover, .event-card:hover,
+    .resource-card:hover, .activity-card:hover, .gallery-item:hover, .stats-card:hover,
+    .dashboard-card:hover {
+        transform: translateY(-4px);
+        box-shadow: 0 20px 38px rgba(0, 48, 64, 0.14);
+    }
+}

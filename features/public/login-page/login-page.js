@@ -9,14 +9,8 @@
     ids: [
         "confirmPassword",
         "course",
-        "dashboardInstallActions",
-        "dashboardPanelFooter",
         "email",
-        "emergencyContact",
         "fullName",
-        "gender",
-        "homeAddress",
-        "localGuardian",
         "loginForm",
         "loginPage",
         "loginPassword",
@@ -24,8 +18,6 @@
         "loginTab",
         "loginTabBtn",
         "loginUsername",
-        "nationality",
-        "passportPhoto",
         "passwordStrengthBar",
         "passwordStrengthText",
         "phone",
@@ -43,7 +35,6 @@
         "yearOfStudy"
     ],
     handlers: [
-        "return showPublicSection(",
         "showForgotPassword",
         "showLanding"
     ]

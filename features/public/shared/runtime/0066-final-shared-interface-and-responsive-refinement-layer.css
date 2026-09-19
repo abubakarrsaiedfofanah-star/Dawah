@@ -1,0 +1,14 @@
+/* Runtime slice from daawah.css: Final shared interface and responsive refinement layer.. */
+/* Final shared interface and responsive refinement layer. */
+:root {
+    --app-ink: #17323a;
+    --app-muted: #5f7880;
+    --app-surface: #ffffff;
+    --app-surface-soft: #f5fbf8;
+    --app-radius: 16px;
+    --app-radius-sm: 10px;
+    --app-ring: 0 0 0 0.25rem rgba(64, 176, 80, 0.22);
+}
+
+html { scroll-behavior: smooth; }
+body { text-rendering: optimizeLegibility; }

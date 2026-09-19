@@ -1,0 +1,9 @@
+/* Runtime slice from daawah.css: Section reveals give the public site a sense of progression.. */
+/* Section reveals give the public site a sense of progression. */
+.landing-section { position: relative; overflow: clip; }
+.landing-section > .container { position: relative; z-index: 1; }
+.landing-section::before { content: ''; position: absolute; width: 360px; aspect-ratio: 1; top: -210px; right: -130px; border-radius: 50%; background: radial-gradient(circle, rgba(64, 176, 80, .12), transparent 68%); pointer-events: none; }
+.landing-section .mission-card, .landing-section .portal-card, .landing-section .leadership-card, .landing-section .gallery-item, .landing-section .activity-card, .landing-section .contact-info, .landing-section .contact-form { opacity: 0; transform: translateY(22px); }
+.landing-section.is-in-view .mission-card, .landing-section.is-in-view .portal-card, .landing-section.is-in-view .leadership-card, .landing-section.is-in-view .gallery-item, .landing-section.is-in-view .activity-card, .landing-section.is-in-view .contact-info, .landing-section.is-in-view .contact-form { animation: interfaceRise .55s cubic-bezier(.2,.8,.2,1) forwards; }
+.landing-section.is-in-view .mission-card:nth-child(2), .landing-section.is-in-view .portal-card:nth-child(2), .landing-section.is-in-view .gallery-item:nth-child(2) { animation-delay: .08s; }
+.landing-section.is-in-view .mission-card:nth-child(3), .landing-section.is-in-view .portal-card:nth-child(3), .landing-section.is-in-view .gallery-item:nth-child(3) { animation-delay: .16s; }

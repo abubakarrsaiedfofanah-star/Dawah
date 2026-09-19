@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-06-04T01:59:25.466Z",
+  "generatedAt": "2026-09-16T22:33:50.111Z",
   "note": "Feature modules generated from the current legacy pages. Keep each feature HTML/CSS/JS together here as the app is modularized.",
   "features": [
     {
@@ -14,7 +14,9 @@
         "portals"
       ],
       "handlers": [
-        "activateAuthTab"
+        "activateAuthTab",
+        "rememberPortalAudience",
+        "return showPublicSection("
       ]
     },
     {
@@ -147,14 +149,8 @@
       "ids": [
         "confirmPassword",
         "course",
-        "dashboardInstallActions",
-        "dashboardPanelFooter",
         "email",
-        "emergencyContact",
         "fullName",
-        "gender",
-        "homeAddress",
-        "localGuardian",
         "loginForm",
         "loginPage",
         "loginPassword",
@@ -162,8 +158,6 @@
         "loginTab",
         "loginTabBtn",
         "loginUsername",
-        "nationality",
-        "passportPhoto",
         "passwordStrengthBar",
         "passwordStrengthText",
         "phone",
@@ -181,7 +175,6 @@
         "yearOfStudy"
       ],
       "handlers": [
-        "return showPublicSection(",
         "showForgotPassword",
         "showLanding"
       ]
@@ -239,11 +232,15 @@
         "dashboardActivityCalendar",
         "dashboardAlertCount",
         "dashboardAlertsList",
+        "dashboardInstallActions",
         "dashboardNavbarNav",
         "dashboardPage",
+        "dashboardPanelFooter",
         "dashboardReportButtons",
         "dashboardRoleBadge",
         "dashboardRoleSummary",
+        "dashboardSidebar",
+        "dashboardSidebarToggle",
         "dashboardStats",
         "dashboardView",
         "displayEmail",
@@ -353,6 +350,10 @@
         "researchAudioUpload",
         "researchHistory",
         "researchMode",
+        "researchPhotoName",
+        "researchPhotoPreview",
+        "researchPhotoPreviewImage",
+        "researchPhotoUpload",
         "researchQuestion",
         "researchRecordBtn",
         "researchResult",
@@ -371,6 +372,7 @@
         "settingResearchHistory",
         "settingResearchMode",
         "settingsView",
+        "sidebarNavSearch",
         "studentBulkAction",
         "studentMenu",
         "upcomingEventsCount",
@@ -396,16 +398,21 @@
         "applyForMembershipCard",
         "applyStudentBulkAction",
         "clearResearchHistory",
+        "clearResearchPhoto",
+        "clearResearchResult",
         "editProfile",
         "enableBrowserNotifications",
         "exportFinanceCsv",
         "exportLatestResearch",
+        "installDawaahApp",
         "loadContactVoiceMessages",
+        "localStorage.setItem(",
         "logout",
         "nextHadith",
         "openMemberDigitalCard",
         "previousHadith",
         "printSystemReport",
+        "rememberPortalAudience",
         "resetWorkspaceSettings",
         "runStudentResearch",
         "saveContactAndSocialInfo",
@@ -423,6 +430,7 @@
         "suggestOfficerHadithArabic",
         "switchView",
         "toggleAllStudentSelection",
+        "toggleDashboardSidebar",
         "toggleResearchRecording",
         "toggleSection",
         "updateContactInfo"
@@ -675,6 +683,10 @@
         "researchAudioUpload",
         "researchHistory",
         "researchMode",
+        "researchPhotoName",
+        "researchPhotoPreview",
+        "researchPhotoPreviewImage",
+        "researchPhotoUpload",
         "researchQuestion",
         "researchRecordBtn",
         "researchResult",
@@ -684,6 +696,8 @@
       ],
       "handlers": [
         "clearResearchHistory",
+        "clearResearchPhoto",
+        "clearResearchResult",
         "exportLatestResearch",
         "runStudentResearch",
         "toggleResearchRecording"
@@ -960,6 +974,7 @@
         "footerContactLocation",
         "footerContactPhone",
         "footerContactWhatsapp",
+        "footerInstallWrapper",
         "gallery",
         "galleryContainer",
         "home",
@@ -1004,6 +1019,7 @@
       ],
       "handlers": [
         "activateAuthTab",
+        "rememberPortalAudience",
         "return showPublicSection(",
         "showLanding"
       ]
@@ -1042,9 +1058,11 @@
         "adminResetCode",
         "adminResetNewPassword",
         "adminResetWithCodeButton",
-        "adminResetWithCodeForm"
+        "adminResetWithCodeForm",
+        "installAppButton"
       ],
       "handlers": [
+        "installAdminApp",
         "togglePasswordVisibility"
       ]
     },
@@ -1065,6 +1083,8 @@
         "backupStatusSummary",
         "dashboardDetailTable",
         "dashboardDetailTitle",
+        "dashboardPendingOfficersCard",
+        "dashboardPendingRoleRequestsList",
         "dashboardView",
         "donationCount",
         "donationTotal",
@@ -1101,6 +1121,7 @@
         "downloadDatabaseBackup",
         "loadDashboardDetail",
         "loadDashboardStats",
+        "loadPendingRoleRequests",
         "renderNeedsAttentionPanel",
         "runSystemHealthCheck"
       ]
@@ -1492,6 +1513,8 @@
         "adminSettingReducedMotion",
         "adminSettingResearchHistory",
         "adminSettingResearchMode",
+        "adminSidebar",
+        "adminSidebarToggle",
         "adminSocialFacebook",
         "adminSocialInstagram",
         "adminSocialLinkedin",
@@ -1524,6 +1547,8 @@
         "contactVoicesView",
         "dashboardDetailTable",
         "dashboardDetailTitle",
+        "dashboardPendingOfficersCard",
+        "dashboardPendingRoleRequestsList",
         "dashboardView",
         "databaseRestoreInput",
         "donationCount",
@@ -1666,6 +1691,7 @@
         "loadAdminWorkspaceSettings",
         "loadDashboardDetail",
         "loadDashboardStats",
+        "loadPendingRoleRequests",
         "logoutAdmin",
         "removeAdminPhoto",
         "removeFinanceSignatureImage",
@@ -1684,6 +1710,7 @@
         "showReligiousAdminSection",
         "suggestAdminHadithArabic",
         "switchAdminView",
+        "toggleAdminSidebar",
         "togglePasswordVisibility"
       ]
     },

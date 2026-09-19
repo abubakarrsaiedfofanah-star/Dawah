@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-08-17T10:31:41.956Z",
+  "generatedAt": "2026-09-16T22:34:15.304Z",
   "note": "Ordered runtime slices. Edit feature files, then run npm run runtime:assemble to rebuild the browser bundles.",
   "bundles": [
     {
@@ -882,7 +882,15 @@
         "features/public/dashboard-page/runtime/0062-distinct-dashboard-tab-colors-for-visibility.css",
         "features/public/landing-page/runtime/0063-final-public-site-colour-override.css",
         "features/public/login-page/runtime/0064-keep-the-login-emblem-in-its-original-green-and-blue-colours.css",
-        "features/public/landing-page/runtime/0065-shared-public-auth-palette-bright-umma-green-and-university-blue.css"
+        "features/public/landing-page/runtime/0065-shared-public-auth-palette-bright-umma-green-and-university-blue.css",
+        "features/public/shared/runtime/0066-final-shared-interface-and-responsive-refinement-layer.css",
+        "features/public/admin-contact-view/runtime/0067-a-calm-consistent-surface-for-every-content-view.css",
+        "features/public/dashboard-page/runtime/0068-comfortable-controls-with-a-clear-keyboard-focus-state.css",
+        "features/public/dashboard-page/runtime/0069-a-distinctive-but-lightweight-navigation-and-dashboard-experience.css",
+        "features/public/landing-page/runtime/0070-public-navigation-is-easy-to-scan-and-has-a-strong-active-state.css",
+        "features/public/admin-contact-view/runtime/0071-section-reveals-give-the-public-site-a-sense-of-progression.css",
+        "features/public/dashboard-page/runtime/0072-dashboard-workspace.css",
+        "features/public/shared/runtime/0073-focused-modern-student-portal-entry-without-instructional-clutter.css"
       ]
     }
   ]

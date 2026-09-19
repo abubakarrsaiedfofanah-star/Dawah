@@ -1,0 +1,4 @@
+/* Runtime slice from daawah.css: A distinctive but lightweight navigation and dashboard experience.. */
+/* A distinctive but lightweight navigation and dashboard experience. */
+.landing-page { --page-scroll: 0%; }
+.landing-page::before { content: ''; position: fixed; inset: 0 auto auto 0; z-index: 1060; width: var(--page-scroll); height: 3px; background: linear-gradient(90deg, #40b050, #78d986, #5cc7ff); box-shadow: 0 2px 10px rgba(64, 176, 80, .45); transition: width 80ms linear; }

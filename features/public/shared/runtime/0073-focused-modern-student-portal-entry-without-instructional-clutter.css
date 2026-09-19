@@ -1,0 +1,55 @@
+/* Runtime slice from daawah.css: Focused, modern student portal entry without instructional clutter.. */
+/* Focused, modern student portal entry without instructional clutter. */
+.auth-page {
+    background: radial-gradient(circle at 12% 10%, rgba(120,217,134,.26), transparent 30%), radial-gradient(circle at 88% 88%, rgba(0,96,176,.24), transparent 32%), linear-gradient(135deg, #003040, #005477 54%, #218d4f) !important;
+}
+.auth-container { padding: clamp(1rem, 4vw, 2.5rem); }
+.auth-card {
+    width: min(100%, 680px);
+    border: 1px solid rgba(255,255,255,.24) !important;
+    border-radius: 22px !important;
+    box-shadow: 0 28px 70px rgba(0, 22, 30, .32) !important;
+    backdrop-filter: blur(14px);
+}
+.auth-card .brand-title { font-size: clamp(1.35rem, 3.5vw, 2rem); line-height: 1.2; }
+.auth-card .auth-logo { margin-bottom: .8rem; }
+.auth-card .auth-logo { width: min(190px, 52vw); padding: 0; border: 0; border-radius: 0; background: transparent; box-shadow: none; filter: none !important; }
+.auth-card .logo-icon { display: none; }
+.auth-card .auth-tabs .nav-tabs { justify-content: center; gap: .5rem; border-bottom: 0; }
+.auth-card .auth-tabs .nav-link { min-width: 128px; border: 1px solid rgba(255,255,255,.3); border-radius: 999px; color: #fff !important; }
+.auth-card .auth-tabs .nav-link.active { box-shadow: 0 8px 20px rgba(0,0,0,.2); }
+.auth-card .form-control, .auth-card .form-select { background: rgba(255,255,255,.96); }
+.registration-form { display: grid; gap: .25rem; }
+.registration-form > .row { --bs-gutter-x: .85rem; }
+.registration-form .mb-3 { margin-bottom: .85rem !important; }
+.registration-form .form-label { color: #fff; font-size: .82rem; letter-spacing: .02em; }
+.registration-form .form-control, .registration-form .form-select { min-height: 50px; border: 1px solid rgba(255,255,255,.24); box-shadow: inset 0 1px 0 rgba(255,255,255,.12); }
+.registration-form .input-group .btn { min-width: 52px; }
+.registration-form > .btn[type="submit"] { min-height: 52px; margin-top: .35rem; border-radius: 12px; font-size: 1rem; box-shadow: 0 12px 26px rgba(0,0,0,.2); }
+.registration-form .form-text, .registration-form .password-strength .text-muted { color: rgba(255,255,255,.74) !important; }
+
+/* Profile is an edit-friendly home for information completed after sign-up. */
+.profile-page-header { align-items: end; }
+.profile-page-kicker { display: inline-flex; align-items: center; gap: .4rem; color: #168248; font-weight: 800; font-size: .78rem; letter-spacing: .08em; text-transform: uppercase; }
+.profile-card { position: sticky; top: 88px; overflow: hidden; border: 0 !important; background: linear-gradient(160deg, #003040, #005477 62%, #287d46) !important; color: #fff; box-shadow: 0 20px 45px rgba(0,48,64,.2) !important; }
+.profile-card::before { content: ''; position: absolute; inset: -60% -35% auto auto; width: 180px; aspect-ratio: 1; border-radius: 50%; background: rgba(120,217,134,.25); }
+.profile-card .card-body { position: relative; }
+.profile-card h5, .profile-card .text-muted { color: #fff !important; }
+.profile-card .text-muted { opacity: .72; }
+.profile-card .profile-photo { display: grid; place-items: center; width: 112px; height: 112px; margin: 0 auto 1rem; border-radius: 50%; background: rgba(255,255,255,.14); color: #fff; }
+.profile-card .profile-photo__image { width: 102px; height: 102px; border-color: #78d986; }
+.profile-card-actions { display: grid; gap: .55rem; margin-top: 1.25rem; }
+.profile-card-actions .btn { width: 100%; }
+.profile-details-card .card-header { padding: 1.15rem 1.35rem; border-bottom: 1px solid rgba(0,48,64,.09); background: linear-gradient(90deg, rgba(64,176,80,.12), transparent); color: #003040; }
+.profile-details-card .card-body > .row { padding: .65rem .3rem; margin-bottom: 0 !important; border-bottom: 1px solid rgba(0,48,64,.07); }
+.profile-details-card .card-body > .row:last-child { border-bottom: 0; }
+.profile-details-card strong { color: #45656d; font-size: .76rem; letter-spacing: .04em; text-transform: uppercase; }
+.profile-details-card p { margin: .2rem 0 0; color: #17323a; font-weight: 650; }
+@media (max-width: 575.98px) {
+    .auth-container { padding: .75rem; }
+    .auth-card { border-radius: 16px !important; }
+    .auth-card .auth-tabs .nav-link { flex: 1; min-width: 0; }
+    .profile-page-header { align-items: stretch; }
+    .profile-page-header .btn { width: 100%; }
+    .profile-card { position: static; margin-bottom: 1rem; }
+}

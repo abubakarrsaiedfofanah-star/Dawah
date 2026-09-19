@@ -15,6 +15,8 @@
         "backupStatusSummary",
         "dashboardDetailTable",
         "dashboardDetailTitle",
+        "dashboardPendingOfficersCard",
+        "dashboardPendingRoleRequestsList",
         "dashboardView",
         "donationCount",
         "donationTotal",
@@ -51,6 +53,7 @@
         "downloadDatabaseBackup",
         "loadDashboardDetail",
         "loadDashboardStats",
+        "loadPendingRoleRequests",
         "renderNeedsAttentionPanel",
         "runSystemHealthCheck"
     ]

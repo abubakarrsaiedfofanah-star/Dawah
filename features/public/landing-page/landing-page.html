@@ -54,7 +54,7 @@
                     <img src="assets/umma-university-logo-color.png?v=20260522-logo2" alt="UMMA University logo" class="hero-logo">
                     <span>UMMA University Dawah Team</span>
                 </h1>
-                <p class="hero-description">Building a compassionate community of Muslim healthcare professionals</p>
+                <p class="hero-description">Building a compassionate community of Muslims.</p>
                 <div class="hero-highlights" aria-label="UMMA University Dawah Team highlights">
                     <span><i class="fas fa-mosque"></i> Prayer & Guidance</span>
                     <span><i class="fas fa-hands-helping"></i> Welfare & Service</span>
@@ -92,10 +92,10 @@
                         <div class="portal-icon"><img src="assets/umma-university-logo-color.png?v=20260522-logo2" alt="UMMA University logo"></div>
                         <h3>Officer Portal</h3>
                         <div class="portal-actions">
-                            <a class="btn btn-success" href="officer.html"><i class="fas fa-right-to-bracket"></i> Officer Access</a>
+                            <a class="btn btn-success" href="officer.html" onclick="rememberPortalAudience('officer')"><i class="fas fa-right-to-bracket"></i> Officer Access</a>
                         </div>
                     </article>
-                    <article class="portal-card portal-card-admin">
+                    <article class="portal-card portal-card-admin" data-admin-portal-card>
                         <div class="portal-card-brand">UMMA University Dawah Team</div>
                         <div class="portal-icon"><img src="assets/umma-university-logo-color.png?v=20260522-logo2" alt="UMMA University logo"></div>
                         <h3>Admin Portal</h3>
@@ -108,7 +108,7 @@
         </section>
 
         <!-- About Us Section -->
-        <section id="about" class="landing-section">
+        <section id="about" class="landing-section public-story-section public-story-section-learn">
             <div class="container">
                 <h2 class="section-title" id="publicAboutTitle">About Us</h2>
                 <div class="row">
@@ -135,7 +135,7 @@
         </section>
 
         <!-- Mission & Vision Section -->
-        <section id="mission" class="landing-section bg-light">
+        <section id="mission" class="landing-section bg-light public-story-section public-story-section-service">
             <div class="container">
                 <h2 class="section-title" id="publicWhatWeDoTitle">What We Do</h2>
                 <div class="row">
@@ -186,7 +186,7 @@
         </section>
 
         <!-- Leadership Section -->
-        <section id="leadership" class="landing-section">
+        <section id="leadership" class="landing-section public-story-section public-story-section-lead">
             <div class="container">
                 <h2 class="section-title">Our Leadership</h2>
                 <div id="leadershipContainer" class="row">
@@ -196,7 +196,7 @@
         </section>
 
         <!-- Activities Section -->
-        <section id="activities" class="landing-section bg-light">
+        <section id="activities" class="landing-section bg-light public-story-section public-story-section-activity">
             <div class="container">
                 <h2 class="section-title">Activities</h2>
                 <div class="activity-public-intro">
@@ -209,7 +209,7 @@
         </section>
 
         <!-- Gallery Section -->
-        <section id="gallery" class="landing-section bg-light">
+        <section id="gallery" class="landing-section bg-light public-story-section public-story-section-gallery">
             <div class="container">
                 <h2 class="section-title">Gallery</h2>
                 <div id="galleryContainer" class="row">
@@ -219,7 +219,7 @@
         </section>
 
         <!-- Contact Section -->
-        <section id="contact" class="landing-section">
+        <section id="contact" class="landing-section public-story-section public-story-section-contact">
             <div class="container">
                 <h2 class="section-title">Contact Us</h2>
                 <div class="row">
@@ -349,6 +349,7 @@
                 <div class="text-center">
                     <p>&copy; 2026 UMMA University Dawah Team. All rights reserved.</p>
                 </div>
+                <div id="footerInstallWrapper" class="footer-install-wrapper"></div>
             </div>
         </footer>
     </div>

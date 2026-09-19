@@ -1993,13 +1993,13 @@ async function handleRegistration(e) {
         course: document.getElementById('course').value,
         yearOfStudy: document.getElementById('yearOfStudy').value,
         semester: document.getElementById('semester').value,
-        gender: document.getElementById('gender').value,
+        gender: document.getElementById('gender')?.value || '',
         phone: phone,
         email: email,
-        nationality: document.getElementById('nationality').value,
-        homeAddress: document.getElementById('homeAddress').value,
-        emergencyContact: document.getElementById('emergencyContact').value,
-        localGuardian: document.getElementById('localGuardian').value,
+        nationality: document.getElementById('nationality')?.value || '',
+        homeAddress: document.getElementById('homeAddress')?.value || '',
+        emergencyContact: document.getElementById('emergencyContact')?.value || '',
+        localGuardian: document.getElementById('localGuardian')?.value || '',
         passportPhoto: passportPhotoFile ? passportPhotoFile.name : '',
         passportPhotoData: '',
         passportPhotoFile: passportPhotoFile || null
@@ -2317,10 +2317,14 @@ function togglePasswordField(inputId, buttonId) {
         passwordInput.type = 'text';
         toggleBtn.innerHTML = passwordVisibilityIcon(true);
         toggleBtn.setAttribute('aria-label', 'Hide password');
+        toggleBtn.setAttribute('title', 'Hide password');
+        toggleBtn.setAttribute('aria-pressed', 'true');
     } else {
         passwordInput.type = 'password';
         toggleBtn.innerHTML = passwordVisibilityIcon(false);
         toggleBtn.setAttribute('aria-label', 'Show password');
+        toggleBtn.setAttribute('title', 'Show password');
+        toggleBtn.setAttribute('aria-pressed', 'false');
     }
 }
 
@@ -10010,3 +10014,43 @@ function removeGalleryItem(index) {
     loadGalleryContent(); // Refresh landing page gallery
     showNotification('Gallery item removed!', 'success');
 }
+
+// Lightweight enhancements for a lively, accessible public site and dashboard.
+(function () {
+    function initialiseInterface() {
+        const landingPage = document.getElementById('landingPage');
+        const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+        if (landingPage) {
+            const updateProgress = () => {
+                const maxScroll = document.documentElement.scrollHeight - window.innerHeight;
+                landingPage.style.setProperty('--page-scroll', `${maxScroll > 0 ? (window.scrollY / maxScroll) * 100 : 0}%`);
+            };
+            window.addEventListener('scroll', updateProgress, { passive: true });
+            updateProgress();
+            if (!reduceMotion && 'IntersectionObserver' in window) {
+                const observer = new IntersectionObserver((entries) => entries.forEach((entry) => {
+                    if (entry.isIntersecting) { entry.target.classList.add('is-in-view'); observer.unobserve(entry.target); }
+                }), { threshold: 0.12 });
+                landingPage.querySelectorAll('.landing-section').forEach((section) => observer.observe(section));
+            } else landingPage.querySelectorAll('.landing-section').forEach((section) => section.classList.add('is-in-view'));
+        }
+        const search = document.getElementById('sidebarNavSearch');
+        if (search) {
+            const filterMenu = () => {
+                const term = search.value.trim().toLowerCase();
+                document.querySelectorAll('.sidebar-menu .menu-section').forEach((section) => {
+                    const links = [...section.querySelectorAll('.nav-link')];
+                    const matches = links.filter((link) => link.textContent.toLowerCase().includes(term));
+                    links.forEach((link) => { link.hidden = Boolean(term) && !matches.includes(link); });
+                    section.classList.toggle('is-filtered-empty', Boolean(term) && matches.length === 0);
+                });
+            };
+            search.addEventListener('input', filterMenu);
+            document.querySelectorAll('.sidebar-menu .nav-link').forEach((link) => link.addEventListener('click', () => {
+                search.value = '';
+                filterMenu();
+            }));
+        }
+    }
+    if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', initialiseInterface, { once: true }); else initialiseInterface();
+}());

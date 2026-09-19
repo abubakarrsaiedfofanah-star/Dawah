@@ -26,7 +26,6 @@
         "clearResearchPhoto",
         "clearResearchResult",
         "exportLatestResearch",
-        "handleResearchPhotoUpload",
         "runStudentResearch",
         "toggleResearchRecording"
     ]

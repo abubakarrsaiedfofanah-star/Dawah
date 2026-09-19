@@ -11,7 +11,7 @@
     <script src="canonical_redirect.js?v=20260527-one-link"></script>
     <script>
         if (window.top !== window.self) {
-            window.top.location = window.self.location;
+            window.top.location = window.self.location;                                                                                 
         }
         (function() {
             window.__dawaahDeferredInstallPrompt = null;
@@ -451,14 +451,8 @@
                     <div class="logo-icon">
                         <i class="fas fa-mosque"></i>
                     </div>
-                    <h1 class="brand-title">UMMA University Dawah Team</h1>
+                    <h1 class="brand-title">UMMA University Dawah Team Student Access</h1>
                 </div>
-                    <div class="alert alert-info text-start">
-                        <strong>Public info available:</strong> Explore About Us, What We Do, Leadership, Gallery and Contact details without registering. <a href="#" onclick="showLanding()">View public pages</a> or <a href="#portals" onclick="return showPublicSection('portals', this)">return to Portals</a>.
-                        <div class="mt-2">
-                            <a href="#portals" onclick="return showPublicSection('portals', this)" class="btn btn-sm btn-outline-danger visit-dawaah-link">Back to Portals</a>
-                        </div>
-                    </div>
                 <div class="auth-tabs">
                     <ul class="nav nav-tabs mb-4" role="tablist">
                         <li class="nav-item">
@@ -492,7 +486,7 @@
 
                     <!-- Register Tab -->
                     <div id="registerTab" class="tab-pane fade">
-                        <form id="registrationForm">
+                        <form id="registrationForm" class="registration-form">
                             <div class="row">
                                 <div class="col-md-6 mb-3">
                                     <label class="form-label">Full Name</label>
@@ -503,14 +497,6 @@
                                     <input type="text" class="form-control" id="studentId" placeholder="e.g. BSCS/2025/53736" autocomplete="username" pattern="[A-Za-z]{2,10}/[0-9]{4}/[0-9]{3,8}" title="Use format like BSCS/2025/53736" required>
                                     <div class="form-text">Use your official student ID, for example BSCS/2025/53736.</div>
                                 </div>
-                            </div>
-
-                            <div class="mb-3">
-                                <label class="form-label">Register As</label>
-                                <select class="form-select" id="registrationRole" required>
-                                    <option value="student" selected>Student</option>
-                                </select>
-                                <div class="form-text">Official accounts are registered from the official website.</div>
                             </div>
 
                             <div class="mb-3">
@@ -611,18 +597,6 @@
 
                             <div class="row">
                                 <div class="col-md-6 mb-3">
-                                    <label class="form-label">Gender</label>
-                                    <select class="form-select" id="gender" required>
-                                        <option value="">Select Gender</option>
-                                        <option value="male">Male</option>
-                                        <option value="female">Female</option>
-                                        <option value="other">Other</option>
-                                    </select>
-                                </div>
-                            </div>
-
-                            <div class="row">
-                                <div class="col-md-6 mb-3">
                                     <label class="form-label">Phone Number</label>
                                     <input type="tel" class="form-control" id="phone" placeholder="Phone number" required>
                                 </div>
@@ -630,16 +604,6 @@
                                     <label class="form-label">Email</label>
                                     <input type="email" class="form-control" id="email" placeholder="Email address" required>
                                 </div>
-                            </div>
-
-                            <div class="mb-3">
-                                <label class="form-label">Nationality</label>
-                                <input type="text" class="form-control" id="nationality" placeholder="Nationality" required>
-                            </div>
-
-                            <div class="mb-3">
-                                <label class="form-label">Home Address</label>
-                                <textarea class="form-control" id="homeAddress" placeholder="Enter home address" rows="2" required></textarea>
                             </div>
 
                             <div class="mb-3">
@@ -664,21 +628,6 @@
                                         <svg class="password-visibility-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M2 12s3.5-6 10-6 10 6 10 6-3.5 6-10 6S2 12 2 12Z"/><circle cx="12" cy="12" r="2.75"/></svg>
                                     </button>
                                 </div>
-                            </div>
-
-                            <div class="mb-3">
-                                <label class="form-label">Emergency Contact</label>
-                                <input type="text" class="form-control" id="emergencyContact" placeholder="Emergency contact name" required>
-                            </div>
-
-                            <div class="mb-3">
-                                <label class="form-label">Local Guardian</label>
-                                <input type="text" class="form-control" id="localGuardian" placeholder="Local guardian name" required>
-                            </div>
-
-                            <div class="mb-3">
-                                <label class="form-label">Passport Photo</label>
-                                <input type="file" class="form-control" id="passportPhoto" accept="image/*" capture="environment">
                             </div>
 
                             <button type="submit" class="btn btn-success w-100">Register</button>
@@ -856,6 +805,11 @@
             <div class="row">
                 <!-- Sidebar Navigation -->
                 <div id="dashboardSidebar" class="col-md-3 col-lg-2 sidebar-menu">
+                    <div class="dashboard-nav-search">
+                        <label class="visually-hidden" for="sidebarNavSearch">Search dashboard menu</label>
+                        <i class="fas fa-magnifying-glass" aria-hidden="true"></i>
+                        <input id="sidebarNavSearch" type="search" placeholder="Find a tool…" autocomplete="off">
+                    </div>
                     <div class="menu-section">
                         <h6 class="menu-title">NAVIGATION</h6>
                         <nav class="nav flex-column">
@@ -1178,8 +1132,12 @@
 
                     <!-- Profile View -->
                     <div id="profileView" class="view-container">
-                        <div class="page-header">
-                            <h2>My Profile</h2>
+                        <div class="page-header profile-page-header">
+                            <div>
+                                <span class="profile-page-kicker"><i class="fas fa-sparkles"></i> Personal workspace</span>
+                                <h2>My Profile</h2>
+                            </div>
+                            <button class="btn btn-primary" onclick="editProfile()"><i class="fas fa-pen"></i> Edit Profile</button>
                         </div>
 
                         <div class="row">
@@ -1192,18 +1150,20 @@
                                         </div>
                                         <h5 class="mt-3" id="profileName">Student Name</h5>
                                         <p class="text-muted" id="profileStudentId">Student ID</p>
-                                        <button class="btn btn-sm btn-primary" onclick="editProfile()">Edit Profile</button>
-                                        <button class="btn btn-sm btn-outline-success mt-2" onclick="openMemberDigitalCard()">
+                                        <div class="profile-card-actions">
+                                        <button class="btn btn-sm btn-primary" onclick="editProfile()"><i class="fas fa-pen"></i> Edit Profile</button>
+                                        <button class="btn btn-sm btn-outline-success" onclick="openMemberDigitalCard()">
                                             <i class="fas fa-id-card"></i> Digital Card
                                         </button>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
 
                             <div class="col-md-9">
-                                <div class="card">
+                                <div class="card profile-details-card">
                                     <div class="card-header">
-                                        <h5 class="mb-0">Personal Information</h5>
+                                        <h5 class="mb-0"><i class="fas fa-address-card"></i> Personal Information</h5>
                                     </div>
                                     <div class="card-body">
                                         <div class="row mb-3">
@@ -2123,6 +2083,7 @@
                             </div>
                         </div>
                     </div>
+                    
 
                     <!-- Admin: Member Database View -->
                     <div id="memberDatabaseView" class="view-container">

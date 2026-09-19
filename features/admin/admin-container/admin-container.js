@@ -56,6 +56,8 @@
         "adminSettingReducedMotion",
         "adminSettingResearchHistory",
         "adminSettingResearchMode",
+        "adminSidebar",
+        "adminSidebarToggle",
         "adminSocialFacebook",
         "adminSocialInstagram",
         "adminSocialLinkedin",
@@ -88,6 +90,8 @@
         "contactVoicesView",
         "dashboardDetailTable",
         "dashboardDetailTitle",
+        "dashboardPendingOfficersCard",
+        "dashboardPendingRoleRequestsList",
         "dashboardView",
         "databaseRestoreInput",
         "donationCount",
@@ -230,6 +234,7 @@
         "loadAdminWorkspaceSettings",
         "loadDashboardDetail",
         "loadDashboardStats",
+        "loadPendingRoleRequests",
         "logoutAdmin",
         "removeAdminPhoto",
         "removeFinanceSignatureImage",
@@ -248,6 +253,7 @@
         "showReligiousAdminSection",
         "suggestAdminHadithArabic",
         "switchAdminView",
+        "toggleAdminSidebar",
         "togglePasswordVisibility"
     ]
   };
