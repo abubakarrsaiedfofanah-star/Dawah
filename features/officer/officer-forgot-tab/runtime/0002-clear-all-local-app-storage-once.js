@@ -79,5 +79,8 @@ document.addEventListener('DOMContentLoaded', () => {
     document.querySelectorAll('[data-password-toggle]').forEach(button => {
         button.addEventListener('click', () => toggleOfficerPassword(button.dataset.passwordToggle, button));
     });
+    if (new URLSearchParams(location.search).get('register') === '1') {
+        document.getElementById('officerRegisterTabBtn')?.click();
+    }
     loadAcademicCatalog();
 });
