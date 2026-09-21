@@ -27,8 +27,19 @@ function switchView(viewName) {
         matchingLink.classList.add('active');
     }
 
+    // Every view is a new destination.  Resetting the document position here
+    // prevents the dashboard opening at the scroll position of the previous
+    // long view (and makes its summary visible as soon as it is selected).
+    window.scrollTo({ top: 0, left: 0, behavior: 'auto' });
     closeDashboardSidebarOnSmallScreens();
     loadViewData(viewName);
+
+    // Render cached values immediately, then request the current cloud values
+    // when Dashboard is selected.  The refresh function prevents duplicate
+    // requests while one is already in flight.
+    if (viewName === 'dashboard') {
+        refreshRoleDashboardSharedData();
+    }
 }
 
 window.showDashboard = showDashboard;

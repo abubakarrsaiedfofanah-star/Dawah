@@ -271,11 +271,38 @@ const SupabaseBackendApi = (() => {
         return (await session())?.user || null;
     }
 
-    async function sendPasswordResetEmail(email) {
+    async function requestPasswordResetCode(email) {
         const db = await client();
         const { error } = await db.auth.resetPasswordForEmail(requireEmail(email));
         if (error) throw error;
         return { email };
+    }
+
+    // Supabase creates the recovery OTP. The Reset Password email template must
+    // display {{ .Token }} (not {{ .ConfirmationURL }}), as documented in
+    // PASSWORD_RESET_EMAIL_SETUP.md.
+    async function resetPasswordWithCode(email, code, password) {
+        const db = await client();
+        const token = String(code || '').trim();
+        if (!/^\d{6}$/.test(token)) throw new Error('Enter the 6-digit code sent to your email.');
+        const { error: verifyError } = await db.auth.verifyOtp({
+            email: requireEmail(email),
+            token,
+            type: 'recovery'
+        });
+        if (verifyError) throw verifyError;
+
+        const { data, error: updateError } = await db.auth.updateUser({ password });
+        if (updateError) throw updateError;
+        await db.auth.signOut().catch(() => {});
+        clearAuthSession();
+        return data?.user || {};
+    }
+
+    // Kept as an alias for existing admin tools. New UI should use the
+    // code-specific name so it never promises a public reset link.
+    async function sendPasswordResetEmail(email) {
+        return requestPasswordResetCode(email);
     }
 
     async function logout() {
@@ -669,6 +696,8 @@ const SupabaseBackendApi = (() => {
         loginEmail,
         ensureRealtimeAuth,
         sendPasswordResetEmail,
+        requestPasswordResetCode,
+        resetPasswordWithCode,
         logout,
         createSecondaryAdminAuthUser,
         saveAdminRoleForUid,

@@ -5234,47 +5234,6 @@ textarea.form-control { min-height: 110px; }
 .registration-form > .btn[type="submit"] { min-height: 52px; margin-top: .35rem; border-radius: 12px; font-size: 1rem; box-shadow: 0 12px 26px rgba(0,0,0,.2); }
 .registration-form .form-text, .registration-form .password-strength .text-muted { color: rgba(255,255,255,.74) !important; }
 
-/* Keep the official logo clear on the dark sign-in background and make password
-   visibility controls visible despite the page-wide white-text theme. */
-body .auth-page img.auth-logo {
-    background: #ffffff !important;
-    width: min(440px, 88vw) !important;
-    height: auto !important;
-    padding: 0 !important;
-    border-radius: 12px !important;
-    filter: none !important;
-    opacity: 1 !important;
-}
-
-body .auth-page .password-visibility-toggle {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    min-width: 52px;
-    background: #ffffff !important;
-    border-color: rgba(255, 255, 255, .6) !important;
-    color: #003b5c !important;
-}
-
-body .auth-page .password-visibility-toggle .password-visibility-icon {
-    width: 24px;
-    height: 24px;
-    color: #003b5c !important;
-    fill: none;
-    stroke: currentColor;
-    stroke-linecap: round;
-    stroke-linejoin: round;
-    stroke-width: 2;
-}
-
-body .auth-page .password-visibility-toggle:hover,
-body .auth-page .password-visibility-toggle:focus-visible {
-    background: #e6f5ea !important;
-    color: #006bb8 !important;
-    outline: 3px solid rgba(120, 217, 134, .55);
-    outline-offset: -3px;
-}
-
 /* Profile is an edit-friendly home for information completed after sign-up. */
 .profile-page-header { align-items: end; }
 .profile-page-kicker { display: inline-flex; align-items: center; gap: .4rem; color: #168248; font-weight: 800; font-size: .78rem; letter-spacing: .08em; text-transform: uppercase; }
