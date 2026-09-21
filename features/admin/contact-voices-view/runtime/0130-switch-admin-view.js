@@ -14,6 +14,11 @@ function switchAdminView(viewName) {
     const viewElement = document.getElementById(viewName + 'View');
     if (viewElement) {
         viewElement.classList.add('active');
+        window.scrollTo({ top: 0, left: 0, behavior: 'auto' });
+        document.documentElement.scrollTop = 0;
+        document.body.scrollTop = 0;
+        if (document.scrollingElement) document.scrollingElement.scrollTop = 0;
+        document.getElementById('adminContainer')?.classList.remove('admin-sidebar-open');
         
         // Add active class to nav link
         const activeEvent = typeof event !== 'undefined' ? event : null;

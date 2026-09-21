@@ -192,8 +192,11 @@
                         </div>
                     </div>
                 </div>
-                <div class="content-card">
-                    <h4 id="dashboardDetailTitle"><i class="fas fa-table"></i> Database Details</h4>
+                <div class="content-card" id="dashboardDetailCard" role="dialog" aria-modal="true" aria-labelledby="dashboardDetailTitle">
+                    <div class="dashboard-detail-header">
+                        <h4 id="dashboardDetailTitle"><i class="fas fa-table"></i> Database Details</h4>
+                        <button type="button" class="btn btn-outline-secondary btn-sm" onclick="closeDashboardDetail()" aria-label="Close database details"><i class="fas fa-xmark"></i> Close</button>
+                    </div>
                     <div id="dashboardDetailTable">
                         <p class="text-muted">Click any dashboard card above to view its database records.</p>
                     </div>

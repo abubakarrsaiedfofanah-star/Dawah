@@ -1,7 +1,7 @@
 // Runtime slice from admin.js: getLocalAdminPrompt.
 function getLocalAdminPrompt() {
     if (useStaticAdminApi && window.SupabaseBackend?.enabled) {
-        return 'Login with the registered Supabase admin email. Use Register Admin only for the first main admin setup.';
+        return '';
     }
     if (isHostedStaticAdminPage && !window.SupabaseBackend?.enabled) {
         const detail = window.SupabaseBackend?.configError || 'Add SUPABASE_URL and SUPABASE_ANON_KEY in Vercel, then redeploy.';

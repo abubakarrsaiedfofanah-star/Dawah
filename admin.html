@@ -382,6 +382,13 @@
             transition: opacity 0.25s ease;
         }
 
+        #dashboardDetailCard { display: none; position: fixed; inset: 24px; z-index: 1080; margin: 0; padding: 24px; overflow: hidden; flex-direction: column; background: #fff; box-shadow: 0 24px 70px rgba(0, 24, 32, .42); }
+        #dashboardView.dashboard-detail-open::before { content: ''; position: fixed; inset: 0; z-index: 1075; background: rgba(0, 24, 32, .58); }
+        #dashboardView.dashboard-detail-open #dashboardDetailCard { display: flex; }
+        #dashboardDetailTable { flex: 1 1 auto; min-height: 0; overflow: auto; }
+        .dashboard-detail-header { display: flex; align-items: center; justify-content: space-between; gap: 1rem; margin-bottom: 1rem; }
+        .dashboard-detail-header h4 { margin: 0; }
+
         .admin-welcome-banner {
             background:
                 radial-gradient(circle at 10% 20%, rgba(245,215,110,0.24), transparent 24%),
@@ -1549,6 +1556,17 @@
         .admin-auth-tabs { display: flex; gap: .5rem; flex-wrap: nowrap; overflow-x: auto; border-bottom: 0; padding-bottom: .25rem; }
         .admin-auth-tabs .nav-link { flex: 1 0 auto; min-height: 44px; border: 1px solid rgba(212,175,55,.28); border-radius: 999px; white-space: nowrap; }
         .admin-login-card .form-control, .admin-login-card .form-select { min-height: 48px; border-radius: 10px; }
+
+        /* Match the green student registration surface for admin access. */
+        #adminLoginScreen { background: radial-gradient(circle at 12% 10%, rgba(120, 217, 134, .26), transparent 30%), radial-gradient(circle at 88% 88%, rgba(0, 96, 176, .24), transparent 32%), linear-gradient(135deg, #003040, #005477 54%, #218d4f) !important; }
+        #adminLoginScreen .admin-login-card { width: min(100%, 680px); padding: 40px; border: 1px solid rgba(255, 255, 255, .24) !important; border-radius: 22px; color: #fff !important; background: rgba(255, 255, 255, .14) !important; box-shadow: 0 28px 70px rgba(0, 22, 30, .32) !important; backdrop-filter: blur(14px); }
+        #adminLoginScreen .admin-login-logo { width: min(190px, 52vw); max-width: 100%; padding: 0; border: 0; border-radius: 0; background: transparent; box-shadow: none; }
+        #adminLoginScreen .admin-login-card h1, #adminLoginScreen .form-label, #adminLoginScreen .form-text { color: #fff !important; }
+        #adminLoginScreen .form-control, #adminLoginScreen .form-select { min-height: 50px; color: #17323a; background: rgba(255, 255, 255, .96); border-color: rgba(255, 255, 255, .24); }
+        #adminLoginScreen .admin-auth-tabs .nav-link { color: #fff !important; border-color: rgba(255, 255, 255, .3); }
+        #adminLoginScreen .admin-auth-tabs .nav-link.active, #adminLoginScreen .btn-primary, #adminLoginScreen .general-site-link { color: #fff !important; background: linear-gradient(120deg, #35a854, #006bb8) !important; border-color: transparent !important; }
+        #adminLoginScreen .password-toggle-btn { color: #17323a; background: rgba(255, 255, 255, .96); border-color: rgba(255, 255, 255, .24); }
+        @media (max-width: 575.98px) { #dashboardDetailCard { inset: 10px; padding: 14px; border-radius: 14px; } #adminLoginScreen .admin-login-card { padding: 1.1rem; border-radius: 16px; } }
     </style>
     <link rel="stylesheet" href="ui-refresh.css?v=responsive-ui-20260918-v5">
 </head>
@@ -1914,8 +1932,11 @@
                         </div>
                     </div>
                 </div>
-                <div class="content-card">
-                    <h4 id="dashboardDetailTitle"><i class="fas fa-table"></i> Database Details</h4>
+                <div class="content-card" id="dashboardDetailCard" role="dialog" aria-modal="true" aria-labelledby="dashboardDetailTitle">
+                    <div class="dashboard-detail-header">
+                        <h4 id="dashboardDetailTitle"><i class="fas fa-table"></i> Database Details</h4>
+                        <button type="button" class="btn btn-outline-secondary btn-sm" onclick="closeDashboardDetail()" aria-label="Close database details"><i class="fas fa-xmark"></i> Close</button>
+                    </div>
                     <div id="dashboardDetailTable">
                         <p class="text-muted">Click any dashboard card above to view its database records.</p>
                     </div>
