@@ -1755,6 +1755,21 @@ function getExistingRoleHolder(role) {
 }
 
 // Runtime slice from daawah.js: handleLogin.
+function showPortalWelcome(user, onComplete) {
+    const existing = document.getElementById('portalWelcomeOverlay');
+    existing?.remove();
+    const overlay = document.createElement('section');
+    overlay.id = 'portalWelcomeOverlay';
+    overlay.className = 'portal-welcome-overlay';
+    const name = String(user?.fullName || user?.name || user?.username || 'Member').trim();
+    const role = String(user?.role || 'student').replace(/_/g, ' ');
+    overlay.innerHTML = '<div class="portal-welcome-card"><img src="assets/umma-university-logo-color.png" alt="UMMA University" class="portal-welcome-logo"><p class="portal-welcome-kicker">UMMA UNIVERSITY DAWAH TEAM</p><h2></h2><p class="portal-welcome-role"></p><div class="portal-welcome-loader" aria-label="Opening your portal"></div><p class="portal-welcome-loading">Loading your dashboard…</p></div>';
+    overlay.querySelector('h2').textContent = `Welcome back, ${name}!`;
+    overlay.querySelector('.portal-welcome-role').textContent = `${role.replace(/\b\w/g, letter => letter.toUpperCase())} Portal is ready`;
+    document.body.appendChild(overlay);
+    window.setTimeout(() => { overlay.classList.add('is-leaving'); window.setTimeout(() => { overlay.remove(); onComplete?.(); }, 220); }, 1250);
+}
+
 async function handleLogin(e) {
     e.preventDefault();
 
@@ -1827,7 +1842,7 @@ async function handleLogin(e) {
     localStorage.setItem('currentRole', currentRole);
 
     document.getElementById('loginForm').reset();
-    showDashboard();
+    showPortalWelcome(user, () => showDashboard());
     loadSharedMemberStore().catch(error => {
         console.warn('Background member refresh failed after login:', error);
     });
@@ -1884,8 +1899,7 @@ function loginWithServerSession(username, password) {
         localStorage.setItem('currentUser', JSON.stringify(user));
         localStorage.setItem('currentRole', user.role);
         document.getElementById('loginForm').reset();
-        showDashboard();
-        checkForAppUpdate(true);
+        showPortalWelcome(user, () => { showDashboard(); checkForAppUpdate(true); });
     })
     .catch(error => {
         recordFailedLoginAttempt(error.message || 'Login failed.');

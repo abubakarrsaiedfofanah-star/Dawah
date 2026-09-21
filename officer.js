@@ -743,6 +743,21 @@ function registerOfficerStudentRecord(userId, data) {
 }
 
 // Runtime slice from officer.js: handleOfficerLogin.
+function showPortalWelcome(user, destination) {
+    const existing = document.getElementById('portalWelcomeOverlay');
+    existing?.remove();
+    const overlay = document.createElement('section');
+    overlay.id = 'portalWelcomeOverlay';
+    overlay.className = 'portal-welcome-overlay';
+    const name = String(user?.fullName || user?.name || user?.username || 'Officer').trim();
+    const role = String(user?.role || 'officer').replace(/_/g, ' ');
+    overlay.innerHTML = '<div class="portal-welcome-card"><img src="assets/umma-university-logo-color.png" alt="UMMA University" class="portal-welcome-logo"><p class="portal-welcome-kicker">UMMA UNIVERSITY DAWAH TEAM</p><h2></h2><p class="portal-welcome-role"></p><div class="portal-welcome-loader" aria-label="Opening your portal"></div><p class="portal-welcome-loading">Loading your dashboard…</p></div>';
+    overlay.querySelector('h2').textContent = `Welcome back, ${name}!`;
+    overlay.querySelector('.portal-welcome-role').textContent = `${role.replace(/\b\w/g, letter => letter.toUpperCase())} Portal is ready`;
+    document.body.appendChild(overlay);
+    window.setTimeout(() => { window.location.href = destination; }, 1250);
+}
+
 async function handleOfficerLogin(event) {
     event.preventDefault();
     localStorage.setItem(PORTAL_AUDIENCE_KEY, 'officer');
@@ -777,7 +792,7 @@ async function handleOfficerLogin(event) {
             localStorage.setItem('currentUser', JSON.stringify(user));
             localStorage.setItem('currentRole', user.role);
             localStorage.setItem('DawaahAccountClearVersion', ACCOUNT_CLEAR_VERSION);
-            window.location.href = 'index.html?dashboard=1';
+            showPortalWelcome(user, 'index.html?dashboard=1');
         } catch (error) {
             const message = /invalid path specified|failed to construct|invalid url/i.test(error.message || '')
                 ? 'Supabase URL is not the project API URL. In Vercel set SUPABASE_URL to https://PROJECT_REF.supabase.co, then redeploy.'
@@ -815,7 +830,7 @@ async function handleOfficerLogin(event) {
     .then(user => {
         localStorage.setItem('currentUser', JSON.stringify(user));
         localStorage.setItem('currentRole', user.role);
-        window.location.href = 'index.html';
+        showPortalWelcome(user, 'index.html?dashboard=1');
     })
     .catch(error => {
         showOfficerAlert(error.message || 'Officer login failed.', 'danger');

@@ -21,6 +21,18 @@ body { font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSyst
 button, a, input, select, textarea { transition: box-shadow .2s ease, transform .2s ease, border-color .2s ease, background-color .2s ease; }
 :focus-visible { outline: 3px solid rgba(53, 168, 84, .5) !important; outline-offset: 3px; }
 
+/* Login handoff */
+.portal-welcome-overlay { position: fixed; inset: 0; z-index: 3000; display: grid; place-items: center; padding: 1.25rem; background: linear-gradient(135deg, rgba(0, 40, 55, .97), rgba(0, 97, 120, .94) 55%, rgba(42, 142, 72, .94)); transition: opacity .22s ease, visibility .22s ease; }
+.portal-welcome-overlay.is-leaving { opacity: 0; visibility: hidden; }
+.portal-welcome-card { width: min(100%, 440px); padding: clamp(2rem, 6vw, 3.25rem); text-align: center; color: #fff; border: 1px solid rgba(255, 255, 255, .3); border-radius: 24px; background: rgba(255, 255, 255, .12); box-shadow: 0 28px 70px rgba(0, 16, 25, .38); backdrop-filter: blur(12px); }
+.portal-welcome-logo { width: 96px; margin-bottom: 1.15rem; border-radius: 12px; background: #fff; padding: .35rem; }
+.portal-welcome-kicker { margin: 0 0 .45rem; font-size: .72rem; font-weight: 800; letter-spacing: .13em; color: #b7f5be; }
+.portal-welcome-card h2 { margin: 0; color: #fff; font-size: clamp(1.5rem, 5vw, 2rem); font-weight: 850; }
+.portal-welcome-role { margin: .6rem 0 1.4rem; color: rgba(255, 255, 255, .84); font-size: 1.05rem; }
+.portal-welcome-loader { width: 34px; height: 34px; margin: 0 auto .75rem; border: 3px solid rgba(255, 255, 255, .3); border-top-color: #b7f5be; border-radius: 50%; animation: portal-welcome-spin .8s linear infinite; }
+.portal-welcome-loading { margin: 0; color: rgba(255, 255, 255, .76); font-size: .9rem; }
+@keyframes portal-welcome-spin { to { transform: rotate(360deg); } }
+
 /* Public pages */
 .landing-page { background: #f6fbf8; color: var(--ui-ink); }
 .landing-page .navbar,

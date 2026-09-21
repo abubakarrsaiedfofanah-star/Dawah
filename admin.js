@@ -8,6 +8,7 @@ let lastDashboardDetailType = '';
 let lastDashboardDetailRows = [];
 let editingReligiousActivity = null;
 let adminStudentRequesters = [];
+let roleAssignableMembers = [];
 let cloudAdminStoresPromise = null;
 let cloudAdminStoresLoadedAt = 0;
 
@@ -1783,6 +1784,7 @@ document.addEventListener('DOMContentLoaded', async function() {
     document.getElementById('adminResetWithCodeForm')?.addEventListener('submit', handleAdminResetWithCode);
     document.getElementById('adminCreateForm')?.addEventListener('submit', handleManagedAdminCreate);
     document.getElementById('memberRoleAssignForm')?.addEventListener('submit', handleMemberRoleAssign);
+    document.getElementById('memberRoleSearch')?.addEventListener('input', event => filterRoleAssignableMembers(event.target.value));
     document.getElementById('memberPasswordResetForm')?.addEventListener('submit', handleMemberPasswordReset);
     document.getElementById('adminChangePasswordForm')?.addEventListener('submit', handleAdminPasswordChange);
     window.addEventListener('storage', handleAdminSharedStoreChange);
@@ -2527,6 +2529,21 @@ function showAdminPanel() {
     updateAdminAccessUi();
 }
 
+function showPortalWelcome(user) {
+    const existing = document.getElementById('portalWelcomeOverlay');
+    existing?.remove();
+    const overlay = document.createElement('section');
+    overlay.id = 'portalWelcomeOverlay';
+    overlay.className = 'portal-welcome-overlay';
+    const name = String(user?.fullName || user?.name || user?.email || 'Admin').trim();
+    const role = user?.isMainAdmin ? 'Main Admin' : 'Admin';
+    overlay.innerHTML = '<div class="portal-welcome-card"><img src="assets/umma-university-logo-color.png" alt="UMMA University" class="portal-welcome-logo"><p class="portal-welcome-kicker">UMMA UNIVERSITY DAWAH TEAM</p><h2></h2><p class="portal-welcome-role"></p><div class="portal-welcome-loader" aria-label="Opening your portal"></div><p class="portal-welcome-loading">Loading your dashboard…</p></div>';
+    overlay.querySelector('h2').textContent = `Welcome back, ${name}!`;
+    overlay.querySelector('.portal-welcome-role').textContent = `${role} Portal is ready`;
+    document.body.appendChild(overlay);
+    return new Promise(resolve => window.setTimeout(() => { overlay.classList.add('is-leaving'); window.setTimeout(() => { overlay.remove(); resolve(); }, 220); }, 1250));
+}
+
 // Runtime slice from admin.js: handleAdminLogin.
 async function handleAdminLogin(event) {
     event.preventDefault();
@@ -2570,6 +2587,7 @@ async function handleAdminLogin(event) {
             clearAdminLoginFailures();
             setAdminUser(adminUser);
             showAdminPanel();
+            await showPortalWelcome(adminUser);
             document.getElementById('adminLoginForm').reset();
             startAdminSessionTimer();
             startAdminRealtimeListeners();
@@ -2599,6 +2617,7 @@ async function handleAdminLogin(event) {
         clearAdminLoginFailures();
         setAdminUser(result.data);
         showAdminPanel();
+        await showPortalWelcome(result.data);
         document.getElementById('adminLoginForm').reset();
         startAdminSessionTimer();
         startAdminRealtimeListeners();
@@ -3296,6 +3315,20 @@ function loadRoleAssignableMembers() {
 
 // Runtime slice from admin.js: renderRoleAssignableMembers.
 function renderRoleAssignableMembers(members) {
+    roleAssignableMembers = Array.isArray(members) ? members : [];
+    renderRoleAssignableMemberOptions(roleAssignableMembers);
+}
+
+function filterRoleAssignableMembers(query = '') {
+    const lookup = String(query).trim().toLowerCase();
+    const matchingMembers = !lookup ? roleAssignableMembers : roleAssignableMembers.filter(member =>
+        [member.first_name, member.last_name, member.username, member.student_id, member.email]
+            .some(value => String(value || '').toLowerCase().includes(lookup))
+    );
+    renderRoleAssignableMemberOptions(matchingMembers);
+}
+
+function renderRoleAssignableMemberOptions(members) {
     const select = document.getElementById('memberRoleUser');
     const passwordSelect = document.getElementById('memberPasswordUser');
     if (!select && !passwordSelect) return;
