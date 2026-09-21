@@ -164,6 +164,34 @@ button, a, input, select, textarea { transition: box-shadow .2s ease, transform 
     box-shadow: 8px 0 28px rgba(0, 0, 0, .18);
     background: linear-gradient(180deg, #062a37 0%, #083e4e 52%, #123d2d 100%) !important;
 }
+
+/* Public footer: keep contact and social links bright and easy to read. */
+.landing-footer {
+    background: linear-gradient(135deg, #e6f7ea 0%, #d8f0fb 55%, #eff9e9 100%) !important;
+    color: #12313b !important;
+    border-top: 1px solid rgba(0, 96, 176, .16);
+}
+.landing-footer h6,
+.landing-footer p,
+.landing-footer a,
+.landing-footer span,
+.landing-footer strong {
+    color: #12313b !important;
+    text-shadow: none !important;
+}
+.landing-footer h6 { color: #005477 !important; }
+.landing-footer .footer-quick-column { border-left-color: rgba(0, 96, 176, .18); }
+.landing-footer .social-links a {
+    background: #ffffff !important;
+    border-color: rgba(0, 96, 176, .3) !important;
+    color: #006bb8 !important;
+    box-shadow: 0 8px 18px rgba(0, 96, 176, .14);
+}
+.landing-footer .social-links a:hover {
+    background: #35a854 !important;
+    color: #ffffff !important;
+    transform: translateY(-3px) scale(1.04);
+}
 .admin-container .nav-menu { padding: 0 .35rem 1.25rem; }
 .admin-container .nav-menu a {
     display: flex;
