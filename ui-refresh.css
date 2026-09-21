@@ -148,8 +148,26 @@ button, a, input, select, textarea { transition: box-shadow .2s ease, transform 
 .officer-card .btn-success { background: linear-gradient(120deg, #35a854, #006bb8); border: 0; }
 
 /* Admin workspace */
-.admin-container .sidebar { box-shadow: 8px 0 28px rgba(0, 0, 0, .18); }
-.admin-container .nav-menu a { border-radius: 10px; margin: 3px 10px; }
+.admin-container .sidebar {
+    box-shadow: 8px 0 28px rgba(0, 0, 0, .18);
+    background: linear-gradient(180deg, #062a37 0%, #083e4e 52%, #123d2d 100%) !important;
+}
+.admin-container .nav-menu { padding: 0 .35rem 1.25rem; }
+.admin-container .nav-menu a {
+    display: flex;
+    align-items: center;
+    gap: .75rem;
+    border-radius: 10px;
+    margin: 4px 6px;
+    padding: .72rem .85rem;
+    border: 1px solid transparent;
+}
+.admin-container .nav-menu a:hover,
+.admin-container .nav-menu a.active {
+    background: rgba(255, 255, 255, .12) !important;
+    border-color: rgba(120, 217, 134, .35);
+    box-shadow: inset 3px 0 #78d986;
+}
 .admin-container .main-content { padding: clamp(1rem, 3vw, 2rem); }
 .admin-header { border-radius: 16px; box-shadow: 0 10px 26px rgba(15, 81, 50, .1); }
 .admin-container .content-card, .admin-container .card {
@@ -160,6 +178,33 @@ button, a, input, select, textarea { transition: box-shadow .2s ease, transform 
 .admin-container .btn, .officer-card .btn { border-radius: 10px; font-weight: 700; }
 .admin-container .form-control, .admin-container .form-select { min-height: 42px; border-radius: 10px; }
 .admin-container .admin-welcome-banner { border-radius: 18px; overflow: hidden; box-shadow: 0 14px 32px rgba(15, 81, 50, .13); }
+.admin-container #dashboardPendingOfficersCard {
+    position: relative;
+    overflow: hidden;
+    border-color: rgba(53, 168, 84, .34) !important;
+    background: linear-gradient(135deg, #ffffff 0%, #f0fbf2 100%);
+}
+.admin-container #dashboardPendingOfficersCard::before {
+    content: '';
+    position: absolute;
+    inset: 0 auto 0 0;
+    width: 5px;
+    background: linear-gradient(#35a854, #006bb8);
+}
+.admin-container .pending-role-grid { display: grid; gap: .8rem; }
+.admin-container .pending-role-card {
+    align-items: flex-start;
+    padding: 1rem;
+    border: 1px solid rgba(0, 59, 92, .13);
+    border-radius: 14px;
+    background: #fff;
+    box-shadow: 0 6px 18px rgba(0, 59, 92, .07);
+}
+.admin-container .pending-role-card__icon {
+    background: linear-gradient(135deg, #dff5e2, #d9edfb);
+    color: #006b45;
+}
+.admin-container .admin-empty-state { padding: 1.25rem; border-radius: 14px; background: rgba(53, 168, 84, .06); }
 
 @media (max-width: 767.98px) {
     .landing-page .navbar, .dashboard-container .navbar { min-height: 64px; }

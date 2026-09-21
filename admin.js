@@ -1802,9 +1802,14 @@ document.addEventListener('DOMContentLoaded', async function() {
 function handleAdminSharedStoreChange(event) {
     if (!['allMembers', 'payments', 'donations', 'welfareRequests', 'registeredEvents'].includes(event.key)) return;
     loadDashboardStatsFromLocal();
+    // A new officer registration is delivered through the members store. Refresh
+    // the dashboard card as well as the account screen so it appears without a
+    // navigation change or a manual page refresh.
+    if (event.key === 'allMembers' && currentAdmin?.isMainAdmin) {
+        loadPendingRoleRequests({ localOnly: true });
+    }
     const accountView = document.getElementById('accountView');
     if (accountView?.classList.contains('active') && currentAdmin?.isMainAdmin) {
-        loadPendingRoleRequests();
         loadRoleAssignableMembers();
     }
     if (lastDashboardDetailType) {
@@ -1817,9 +1822,11 @@ async function refreshAdminRegistrationCapture() {
     if (!currentAdmin) return;
     await refreshCloudAdminStores(true);
     loadDashboardStatsFromLocal();
+    if (currentAdmin.isMainAdmin) {
+        loadPendingRoleRequests({ localOnly: true });
+    }
     const accountView = document.getElementById('accountView');
     if (accountView?.classList.contains('active') && currentAdmin?.isMainAdmin) {
-        loadPendingRoleRequests();
         loadRoleAssignableMembers();
     }
 }
@@ -3418,13 +3425,14 @@ function handleMemberPasswordReset(event) {
 }
 
 // Runtime slice from admin.js: loadPendingRoleRequests.
-function loadPendingRoleRequests() {
+function loadPendingRoleRequests(options = {}) {
     const containers = [
         document.getElementById('pendingRoleRequestsList'),
         document.getElementById('dashboardPendingRoleRequestsList')
     ].filter(Boolean);
     if (!containers.length) return;
     renderPendingRoleRequests(getLocalPendingRoleRequests());
+    if (options.localOnly) return;
 
     const cloudMembers = window.SupabaseBackend?.enabled && window.SupabaseBackend.hasAuthSession?.()
         ? window.SupabaseBackend.listMembers()
