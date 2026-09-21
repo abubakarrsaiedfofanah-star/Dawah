@@ -114,13 +114,17 @@ button, a, input, select, textarea { transition: box-shadow .2s ease, transform 
 }
 .social-links a:hover { background: #ffffff !important; color: #006bb8 !important; }
 .social-links .social-link-mark {
-    display: block !important;
+    display: inline-flex !important;
+    align-items: center;
+    justify-content: center;
+    min-width: 1.2em;
     color: currentColor !important;
-    font-size: .78rem;
-    font-weight: 850;
-    letter-spacing: -.04em;
+    font-size: .76rem;
+    font-weight: 900;
+    letter-spacing: 0;
     line-height: 1;
 }
+.social-link-label { display: none; }
 
 /* Authentication */
 .auth-container { padding-block: clamp(1.25rem, 5vw, 3.5rem); }
@@ -182,11 +186,19 @@ button, a, input, select, textarea { transition: box-shadow .2s ease, transform 
 .landing-footer h6 { color: #005477 !important; }
 .landing-footer .footer-quick-column { border-left-color: rgba(0, 96, 176, .18); }
 .landing-footer .social-links a {
+    width: auto !important;
+    min-height: 46px;
+    padding: .65rem .85rem;
+    gap: .55rem;
+    border-radius: 12px;
     background: #ffffff !important;
     border-color: rgba(0, 96, 176, .3) !important;
     color: #006bb8 !important;
     box-shadow: 0 8px 18px rgba(0, 96, 176, .14);
+    font-weight: 800;
+    text-decoration: none;
 }
+.landing-footer .social-links .social-link-label { display: inline; }
 .landing-footer .social-links a:hover {
     background: #35a854 !important;
     color: #ffffff !important;

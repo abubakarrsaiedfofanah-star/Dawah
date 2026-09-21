@@ -829,12 +829,12 @@ function renderPublicSocialLinks(settings) {
     if (!container) return;
     const links = [
         ['social_whatsapp', 'WhatsApp', 'WA'],
-        ['contact_email', 'Email', '@', value => `mailto:${value}`],
+        ['contact_email', 'Email', 'Email', value => `mailto:${value}`],
         ['social_facebook', 'Facebook', 'f'],
         ['social_x', 'X', 'X'],
         ['social_instagram', 'Instagram', 'IG'],
-        ['social_youtube', 'YouTube', '▶'],
-        ['social_tiktok', 'TikTok', '♪'],
+        ['social_youtube', 'YouTube', 'YT'],
+        ['social_tiktok', 'TikTok', 'TT'],
         ['social_linkedin', 'LinkedIn', 'in']
     ];
     container.innerHTML = links
@@ -842,7 +842,7 @@ function renderPublicSocialLinks(settings) {
         .map(([key, label, mark, hrefBuilder]) => {
             const href = hrefBuilder ? hrefBuilder(settings[key]) : settings[key];
             const targetAttrs = key === 'contact_email' ? '' : ' target="_blank" rel="noopener"';
-            return `<a href="${escapeHtml(href)}"${targetAttrs} aria-label="${escapeHtml(label)}" title="${escapeHtml(label)}"><span class="social-link-mark" aria-hidden="true">${mark}</span></a>`;
+            return `<a href="${escapeHtml(href)}"${targetAttrs} aria-label="${escapeHtml(label)}" title="${escapeHtml(label)}"><span class="social-link-mark" aria-hidden="true">${mark}</span><span class="social-link-label">${escapeHtml(label)}</span></a>`;
         })
         .join('');
 }
@@ -1755,21 +1755,6 @@ function getExistingRoleHolder(role) {
 }
 
 // Runtime slice from daawah.js: handleLogin.
-function showPortalWelcome(user, onComplete) {
-    const existing = document.getElementById('portalWelcomeOverlay');
-    existing?.remove();
-    const overlay = document.createElement('section');
-    overlay.id = 'portalWelcomeOverlay';
-    overlay.className = 'portal-welcome-overlay';
-    const name = String(user?.fullName || user?.name || user?.username || 'Member').trim();
-    const role = String(user?.role || 'student').replace(/_/g, ' ');
-    overlay.innerHTML = '<div class="portal-welcome-card"><img src="assets/umma-university-logo-color.png" alt="UMMA University" class="portal-welcome-logo"><p class="portal-welcome-kicker">UMMA UNIVERSITY DAWAH TEAM</p><h2></h2><p class="portal-welcome-role"></p><div class="portal-welcome-loader" aria-label="Opening your portal"></div><p class="portal-welcome-loading">Loading your dashboard…</p></div>';
-    overlay.querySelector('h2').textContent = `Welcome back, ${name}!`;
-    overlay.querySelector('.portal-welcome-role').textContent = `${role.replace(/\b\w/g, letter => letter.toUpperCase())} Portal is ready`;
-    document.body.appendChild(overlay);
-    window.setTimeout(() => { overlay.classList.add('is-leaving'); window.setTimeout(() => { overlay.remove(); onComplete?.(); }, 220); }, 1250);
-}
-
 async function handleLogin(e) {
     e.preventDefault();
 
@@ -1842,7 +1827,7 @@ async function handleLogin(e) {
     localStorage.setItem('currentRole', currentRole);
 
     document.getElementById('loginForm').reset();
-    showPortalWelcome(user, () => showDashboard());
+    showDashboard();
     loadSharedMemberStore().catch(error => {
         console.warn('Background member refresh failed after login:', error);
     });
@@ -1899,7 +1884,8 @@ function loginWithServerSession(username, password) {
         localStorage.setItem('currentUser', JSON.stringify(user));
         localStorage.setItem('currentRole', user.role);
         document.getElementById('loginForm').reset();
-        showPortalWelcome(user, () => { showDashboard(); checkForAppUpdate(true); });
+        showDashboard();
+        checkForAppUpdate(true);
     })
     .catch(error => {
         recordFailedLoginAttempt(error.message || 'Login failed.');
@@ -2316,11 +2302,6 @@ function togglePasswordVisibility() {
     togglePasswordField('loginPassword', 'togglePassword');
 }
 
-function passwordVisibilityIcon(isVisible) {
-    const slash = isVisible ? '<path d="M4 4 20 20"/>' : '';
-    return `<svg class="password-visibility-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M2 12s3.5-6 10-6 10 6 10 6-3.5 6-10 6S2 12 2 12Z"/><circle cx="12" cy="12" r="2.75"/>${slash}</svg>`;
-}
-
 // Runtime slice from daawah.js: togglePasswordField.
 function togglePasswordField(inputId, buttonId) {
     const passwordInput = document.getElementById(inputId);
@@ -2329,16 +2310,12 @@ function togglePasswordField(inputId, buttonId) {
 
     if (passwordInput.type === 'password') {
         passwordInput.type = 'text';
-        toggleBtn.innerHTML = passwordVisibilityIcon(true);
+        toggleBtn.innerHTML = '<i class="fas fa-eye-slash"></i>';
         toggleBtn.setAttribute('aria-label', 'Hide password');
-        toggleBtn.setAttribute('title', 'Hide password');
-        toggleBtn.setAttribute('aria-pressed', 'true');
     } else {
         passwordInput.type = 'password';
-        toggleBtn.innerHTML = passwordVisibilityIcon(false);
+        toggleBtn.innerHTML = '<i class="fas fa-eye"></i>';
         toggleBtn.setAttribute('aria-label', 'Show password');
-        toggleBtn.setAttribute('title', 'Show password');
-        toggleBtn.setAttribute('aria-pressed', 'false');
     }
 }
 
