@@ -43,10 +43,9 @@ function renderDashboardDetail(type, rows) {
                 ${rows.map((row, index) => {
                     const name = row.fullName || row.full_name || row.name || row.username || row.student_id || row.studentId || 'Student';
                     const studentId = row.studentId || row.student_id || row.username || '';
-                    const email = row.email || row.authEmail || row.auth_email || '';
                     const course = row.course || '';
-                    const school = row.school || '';
                     const status = row.status || row.accountStatus || row.membershipStatus || 'Active';
+                    const photo = row.profilePhoto || row.profileImage || row.photoUrl || row.avatar || '';
                     const badge = normalizeAdminText(status).includes('suspend') || normalizeAdminText(status).includes('inactive')
                         ? 'bg-secondary'
                         : normalizeAdminText(status).includes('pending')
@@ -54,17 +53,15 @@ function renderDashboardDetail(type, rows) {
                             : 'bg-success';
                     return `
                         <article class="student-record-card">
-                            <div class="student-record-card__top">
-                                <span class="student-record-card__eyebrow">Student</span>
+                            <div class="student-record-card__identity">
+                                ${photo ? `<img class="student-record-card__photo" src="${escapeAdminText(photo)}" alt="">` : '<span class="student-record-card__avatar" aria-hidden="true"><i class="fas fa-user"></i></span>'}
+                                <div class="student-record-card__name-wrap">
+                                    <h5>${escapeAdminText(name)}</h5>
+                                    <p>${escapeAdminText(studentId ? `Student ID: ${studentId}` : 'Student account')}</p>
+                                </div>
                                 <span class="badge ${badge}">${escapeAdminText(status)}</span>
                             </div>
-                            <h5>${escapeAdminText(name)}</h5>
-                            <p class="student-record-card__id">${escapeAdminText(studentId || 'No student ID')}</p>
-                            <dl>
-                                <div><dt>Email</dt><dd>${email ? `<a href="mailto:${escapeAdminText(email)}">${escapeAdminText(email)}</a>` : 'Not provided'}</dd></div>
-                                <div><dt>Course</dt><dd>${escapeAdminText(course || 'Not provided')}</dd></div>
-                                <div><dt>School</dt><dd>${escapeAdminText(school || 'Not provided')}</dd></div>
-                            </dl>
+                            <div class="student-record-card__course"><span>Course</span><strong>${escapeAdminText(course || 'Not provided')}</strong></div>
                             ${canDelete ? `<button class="btn btn-sm btn-outline-danger student-record-delete" type="button" onclick="deleteDashboardStudent(${index})"><i class="fas fa-trash-can" aria-hidden="true"></i> Delete student</button>` : ''}
                         </article>
                     `;

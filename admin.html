@@ -391,16 +391,16 @@
         .student-record-toolbar { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: .75rem; margin-bottom: 1rem; }
         .student-record-toolbar input { width: min(100%, 560px); min-height: 46px; }
         .student-record-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 290px), 1fr)); gap: 14px; }
-        .student-record-card { min-width: 0; padding: 16px; overflow: hidden; overflow-wrap: anywhere; border: 1px solid #dce5e7; border-radius: 14px; background: #fff; box-shadow: 0 5px 18px rgba(0, 48, 64, .07); }
-        .student-record-card__top { display: flex; justify-content: space-between; align-items: center; gap: 8px; margin-bottom: 10px; }
-        .student-record-card__eyebrow { color: #557078; font-size: .78rem; font-weight: 700; text-transform: uppercase; letter-spacing: .06em; }
-        .student-record-card h5 { margin: 0 0 4px; color: #17323a; font-size: 1.05rem; overflow-wrap: anywhere; }
-        .student-record-card__id { margin: 0 0 14px; color: #61777d; font-size: .88rem; }
-        .student-record-card dl { display: grid; gap: 9px; margin: 0; }
-        .student-record-card dl div { display: grid; grid-template-columns: 66px minmax(0, 1fr); gap: 8px; }
-        .student-record-card dt { color: #61777d; font-size: .84rem; font-weight: 600; }
-        .student-record-card dd { min-width: 0; margin: 0; color: #20383e; overflow-wrap: anywhere; }
-        .student-record-card a { overflow-wrap: anywhere; }
+        .student-record-card { min-width: 0; padding: 15px; overflow: hidden; overflow-wrap: anywhere; border: 1px solid #dce5e7; border-radius: 14px; background: #fff; box-shadow: 0 5px 18px rgba(0, 48, 64, .07); }
+        .student-record-card__identity { display: flex; min-width: 0; align-items: center; gap: 10px; }
+        .student-record-card__photo, .student-record-card__avatar { display: grid; flex: 0 0 44px; width: 44px; height: 44px; place-items: center; border-radius: 50%; background: #edf5f2; color: #0f5132; object-fit: cover; }
+        .student-record-card__name-wrap { min-width: 0; flex: 1; }
+        .student-record-card__name-wrap h5 { margin: 0 0 3px; color: #17323a; font-size: 1rem; overflow-wrap: anywhere; }
+        .student-record-card__name-wrap p { margin: 0; color: #61777d; font-size: .82rem; overflow-wrap: anywhere; }
+        .student-record-card__identity .badge { flex: 0 0 auto; }
+        .student-record-card__course { display: grid; gap: 3px; margin-top: 14px; padding-top: 12px; border-top: 1px solid #edf1f2; }
+        .student-record-card__course span { color: #61777d; font-size: .78rem; font-weight: 700; text-transform: uppercase; letter-spacing: .04em; }
+        .student-record-card__course strong { color: #20383e; font-size: .94rem; overflow-wrap: anywhere; }
         .student-record-delete { min-height: 40px; margin-top: 15px; }
         @media (max-width: 575.98px) {
             #dashboardDetailCard { inset: 8px; padding: 14px; }
