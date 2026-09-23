@@ -4947,36 +4947,6 @@ function setActiveDashboardCard(type) {
     }
 }
 
-// Runtime slice from admin.js: isDashboardStudentMember.
-function isDashboardStudentMember(row) {
-    const rowKeys = new Set(memberIdentityKeys(row));
-    if (
-        isCompletedStatus(row?.membershipCardPaymentStatus)
-        || isCompletedStatus(row?.paymentStatus)
-        || isCompletedStatus(row?.membershipPaymentStatus)
-        || normalizeAdminText(row?.membershipCardRecordStatus) === 'active'
-        || normalizeAdminText(row?.membershipCardStatus).includes('ready after payment')
-    ) {
-        return true;
-    }
-    return getMemberRecords().some(member =>
-        memberIdentityKeys(member).some(key => rowKeys.has(key))
-    );
-}
-
-// Runtime slice from admin.js: getStudentDashboardFilterFlags.
-function getStudentDashboardFilterFlags(row) {
-    const flags = ['all'];
-    const status = normalizeAdminText(row?.status || row?.accountStatus);
-    const membershipStatus = normalizeAdminText(row?.membershipStatus || row?.membershipStage);
-
-    if (isDashboardStudentMember(row)) flags.push('members');
-    else flags.push('not_paid');
-    if (status.includes('pending') || membershipStatus.includes('pending')) flags.push('pending');
-    if (status === 'active' || normalizeAdminText(row?.accountStatus) === 'active') flags.push('active');
-    return flags;
-}
-
 // Runtime slice from admin.js: renderStudentDashboardFilters.
 function renderStudentDashboardFilters(rows) {
     return `
@@ -5130,17 +5100,13 @@ function renderDashboardDetail(type, rows) {
                 <thead><tr>${columns.map(col => `<th>${col.replaceAll('_', ' ')}</th>`).join('')}${showApprovalActions ? '<th>Action</th>' : ''}</tr></thead>
                 <tbody>
                     ${rows.map(row => `
-                        <tr${type === 'students' ? ` data-student-filter="${getStudentDashboardFilterFlags(row).join(' ')}"` : ` data-dashboard-row="1" data-status="${escapeAdminText(row.status || row.accountStatus || row.paymentStatus || '')}"`}>${columns.map(col => `<td>${formatCell(row[col], col)}</td>`).join('')}${showApprovalActions ? `<td>${renderApprovalAction(type, row)}</td>` : ''}</tr>
+                        <tr data-dashboard-row="1" data-status="${escapeAdminText(row.status || row.accountStatus || row.paymentStatus || '')}">${columns.map(col => `<td>${formatCell(row[col], col)}</td>`).join('')}${showApprovalActions ? `<td>${renderApprovalAction(type, row)}</td>` : ''}</tr>
                     `).join('')}
                 </tbody>
             </table>
         </div>
     `;
-    if (type === 'students') {
-        filterStudentDashboardDetail();
-    } else {
-        filterDashboardDetailRows();
-    }
+    filterDashboardDetailRows();
 }
 
 // Runtime slice from admin.js: getFinanceAmount.

@@ -103,15 +103,11 @@ function renderDashboardDetail(type, rows) {
                 <thead><tr>${columns.map(col => `<th>${col.replaceAll('_', ' ')}</th>`).join('')}${showApprovalActions ? '<th>Action</th>' : ''}</tr></thead>
                 <tbody>
                     ${rows.map(row => `
-                        <tr${type === 'students' ? ` data-student-filter="${getStudentDashboardFilterFlags(row).join(' ')}"` : ` data-dashboard-row="1" data-status="${escapeAdminText(row.status || row.accountStatus || row.paymentStatus || '')}"`}>${columns.map(col => `<td>${formatCell(row[col], col)}</td>`).join('')}${showApprovalActions ? `<td>${renderApprovalAction(type, row)}</td>` : ''}</tr>
+                        <tr data-dashboard-row="1" data-status="${escapeAdminText(row.status || row.accountStatus || row.paymentStatus || '')}">${columns.map(col => `<td>${formatCell(row[col], col)}</td>`).join('')}${showApprovalActions ? `<td>${renderApprovalAction(type, row)}</td>` : ''}</tr>
                     `).join('')}
                 </tbody>
             </table>
         </div>
     `;
-    if (type === 'students') {
-        filterStudentDashboardDetail();
-    } else {
-        filterDashboardDetailRows();
-    }
+    filterDashboardDetailRows();
 }

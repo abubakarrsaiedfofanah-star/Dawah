@@ -554,16 +554,6 @@ const SupabaseBackendApi = (() => {
         return found?.supabaseId ? updateRecord('members', found.supabaseId, member) : saveMember({ ...member, authUid: uid });
     }
 
-    async function deleteMember(uid) {
-        const db = await client();
-        // Supabase Auth does not directly support deleting users from the client.
-        // This would typically be handled by an Edge Function or Admin API.
-        // For now, we'll just remove the member record from our 'members' table.
-        const { error } = await db.from('members').delete().eq('authUid', uid);
-        if (error) throw error;
-        return true;
-    }
-
     async function loadMyMember() {
         const uid = currentUid();
         const email = currentEmail();
@@ -700,7 +690,6 @@ const SupabaseBackendApi = (() => {
         saveMember,
         updateMemberProfile,
         loadMyMember,
-        deleteMember,
         listMembers,
         loadMyAdminRole,
         saveAdminRole
