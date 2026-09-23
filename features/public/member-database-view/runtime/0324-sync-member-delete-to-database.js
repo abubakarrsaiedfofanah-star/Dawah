@@ -1,9 +1,13 @@
 // Runtime slice from daawah.js: syncMemberDeleteToDatabase.
-function syncMemberDeleteToDatabase(member) {
+async function syncMemberDeleteToDatabase(member) {
     if (frontendOnly || !member.dbStudentId) return;
-    fetch('supabase-required-endpoint?action=deleteStudent', {
+    const response = await fetch('supabase-required-endpoint?action=deleteStudent', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(authPayload({ student_db_id: member.dbStudentId }))
-    }).catch(error => console.error('Member delete sync error:', error));
+    });
+    const result = await parseJsonResponse(response);
+    if (!response.ok || result.success === false) {
+        throw new Error(result.message || 'The server could not delete this student.');
+    }
 }

@@ -2836,6 +2836,17 @@ body .auth-page .brand-logo__image {
     transform: translateX(2px) scale(0.99);
 }
 
+.sidebar-account-menu {
+    margin-top: 12px;
+    padding-top: 12px;
+    border-top: 1px solid rgba(255, 255, 255, .14);
+}
+
+.sidebar-account-menu .nav-link {
+    min-height: 46px;
+    text-align: left;
+}
+
 .nav-link i {
     margin-right: 12px;
     width: 20px;

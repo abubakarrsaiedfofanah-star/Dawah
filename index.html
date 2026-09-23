@@ -817,12 +817,6 @@
                             <a href="#" class="nav-link active" onclick="switchView('dashboard')">
                                 <i class="fas fa-home"></i> Dashboard
                             </a>
-                            <a href="#" class="nav-link" onclick="switchView('profile')">
-                                <i class="fas fa-user-circle"></i> Profile
-                            </a>
-                            <a href="#" class="nav-link" onclick="switchView('settings')">
-                                <i class="fas fa-gear"></i> Settings
-                            </a>
                         </nav>
                     </div>
 
@@ -850,9 +844,6 @@
                             <a href="#" class="nav-link" onclick="switchView('resources')">
                                 <i class="fas fa-book"></i> Resources
                             </a>
-                            <button type="button" class="nav-link install-app-sidebar-link app-install-trigger text-start w-100 border-0 bg-transparent" onclick="installDawaahApp()">
-                                <i class="fas fa-mobile-screen-button"></i> Install App
-                            </button>
                         </nav>
                     </div>
 
@@ -897,6 +888,24 @@
                             </a>
                             <a href="#" class="nav-link role-tool-link" data-permission="manage_hadiths" onclick="switchView('officerHadiths')">
                                 <i class="fas fa-book-open"></i> Hadiths
+                            </a>
+                        </nav>
+                    </div>
+
+                    <div class="menu-section sidebar-account-menu">
+                        <h6 class="menu-title">ACCOUNT</h6>
+                        <nav class="nav flex-column">
+                            <button type="button" class="nav-link install-app-sidebar-link app-install-trigger text-start w-100 border-0 bg-transparent" onclick="installDawaahApp()">
+                                <i class="fas fa-mobile-screen-button"></i> Install App
+                            </button>
+                            <a href="#" class="nav-link" onclick="switchView('profile')">
+                                <i class="fas fa-user-circle"></i> My Account
+                            </a>
+                            <a href="#" class="nav-link" onclick="switchView('settings')">
+                                <i class="fas fa-gear"></i> Settings
+                            </a>
+                            <a href="#" class="nav-link text-danger" onclick="logout(); return false;">
+                                <i class="fas fa-sign-out-alt"></i> Logout
                             </a>
                         </nav>
                     </div>
@@ -2113,7 +2122,8 @@
                                         <input type="file" accept=".csv,text/csv" hidden onchange="importStudentsCsv(this)">
                                     </label>
                                 </div>
-                                <table class="table table-hover">
+                                <div class="table-responsive">
+                                <table class="table table-hover align-middle">
                                     <thead>
                                         <tr>
                                             <th>Select</th>
@@ -2132,6 +2142,7 @@
                                         </tr>
                                     </tbody>
                                 </table>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -3324,10 +3335,7 @@
                 const promptEvent = window.__dawaahDeferredInstallPrompt;
                 if (promptEvent) {
                     promptEvent.prompt();
-                    promptEvent.userChoice.finally(() => {
-                        localStorage.setItem('dawaahAppInstalled', '1');
-                        updateFooterInstallButton();
-                    });
+                    promptEvent.userChoice.finally(updateFooterInstallButton);
                     window.__dawaahDeferredInstallPrompt = null;
                     return;
                 }

@@ -2526,6 +2526,7 @@ function showAdminLogin(message = '') {
 function showAdminPanel() {
     document.getElementById('adminLoginScreen')?.classList.add('d-none');
     document.getElementById('adminContainer')?.classList.remove('locked');
+    window.updateAdminInstallButton?.();
     updateAdminAccessUi();
 }
 

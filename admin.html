@@ -1684,11 +1684,6 @@
                 <a href="index.html" class="text-danger text-decoration-none"><i class="fas fa-arrow-left"></i> Back to home</a>
             </div>
         </div>
-        <div class="admin-panel-footer">
-            <button id="installAppButton" type="button" class="btn btn-sm btn-outline-primary" onclick="installAdminApp()">
-                <i class="fas fa-mobile-screen-button"></i> Install App
-            </button>
-        </div>
     </div>
 
     <div id="adminContainer" class="admin-container locked">
@@ -1717,11 +1712,12 @@
                 <li><a href="#" onclick="showReligiousAdminSection('jummahAdminSection')"><i class="fas fa-bell"></i> Jumu'ah Reminders</a></li>
                 <li><a href="#" onclick="showReligiousAdminSection('ramadanAdminSection')"><i class="fas fa-moon"></i> Ramadan Schedule</a></li>
                 <li><a href="#" onclick="showReligiousAdminSection('lectureAdminSection')"><i class="fas fa-chalkboard-user"></i> Islamic Lectures</a></li>
-                <li><a href="#" onclick="switchAdminView('account')"><i class="fas fa-user-gear"></i> My Account</a></li>
-                <li><a href="#" onclick="switchAdminView('settings')"><i class="fas fa-gear"></i> Settings</a></li>
                 <li><a href="#" onclick="switchAdminView('resources')"><i class="fas fa-folder-open"></i> Resources</a></li>
                 <li><a href="#" onclick="switchAdminView('hadiths')"><i class="fas fa-book"></i> Hadiths</a></li>
-                <li><a href="#" onclick="logoutAdmin()"><i class="fas fa-user-shield"></i> Admin Logout</a></li>
+                <li><a href="#" id="installAppButton" onclick="installAdminApp(); return false;"><i class="fas fa-mobile-screen-button"></i> Install App</a></li>
+                <li><a href="#" onclick="switchAdminView('account')"><i class="fas fa-user-gear"></i> My Account</a></li>
+                <li><a href="#" onclick="switchAdminView('settings')"><i class="fas fa-gear"></i> Settings</a></li>
+                <li><a href="#" onclick="logoutAdmin()"><i class="fas fa-user-shield"></i> Logout</a></li>
             </ul>
         </div>
         
@@ -2882,10 +2878,7 @@
                 const promptEvent = window.__dawaahDeferredInstallPrompt;
                 if (promptEvent) {
                     promptEvent.prompt();
-                    promptEvent.userChoice.finally(() => {
-                        localStorage.setItem('dawaahAppInstalled', '1');
-                        updateAdminInstallButton();
-                    });
+                    promptEvent.userChoice.finally(updateAdminInstallButton);
                     window.__dawaahDeferredInstallPrompt = null;
                     return;
                 }
