@@ -182,7 +182,10 @@ create policy "Users update owned profiles and admins update all"
 create policy "Admins delete app records"
     on public.app_records for delete
     to authenticated
-    using (public.is_dawah_admin());
+    using (
+        (collection = 'members' and public.is_dawah_main_admin())
+        or (collection <> 'members' and public.is_dawah_admin())
+    );
 
 create policy "Users can read their own admin role"
     on public.admin_roles for select

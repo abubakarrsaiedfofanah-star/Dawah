@@ -4970,57 +4970,39 @@ function getStudentDashboardFilterFlags(row) {
     const status = normalizeAdminText(row?.status || row?.accountStatus);
     const membershipStatus = normalizeAdminText(row?.membershipStatus || row?.membershipStage);
 
-    if (isDashboardStudentMember(row)) {
-        flags.push('members');
-    } else {
-        flags.push('not_paid');
-    }
-    if (status.includes('pending') || membershipStatus.includes('pending')) {
-        flags.push('pending');
-    }
-    if (status === 'active' || normalizeAdminText(row?.accountStatus) === 'active') {
-        flags.push('active');
-    }
+    if (isDashboardStudentMember(row)) flags.push('members');
+    else flags.push('not_paid');
+    if (status.includes('pending') || membershipStatus.includes('pending')) flags.push('pending');
+    if (status === 'active' || normalizeAdminText(row?.accountStatus) === 'active') flags.push('active');
     return flags;
 }
 
 // Runtime slice from admin.js: renderStudentDashboardFilters.
 function renderStudentDashboardFilters(rows) {
-    const memberCount = rows.filter(isDashboardStudentMember).length;
-    const notPaidCount = Math.max(0, rows.length - memberCount);
     return `
-        <div class="d-flex flex-wrap gap-2 align-items-center mb-2">
-            <select class="form-select form-select-sm" id="studentDashboardFilter" style="max-width: 220px;" onchange="filterStudentDashboardDetail()">
-                <option value="all">All students (${rows.length})</option>
-                <option value="members">Paid members (${memberCount})</option>
-                <option value="not_paid">Not paid yet (${notPaidCount})</option>
-                <option value="pending">Pending status</option>
-                <option value="active">Active login</option>
-            </select>
-            <input type="search" class="form-control form-control-sm" id="studentDashboardSearch" style="max-width: 260px;" placeholder="Search student records" oninput="filterStudentDashboardDetail()">
-            <span class="small text-muted" id="studentDashboardFilterCount">${rows.length} shown</span>
+        <div class="student-record-toolbar">
+            <label class="visually-hidden" for="studentDashboardSearch">Search students</label>
+            <input type="search" class="form-control" id="studentDashboardSearch" placeholder="Search by name, student ID, or email" oninput="filterStudentDashboardDetail()">
+            <span class="small text-muted" id="studentDashboardFilterCount">${rows.length} students</span>
         </div>
     `;
 }
 
 // Runtime slice from admin.js: filterStudentDashboardDetail.
 function filterStudentDashboardDetail() {
-    const filter = document.getElementById('studentDashboardFilter')?.value || 'all';
     const search = normalizeAdminText(document.getElementById('studentDashboardSearch')?.value || '');
-    const rows = Array.from(document.querySelectorAll('#dashboardDetailTable tbody tr[data-student-filter]'));
+    const rows = Array.from(document.querySelectorAll('#dashboardDetailTable .student-record-card'));
     let visible = 0;
 
     rows.forEach(row => {
-        const flags = String(row.dataset.studentFilter || '').split(/\s+/);
-        const matchesFilter = filter === 'all' || flags.includes(filter);
         const matchesSearch = !search || normalizeAdminText(row.textContent).includes(search);
-        const shouldShow = matchesFilter && matchesSearch;
+        const shouldShow = matchesSearch;
         row.classList.toggle('d-none', !shouldShow);
         if (shouldShow) visible += 1;
     });
 
     const count = document.getElementById('studentDashboardFilterCount');
-    if (count) count.textContent = `${visible} shown`;
+    if (count) count.textContent = `${visible} ${visible === 1 ? 'student' : 'students'}`;
 }
 
 // Runtime slice from admin.js: filterDashboardDetailRows.
@@ -5077,13 +5059,56 @@ function renderDashboardDetail(type, rows) {
         return;
     }
 
+    if (type === 'students') {
+        const canDelete = Boolean(currentAdmin?.isMainAdmin);
+        container.innerHTML = `
+            ${renderStudentDashboardFilters(rows)}
+            <div class="d-flex flex-wrap gap-2 justify-content-end mb-3">
+                <button class="btn btn-sm btn-outline-secondary" type="button" onclick="exportDashboardDetailCsv()"><i class="fas fa-file-export"></i> Export students</button>
+            </div>
+            <div class="student-record-grid">
+                ${rows.map((row, index) => {
+                    const name = row.fullName || row.full_name || row.name || row.username || row.student_id || row.studentId || 'Student';
+                    const studentId = row.studentId || row.student_id || row.username || '';
+                    const email = row.email || row.authEmail || row.auth_email || '';
+                    const course = row.course || '';
+                    const school = row.school || '';
+                    const status = row.status || row.accountStatus || row.membershipStatus || 'Active';
+                    const badge = normalizeAdminText(status).includes('suspend') || normalizeAdminText(status).includes('inactive')
+                        ? 'bg-secondary'
+                        : normalizeAdminText(status).includes('pending')
+                            ? 'bg-warning text-dark'
+                            : 'bg-success';
+                    return `
+                        <article class="student-record-card">
+                            <div class="student-record-card__top">
+                                <span class="student-record-card__eyebrow">Student</span>
+                                <span class="badge ${badge}">${escapeAdminText(status)}</span>
+                            </div>
+                            <h5>${escapeAdminText(name)}</h5>
+                            <p class="student-record-card__id">${escapeAdminText(studentId || 'No student ID')}</p>
+                            <dl>
+                                <div><dt>Email</dt><dd>${email ? `<a href="mailto:${escapeAdminText(email)}">${escapeAdminText(email)}</a>` : 'Not provided'}</dd></div>
+                                <div><dt>Course</dt><dd>${escapeAdminText(course || 'Not provided')}</dd></div>
+                                <div><dt>School</dt><dd>${escapeAdminText(school || 'Not provided')}</dd></div>
+                            </dl>
+                            ${canDelete ? `<button class="btn btn-sm btn-outline-danger student-record-delete" type="button" onclick="deleteDashboardStudent(${index})"><i class="fas fa-trash-can" aria-hidden="true"></i> Delete student</button>` : ''}
+                        </article>
+                    `;
+                }).join('')}
+            </div>
+            ${rows.length ? '' : '<p class="text-muted mb-0">No students found.</p>'}
+        `;
+        filterStudentDashboardDetail();
+        return;
+    }
+
     const columns = Object.keys(rows[0]);
     const showApprovalActions = type === 'payments' || type === 'donations';
     const researchNote = type === 'research'
         ? '<div class="alert alert-info py-2">AI research logs are for monitoring system usage and academic safety. Religious rulings should still be verified by qualified scholars.</div>'
         : '';
-    const studentFilters = type === 'students' ? renderStudentDashboardFilters(rows) : '';
-    const dashboardFilters = type === 'students' ? '' : `
+    const dashboardFilters = `
         <div class="d-flex flex-wrap gap-2 align-items-center mb-2">
             <input type="search" class="form-control form-control-sm" id="dashboardDetailSearch" style="max-width: 280px;" placeholder="Search records" oninput="filterDashboardDetailRows()">
             <select class="form-select form-select-sm" id="dashboardDetailStatusFilter" style="max-width: 180px;" onchange="filterDashboardDetailRows()">
@@ -5098,7 +5123,6 @@ function renderDashboardDetail(type, rows) {
     `;
     container.innerHTML = `
         ${researchNote}
-        ${studentFilters}
         ${dashboardFilters}
         <div class="d-flex flex-wrap gap-2 justify-content-end mb-2">
             <button class="btn btn-sm btn-outline-secondary" type="button" onclick="exportDashboardDetailCsv()"><i class="fas fa-file-export"></i> Export CSV</button>
@@ -7328,4 +7352,88 @@ function deleteResource(resourceId) {
         loadResourcesAdmin();
     })
     .catch(error => showNotification(error.message, 'danger'));
+}
+
+// Runtime slice from admin.js: deleteDashboardStudent.
+async function deleteDashboardStudent(index) {
+    if (!currentAdmin?.isMainAdmin) {
+        showNotification('Only the main admin can delete student accounts.', 'danger');
+        return;
+    }
+
+    const student = lastDashboardDetailRows[index];
+    if (!student) {
+        showNotification('Student record not found. Refresh the records and try again.', 'warning');
+        return;
+    }
+
+    const name = student.fullName || student.full_name || student.name || student.username || student.studentId || student.student_id || 'this student';
+    if (!confirm(`Delete ${name}'s account? They will no longer be able to sign in. This cannot be undone.`)) return;
+
+    const deleteButton = document.querySelector(`.student-record-delete[onclick="deleteDashboardStudent(${index})"]`);
+    if (deleteButton) {
+        deleteButton.disabled = true;
+        deleteButton.innerHTML = '<i class="fas fa-spinner fa-spin" aria-hidden="true"></i> Deleting...';
+    }
+
+    try {
+        if (window.SupabaseBackend?.enabled) {
+            const accessToken = sessionStorage.getItem('dawahSupabaseAccessToken') || localStorage.getItem('dawahSupabaseAccessToken') || '';
+            if (!accessToken) throw new Error('Your secure admin session expired. Sign in again and retry.');
+            const response = await fetch('/api/delete-student-account', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${accessToken}`
+                },
+                body: JSON.stringify({
+                    memberRecordId: student.supabaseId || '',
+                    studentId: student.studentId || student.student_id || student.username || '',
+                    email: student.email || student.authEmail || student.auth_email || '',
+                    userId: student.authUid || student.uid || student.user_id || student.dbUserId || ''
+                })
+            });
+            const result = await parseJsonResponse(response);
+            if (!response.ok || result.success !== true) {
+                throw new Error(result.message || 'The account could not be deleted.');
+            }
+        } else {
+            const targets = new Set([
+                student.supabaseId, student.id, student.authUid, student.uid, student.user_id,
+                student.dbUserId, student.studentId, student.student_id, student.username,
+                student.email, student.authEmail
+            ].map(value => String(value || '').trim().toLowerCase()).filter(Boolean));
+            const remaining = readStore('allMembers').filter(member => {
+                const identities = [member.supabaseId, member.id, member.authUid, member.uid, member.user_id,
+                    member.dbUserId, member.studentId, member.student_id, member.username, member.email, member.authEmail]
+                    .map(value => String(value || '').trim().toLowerCase()).filter(Boolean);
+                return !identities.some(value => targets.has(value));
+            });
+            localStorage.setItem('allMembers', JSON.stringify(remaining));
+        }
+
+        const targets = new Set([
+            student.supabaseId, student.id, student.authUid, student.uid, student.user_id,
+            student.dbUserId, student.studentId, student.student_id, student.username,
+            student.email, student.authEmail
+        ].map(value => String(value || '').trim().toLowerCase()).filter(Boolean));
+        const remainingRows = lastDashboardDetailRows.filter(row => {
+            const identities = [row.supabaseId, row.id, row.authUid, row.uid, row.user_id, row.dbUserId,
+                row.studentId, row.student_id, row.username, row.email, row.authEmail]
+                .map(value => String(value || '').trim().toLowerCase()).filter(Boolean);
+            return !identities.some(value => targets.has(value));
+        });
+        lastDashboardDetailRows = remainingRows;
+        logLocalAdminActivity('deleteStudent', { student_id: student.studentId || student.student_id || '', email: student.email || '' });
+        renderDashboardDetail('students', remainingRows);
+        loadDashboardStatsFromLocal();
+        showNotification('Student account deleted.', 'success');
+    } catch (error) {
+        console.error('Student account deletion failed:', error);
+        showNotification(error.message || 'The account could not be deleted. Please try again.', 'danger');
+        if (deleteButton) {
+            deleteButton.disabled = false;
+            deleteButton.innerHTML = '<i class="fas fa-trash-can" aria-hidden="true"></i> Delete student';
+        }
+    }
 }

@@ -32,13 +32,56 @@ function renderDashboardDetail(type, rows) {
         return;
     }
 
+    if (type === 'students') {
+        const canDelete = Boolean(currentAdmin?.isMainAdmin);
+        container.innerHTML = `
+            ${renderStudentDashboardFilters(rows)}
+            <div class="d-flex flex-wrap gap-2 justify-content-end mb-3">
+                <button class="btn btn-sm btn-outline-secondary" type="button" onclick="exportDashboardDetailCsv()"><i class="fas fa-file-export"></i> Export students</button>
+            </div>
+            <div class="student-record-grid">
+                ${rows.map((row, index) => {
+                    const name = row.fullName || row.full_name || row.name || row.username || row.student_id || row.studentId || 'Student';
+                    const studentId = row.studentId || row.student_id || row.username || '';
+                    const email = row.email || row.authEmail || row.auth_email || '';
+                    const course = row.course || '';
+                    const school = row.school || '';
+                    const status = row.status || row.accountStatus || row.membershipStatus || 'Active';
+                    const badge = normalizeAdminText(status).includes('suspend') || normalizeAdminText(status).includes('inactive')
+                        ? 'bg-secondary'
+                        : normalizeAdminText(status).includes('pending')
+                            ? 'bg-warning text-dark'
+                            : 'bg-success';
+                    return `
+                        <article class="student-record-card">
+                            <div class="student-record-card__top">
+                                <span class="student-record-card__eyebrow">Student</span>
+                                <span class="badge ${badge}">${escapeAdminText(status)}</span>
+                            </div>
+                            <h5>${escapeAdminText(name)}</h5>
+                            <p class="student-record-card__id">${escapeAdminText(studentId || 'No student ID')}</p>
+                            <dl>
+                                <div><dt>Email</dt><dd>${email ? `<a href="mailto:${escapeAdminText(email)}">${escapeAdminText(email)}</a>` : 'Not provided'}</dd></div>
+                                <div><dt>Course</dt><dd>${escapeAdminText(course || 'Not provided')}</dd></div>
+                                <div><dt>School</dt><dd>${escapeAdminText(school || 'Not provided')}</dd></div>
+                            </dl>
+                            ${canDelete ? `<button class="btn btn-sm btn-outline-danger student-record-delete" type="button" onclick="deleteDashboardStudent(${index})"><i class="fas fa-trash-can" aria-hidden="true"></i> Delete student</button>` : ''}
+                        </article>
+                    `;
+                }).join('')}
+            </div>
+            ${rows.length ? '' : '<p class="text-muted mb-0">No students found.</p>'}
+        `;
+        filterStudentDashboardDetail();
+        return;
+    }
+
     const columns = Object.keys(rows[0]);
     const showApprovalActions = type === 'payments' || type === 'donations';
     const researchNote = type === 'research'
         ? '<div class="alert alert-info py-2">AI research logs are for monitoring system usage and academic safety. Religious rulings should still be verified by qualified scholars.</div>'
         : '';
-    const studentFilters = type === 'students' ? renderStudentDashboardFilters(rows) : '';
-    const dashboardFilters = type === 'students' ? '' : `
+    const dashboardFilters = `
         <div class="d-flex flex-wrap gap-2 align-items-center mb-2">
             <input type="search" class="form-control form-control-sm" id="dashboardDetailSearch" style="max-width: 280px;" placeholder="Search records" oninput="filterDashboardDetailRows()">
             <select class="form-select form-select-sm" id="dashboardDetailStatusFilter" style="max-width: 180px;" onchange="filterDashboardDetailRows()">
@@ -53,7 +96,6 @@ function renderDashboardDetail(type, rows) {
     `;
     container.innerHTML = `
         ${researchNote}
-        ${studentFilters}
         ${dashboardFilters}
         <div class="d-flex flex-wrap gap-2 justify-content-end mb-2">
             <button class="btn btn-sm btn-outline-secondary" type="button" onclick="exportDashboardDetailCsv()"><i class="fas fa-file-export"></i> Export CSV</button>

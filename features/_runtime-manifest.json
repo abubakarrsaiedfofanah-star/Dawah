@@ -762,7 +762,8 @@
         "features/admin/admin-container/runtime/0293-render-religious-activities-admin.js",
         "features/admin/shared/runtime/0294-add-resource.js",
         "features/admin/admin-container/runtime/0295-load-resources-admin.js",
-        "features/admin/admin-container/runtime/0296-delete-resource.js"
+        "features/admin/admin-container/runtime/0296-delete-resource.js",
+        "features/admin/admin-container/runtime/0297-delete-dashboard-student.js"
       ]
     },
     {

@@ -2,7 +2,7 @@
   "version": 2,
   "cleanUrls": true,
   "trailingSlash": false,
-  "buildCommand": "npm run build",
+  "buildCommand": "npm run config:supabase",
   "outputDirectory": ".",
   "redirects": [
     {

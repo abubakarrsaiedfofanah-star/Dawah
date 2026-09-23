@@ -13,10 +13,11 @@ This folder is a copy of the existing Dawah app with the source features preserv
 ## Vercel Deployment (Supabase)
 
 1. Connect your GitHub repository to Vercel.
-2. Set the **Build Command** to `npm run build`.
+2. Keep the **Build Command** from `vercel.json` (`npm run config:supabase`). Runtime bundles are checked in; this generates the public Supabase config without rebuilding unrelated portal bundles.
 3. Leave **Root Directory** empty/default when importing `abubakarrsaiedfofanah-star/Dawah`. Use `Dawah` only if you import a parent repository that contains this app as a subfolder.
 4. Leave the **Output Directory** as `.` or let `vercel.json` provide it.
 5. Add your `SUPABASE_URL` and `SUPABASE_ANON_KEY` as environment variables so the build can generate `supabase_config.js`.
+6. Add `SUPABASE_SERVICE_ROLE_KEY` in Vercel Project Settings > Environment Variables for secure main-admin student account deletion. This server-only key is used by `/api/delete-student-account` and must never be added to browser config or committed to Git.
 
 If the admin login says Supabase is not configured, check these values first:
 
@@ -25,6 +26,7 @@ If the admin login says Supabase is not configured, check these values first:
 - In Vercel, add both variables for Production, Preview, and Development if needed:
   - `SUPABASE_URL`
   - `SUPABASE_ANON_KEY`
+  - `SUPABASE_SERVICE_ROLE_KEY` (server only; required for deleting student Auth accounts)
 - Redeploy after adding the variables. Vercel does not automatically rebuild old deployments when environment variables are added.
 - After deployment, open `/supabase_config.js` on the live site and confirm `url` and `anonKey` are not empty.
 - If login succeeds but admin access is denied, create or update the matching row in `public.admin_roles` for the user id from Supabase Auth.
