@@ -5,6 +5,7 @@
         const widget = document.getElementById('aiChatWidget');
         const toggle = document.getElementById('aiChatToggle');
         const close = document.getElementById('aiChatClose');
+        const panel = document.getElementById('aiChatPanel');
         const form = document.getElementById('aiChatForm');
         const input = document.getElementById('aiChatInput');
         const messages = document.getElementById('aiChatMessages');
@@ -83,11 +84,13 @@
             return allowed;
         };
 
-        const setOpen = isOpen => {
+        const setOpen = (isOpen, restoreFocus = false) => {
             if (isOpen && !syncWorkspaceAccess()) return;
             widget.classList.toggle('is-open', isOpen);
             toggle.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
+            panel?.setAttribute('aria-hidden', isOpen ? 'false' : 'true');
             if (isOpen) setTimeout(() => input.focus(), 60);
+            else if (restoreFocus && !widget.classList.contains('ai-chat-widget--disabled')) toggle.focus();
         };
 
         const setVoiceStatus = text => {
@@ -430,13 +433,24 @@
         };
 
         toggle.addEventListener('click', () => setOpen(true));
-        close.addEventListener('click', () => setOpen(false));
+        close.addEventListener('click', () => setOpen(false, true));
+        document.addEventListener('keydown', event => {
+            if (event.key === 'Escape' && widget.classList.contains('is-open')) setOpen(false, true);
+        });
+
+        widget.querySelector('.ai-chat-suggestions')?.addEventListener('click', event => {
+            const promptButton = event.target.closest('[data-chat-prompt]');
+            if (!promptButton) return;
+            input.value = promptButton.dataset.chatPrompt || '';
+            form.requestSubmit();
+        });
 
         form.addEventListener('submit', event => {
             event.preventDefault();
             const question = input.value.trim();
             if (!question) return;
             addMessage(question, 'user');
+            widget.classList.add('has-chat-messages');
             input.value = '';
             input.style.height = '';
             sendToAssistant({ message: question, context: workspaceContext(), mode: preferredResearchMode() });

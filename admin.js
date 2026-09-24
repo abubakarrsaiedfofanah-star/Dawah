@@ -1772,6 +1772,16 @@ async function handleAdminAccountApi(action, method, payload) {
 
 // Initialize admin panel
 document.addEventListener('DOMContentLoaded', async function() {
+    document.querySelectorAll('#dashboardView .dashboard-stat-card[onclick]').forEach(card => {
+        card.setAttribute('role', 'button');
+        card.tabIndex = 0;
+        card.setAttribute('aria-label', `${card.textContent.trim().replace(/\s+/g, ' ')}. Open dashboard details.`);
+        card.addEventListener('keydown', event => {
+            if (event.key !== 'Enter' && event.key !== ' ') return;
+            event.preventDefault();
+            card.click();
+        });
+    });
     if (useStaticAdminApi) {
         loadCloudAdminStores().catch(error => {
             console.warn('Initial cloud admin store preload failed:', error);
@@ -2983,8 +2993,27 @@ window.addEventListener('storage', event => {
 
 // Switch between admin views
 
+function setAdminSidebarOpen(isOpen) {
+    const container = document.getElementById('adminContainer');
+    if (!container) return;
+    container.classList.toggle('admin-sidebar-open', isOpen);
+    document.getElementById('adminSidebarToggle')?.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
+}
+
+function toggleAdminSidebar() {
+    const container = document.getElementById('adminContainer');
+    setAdminSidebarOpen(!container?.classList.contains('admin-sidebar-open'));
+}
+
+function closeAdminSidebarOnSmallScreens() {
+    if (window.matchMedia('(max-width: 991.98px)').matches) setAdminSidebarOpen(false);
+}
+
+window.toggleAdminSidebar = toggleAdminSidebar;
+
 // Runtime slice from admin.js: switchAdminView.
 function switchAdminView(viewName) {
+    closeAdminSidebarOnSmallScreens();
     // Hide all views
     document.querySelectorAll('.admin-content').forEach(view => {
         view.classList.remove('active');

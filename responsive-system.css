@@ -171,3 +171,67 @@ pre, code { overflow-wrap: anywhere; }
 @media (prefers-reduced-motion: reduce) {
     *, *::before, *::after { scroll-behavior: auto !important; animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; }
 }
+
+/* Dashboard surfaces: readable summaries, clear actions, and keyboard-ready tiles. */
+.dashboard-container .welcome-banner,
+.admin-container #dashboardView .admin-welcome-banner {
+    position: relative;
+    border: 1px solid rgba(0, 84, 119, .16);
+    background: linear-gradient(125deg, #003b4d, #005477 68%, #167b47);
+    box-shadow: 0 16px 34px rgba(0, 48, 64, .14);
+}
+.dashboard-container .stats-card,
+.admin-container #dashboardView .dashboard-stat-card {
+    border: 1px solid rgba(0, 84, 119, .13) !important;
+    background: linear-gradient(150deg, #fff, #f5fbf7) !important;
+    box-shadow: 0 8px 22px rgba(0, 48, 64, .07) !important;
+    transition: transform .18s ease, box-shadow .18s ease, border-color .18s ease;
+}
+.dashboard-container .stats-card[role="button"],
+.admin-container #dashboardView .dashboard-stat-card[role="button"] { cursor: pointer; }
+.dashboard-container .stats-card[role="button"]:hover,
+.dashboard-container .stats-card[role="button"]:focus-visible,
+.admin-container #dashboardView .dashboard-stat-card[role="button"]:hover,
+.admin-container #dashboardView .dashboard-stat-card[role="button"]:focus-visible {
+    transform: translateY(-3px);
+    border-color: rgba(8, 122, 72, .42) !important;
+    box-shadow: 0 14px 28px rgba(0, 48, 64, .12) !important;
+}
+.dashboard-container .premium-dashboard-card { height: 100%; overflow: hidden; }
+.dashboard-container .premium-dashboard-card > .card-header,
+.dashboard-container .card > .card-header {
+    background: linear-gradient(100deg, #f0f8f3, #f1f8fc);
+    border-bottom-color: rgba(0, 84, 119, .1);
+}
+.dashboard-container .role-quick-actions,
+.dashboard-container .dashboard-report-buttons { display: flex; flex-wrap: wrap; gap: .55rem; }
+.admin-container #dashboardView .admin-report-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; }
+.admin-container #dashboardView .dashboard-stat-card { align-items: flex-start; text-align: left; padding: 16px; border-radius: 14px !important; }
+.admin-container #dashboardView .dashboard-stat-card h5 { display: flex; align-items: center; gap: .5rem; min-height: 2.2em; color: #31525b; font-size: .88rem; font-weight: 800; }
+.admin-container #dashboardView .dashboard-stat-card h2 { font-size: clamp(1.35rem, 2vw, 1.8rem); font-weight: 850; letter-spacing: -.03em; }
+.admin-container #dashboardView .dashboard-stat-card small { color: #657a80; line-height: 1.45; }
+.admin-container #dashboardView > .content-card { border-radius: 16px; }
+
+@media (max-width: 991.98px) {
+    .admin-container #dashboardView .admin-report-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+}
+@media (max-width: 575.98px) {
+    .dashboard-container .welcome-kicker,
+    .admin-container #dashboardView .admin-welcome-kicker { gap: 5px; }
+    .dashboard-container .welcome-kicker span,
+    .admin-container #dashboardView .admin-welcome-kicker span { font-size: .68rem; }
+    .dashboard-container .hadith-section { border-radius: 14px; }
+    .dashboard-container .hadith-nav { display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; gap: .35rem; }
+    .dashboard-container .hadith-btn { min-height: 42px; padding-inline: .6rem; }
+    .admin-container #dashboardView .admin-report-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+    .admin-container #dashboardView .dashboard-stat-card { min-height: 104px; padding: 12px; }
+    .admin-container #dashboardView .dashboard-stat-card h5 { font-size: .78rem; }
+    .admin-container #dashboardView .dashboard-stat-card small { font-size: .68rem; }
+    .dashboard-container .profile-meter { align-items: flex-start; gap: 12px; }
+    .dashboard-container .profile-meter__ring { flex: 0 0 64px; width: 64px; height: 64px; }
+}
+@media (max-width: 360px) {
+    .admin-container #dashboardView .admin-report-grid { grid-template-columns: 1fr 1fr; gap: 6px; }
+    .admin-container #dashboardView .dashboard-stat-card { min-height: 96px; padding: 10px; }
+    .dashboard-container .profile-meter { flex-direction: column; }
+}

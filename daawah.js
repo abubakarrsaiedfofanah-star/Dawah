@@ -10011,6 +10011,17 @@ function removeGalleryItem(index) {
                 filterMenu();
             }));
         }
+
+        document.querySelectorAll('#dashboardPage .stats-card[onclick]').forEach(card => {
+            card.setAttribute('role', 'button');
+            card.tabIndex = 0;
+            card.setAttribute('aria-label', `${card.textContent.trim().replace(/\s+/g, ' ')}. Open this dashboard section.`);
+            card.addEventListener('keydown', event => {
+                if (event.key !== 'Enter' && event.key !== ' ') return;
+                event.preventDefault();
+                card.click();
+            });
+        });
     }
     if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', initialiseInterface, { once: true }); else initialiseInterface();
 }());
