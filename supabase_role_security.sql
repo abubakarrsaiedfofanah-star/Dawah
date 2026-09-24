@@ -53,26 +53,130 @@ security definer
 set search_path = public, pg_temp
 as $$
     select jsonb_build_object(
-        'cardId', data ->> 'cardId',
-        'fullName', coalesce(data ->> 'fullName', data ->> 'name', data ->> 'username'),
-        'username', data ->> 'username',
-        'studentId', data ->> 'studentId',
-        'course', data ->> 'course',
-        'status', data ->> 'status',
-        'paymentStatus', data ->> 'paymentStatus',
-        'issuedAt', data ->> 'issuedAt',
-        'expiresAt', data ->> 'expiresAt',
-        'validityYears', data ->> 'validityYears',
-        'receiptNumber', data ->> 'receiptNumber'
+        'cardId', card.data ->> 'cardId',
+        'fullName', coalesce(card.data ->> 'fullName', card.data ->> 'name', card.data ->> 'username'),
+        'username', card.data ->> 'username',
+        'studentId', card.data ->> 'studentId',
+        'course', card.data ->> 'course',
+        'status', card.data ->> 'status',
+        'paymentStatus', card.data ->> 'paymentStatus',
+        'issuedAt', card.data ->> 'issuedAt',
+        'expiresAt', card.data ->> 'expiresAt',
+        'validityYears', card.data ->> 'validityYears',
+        'receiptNumber', card.data ->> 'receiptNumber',
+        'signatureName', coalesce(site.data -> 'settings' ->> 'finance_signature_name', site.data ->> 'finance_signature_name'),
+        'signatureTitle', coalesce(site.data -> 'settings' ->> 'finance_signature_title', site.data ->> 'finance_signature_title'),
+        'signatureImage', coalesce(site.data -> 'settings' ->> 'finance_signature_image', site.data ->> 'finance_signature_image')
     )
-    from public.app_records
-    where collection = 'membershipCards'
-      and data ->> 'cardId' = lookup_card_id
-    order by updated_at desc, created_at desc
+    from public.app_records card
+    left join public.app_stores site on site.key = 'siteSettings'
+    where card.collection = 'membershipCards'
+      and card.data ->> 'cardId' = lookup_card_id
+      and lower(coalesce(card.data ->> 'status', '')) = 'active'
+      and lower(coalesce(card.data ->> 'paymentStatus', '')) = 'paid'
+      and exists (
+          select 1
+          from public.app_records payment
+          where payment.collection = 'payments'
+            and replace(lower(coalesce(payment.data ->> 'type', payment.data ->> 'payment_type', '')), ' ', '') = 'membershipdues'
+            and lower(coalesce(payment.data ->> 'status', '')) = 'completed'
+            and coalesce(payment.data ->> 'id', payment.id::text) = coalesce(card.data ->> 'paymentId', '')
+      )
+    order by card.updated_at desc, card.created_at desc
     limit 1;
 $$;
 revoke all on function public.dawah_get_public_membership_card(text) from public;
 grant execute on function public.dawah_get_public_membership_card(text) to anon, authenticated;
+
+-- Receipt QR lookups expose only a single approved receipt's public fields.
+create or replace function public.dawah_get_public_receipt(lookup_receipt_number text)
+returns jsonb
+language sql
+stable
+security definer
+set search_path = public, pg_temp
+as $$
+    select jsonb_build_object(
+        'receiptNumber', receipt.data ->> 'receiptNumber',
+        'kind', receipt.data ->> 'kind',
+        'amount', receipt.data ->> 'amount',
+        'status', receipt.data ->> 'status',
+        'type', receipt.data ->> 'type',
+        'name', receipt.data ->> 'name',
+        'method', receipt.data ->> 'method',
+        'transactionRef', receipt.data ->> 'transactionRef',
+        'approvedBy', receipt.data ->> 'approvedBy',
+        'approvedAt', receipt.data ->> 'approvedAt',
+        'createdAt', receipt.data ->> 'createdAt',
+        'updatedAt', receipt.data ->> 'updatedAt',
+        'signatureName', coalesce(site.data -> 'settings' ->> 'finance_signature_name', site.data ->> 'finance_signature_name'),
+        'signatureTitle', coalesce(site.data -> 'settings' ->> 'finance_signature_title', site.data ->> 'finance_signature_title'),
+        'signatureImage', coalesce(site.data -> 'settings' ->> 'finance_signature_image', site.data ->> 'finance_signature_image')
+    )
+    from public.app_records receipt
+    left join public.app_stores site on site.key = 'siteSettings'
+    where receipt.collection = 'receiptVerifications'
+      and lower(receipt.data ->> 'receiptNumber') = lower(lookup_receipt_number)
+      and lower(coalesce(receipt.data ->> 'status', '')) in ('completed', 'reversed')
+      and exists (
+          select 1
+          from public.app_records source
+          where source.collection = case when lower(coalesce(receipt.data ->> 'kind', '')) = 'donation' then 'donations' else 'payments' end
+            and lower(coalesce(source.data ->> 'receiptNumber', source.data ->> 'receipt_number', ''))
+                = lower(coalesce(receipt.data ->> 'receiptNumber', ''))
+            and lower(coalesce(source.data ->> 'status', '')) = lower(coalesce(receipt.data ->> 'status', ''))
+            and lower(coalesce(source.data ->> 'status', '')) in ('completed', 'reversed')
+            and coalesce(source.data ->> 'amount', '') ~ '^[0-9]+([.][0-9]{1,2})?$'
+            and coalesce(receipt.data ->> 'amount', '') ~ '^[0-9]+([.][0-9]{1,2})?$'
+            and (source.data ->> 'amount')::numeric = (receipt.data ->> 'amount')::numeric
+      )
+    order by receipt.updated_at desc, receipt.created_at desc
+    limit 1;
+$$;
+revoke all on function public.dawah_get_public_receipt(text) from public;
+grant execute on function public.dawah_get_public_receipt(text) to anon, authenticated;
+
+-- Only the main admin may set or change the official Imam signature.
+create or replace function public.protect_dawah_finance_signature()
+returns trigger
+language plpgsql
+security definer
+set search_path = public, pg_temp
+as $$
+declare
+    previous_settings jsonb := '{}'::jsonb;
+    next_settings jsonb := '{}'::jsonb;
+    signature_changed boolean := false;
+begin
+    if new.key <> 'siteSettings' then
+        return new;
+    end if;
+
+    next_settings := coalesce(new.data -> 'settings', new.data, '{}'::jsonb);
+    if tg_op = 'UPDATE' then
+        previous_settings := coalesce(old.data -> 'settings', old.data, '{}'::jsonb);
+        signature_changed :=
+            coalesce(next_settings ->> 'finance_signature_name', '') is distinct from coalesce(previous_settings ->> 'finance_signature_name', '')
+            or coalesce(next_settings ->> 'finance_signature_title', '') is distinct from coalesce(previous_settings ->> 'finance_signature_title', '')
+            or coalesce(next_settings ->> 'finance_signature_image', '') is distinct from coalesce(previous_settings ->> 'finance_signature_image', '');
+    else
+        signature_changed :=
+            coalesce(next_settings ->> 'finance_signature_name', '') <> ''
+            or coalesce(next_settings ->> 'finance_signature_title', '') <> ''
+            or coalesce(next_settings ->> 'finance_signature_image', '') <> '';
+    end if;
+
+    if signature_changed and not public.is_dawah_main_admin(auth.uid()) then
+        raise exception 'Only the main admin can change the official Imam signature';
+    end if;
+    return new;
+end;
+$$;
+revoke all on function public.protect_dawah_finance_signature() from public;
+drop trigger if exists protect_dawah_finance_signature_trigger on public.app_stores;
+create trigger protect_dawah_finance_signature_trigger
+    before insert or update on public.app_stores
+    for each row execute function public.protect_dawah_finance_signature();
 
 create or replace function public.dawah_has_permission(check_permission text)
 returns boolean
@@ -196,6 +300,36 @@ $$;
 revoke all on function public.dawah_has_permission(text) from public;
 grant execute on function public.dawah_has_permission(text) to authenticated;
 
+create or replace function public.dawah_receipt_matches_verified_transaction(receipt jsonb)
+returns boolean
+language plpgsql
+stable
+security definer
+set search_path = public, pg_temp
+as $$
+declare
+    source_collection text;
+begin
+    source_collection := case when lower(coalesce(receipt ->> 'kind', '')) = 'donation' then 'donations' else 'payments' end;
+    return exists (
+        select 1
+        from public.app_records source
+        where source.collection = source_collection
+          and lower(coalesce(source.data ->> 'receiptNumber', source.data ->> 'receipt_number', ''))
+              = lower(coalesce(receipt ->> 'receiptNumber', ''))
+          and lower(coalesce(source.data ->> 'status', '')) = lower(coalesce(receipt ->> 'status', ''))
+          and lower(coalesce(source.data ->> 'status', '')) in ('completed', 'reversed')
+          and case
+              when coalesce(source.data ->> 'amount', '') ~ '^[0-9]+([.][0-9]{1,2})?$'
+               and coalesce(receipt ->> 'amount', '') ~ '^[0-9]+([.][0-9]{1,2})?$'
+              then (source.data ->> 'amount')::numeric = (receipt ->> 'amount')::numeric
+              else false
+          end
+    );
+end;
+$$;
+revoke all on function public.dawah_receipt_matches_verified_transaction(jsonb) from public;
+
 -- Officers can read only the records covered by their approved role.
 drop policy if exists "Authenticated users can read app records" on public.app_records;
 drop policy if exists "Authenticated users can write app records" on public.app_records;
@@ -211,7 +345,8 @@ create policy "Users and assigned officers read permitted records"
     using (
         public.is_dawah_admin()
         or public.dawah_record_is_owned(data)
-        or collection in ('receiptVerifications', 'memberVerifications')
+        or collection = 'memberVerifications'
+        or (collection = 'receiptVerifications' and public.dawah_has_permission('manage_payments'))
         or (collection = 'membershipCards' and public.dawah_record_is_owned(data))
         or (collection = 'members' and public.dawah_has_permission('manage_members'))
         or (collection in ('payments', 'donations') and public.dawah_has_permission('manage_payments'))
@@ -222,7 +357,7 @@ create policy "Users and assigned officers read permitted records"
 create policy "Public users can verify receipts and members"
     on public.app_records for select
     to anon
-    using (collection in ('receiptVerifications', 'memberVerifications'));
+    using (collection = 'memberVerifications');
 
 -- Students may insert only their own account and transaction records. The trigger below
 -- requires every requested officer role to remain pending until an admin approves it.
@@ -239,6 +374,7 @@ create policy "Users create owned records and admins create all"
             and public.dawah_record_is_owned(data)
             and lower(coalesce(data ->> 'role', 'student')) not in ('admin', 'main-admin', 'super-admin')
         )
+        or (collection = 'receiptVerifications' and public.dawah_has_permission('manage_payments'))
     );
 
 create policy "Admins delete app records"
@@ -259,6 +395,7 @@ create policy "Users and assigned officers update permitted records"
         or (collection = 'members' and public.dawah_record_is_owned(data))
         or (collection = 'members' and public.dawah_has_permission('manage_members'))
         or (collection in ('payments', 'donations') and public.dawah_has_permission('manage_payments'))
+        or (collection = 'receiptVerifications' and public.dawah_has_permission('manage_payments'))
         or (collection = 'welfareRequests' and public.dawah_has_permission('manage_welfare'))
         or (collection in ('eventRegistrations', 'volunteerRegistrations') and public.dawah_has_permission('manage_events'))
     )
@@ -267,6 +404,7 @@ create policy "Users and assigned officers update permitted records"
         or (collection = 'members' and public.dawah_record_is_owned(data))
         or (collection = 'members' and public.dawah_has_permission('manage_members'))
         or (collection in ('payments', 'donations') and public.dawah_has_permission('manage_payments'))
+        or (collection = 'receiptVerifications' and public.dawah_has_permission('manage_payments'))
         or (collection = 'welfareRequests' and public.dawah_has_permission('manage_welfare'))
         or (collection in ('eventRegistrations', 'volunteerRegistrations') and public.dawah_has_permission('manage_events'))
     );
@@ -500,7 +638,7 @@ begin
                 select 1
                 from public.app_records payment
                 where payment.collection = 'payments'
-                  and lower(coalesce(payment.data ->> 'type', payment.data ->> 'payment_type', '')) = 'membershipdues'
+                  and replace(lower(coalesce(payment.data ->> 'type', payment.data ->> 'payment_type', '')), ' ', '') = 'membershipdues'
                   and lower(coalesce(payment.data ->> 'status', '')) = 'completed'
                   and coalesce(payment.data ->> 'id', payment.id::text) = coalesce(new.data ->> 'paymentId', '')
                   and coalesce(payment.data ->> 'ownerUid', payment.data ->> 'authUid', payment.data ->> 'uid', '') = auth.uid()::text
@@ -523,6 +661,13 @@ begin
             ) then
                 raise exception 'This membership card ID has already been issued';
             end if;
+        end if;
+        if new.collection = 'receiptVerifications'
+           and (
+               not public.dawah_has_permission('manage_payments')
+               or not public.dawah_receipt_matches_verified_transaction(new.data)
+           ) then
+            raise exception 'A public receipt must match a completed or reversed finance record';
         end if;
         return new;
     end if;
@@ -561,7 +706,7 @@ begin
             select 1
             from public.app_records payment
             where payment.collection = 'payments'
-              and lower(coalesce(payment.data ->> 'type', payment.data ->> 'payment_type', '')) = 'membershipdues'
+              and replace(lower(coalesce(payment.data ->> 'type', payment.data ->> 'payment_type', '')), ' ', '') = 'membershipdues'
               and lower(coalesce(payment.data ->> 'status', '')) = 'completed'
               and coalesce(payment.data ->> 'id', payment.id::text) = coalesce(new.data ->> 'paymentId', '')
               and coalesce(payment.data ->> 'ownerUid', payment.data ->> 'authUid', payment.data ->> 'uid', '') = auth.uid()::text
@@ -573,6 +718,14 @@ begin
            or lower(coalesce(new.data ->> 'paymentStatus', '')) <> 'paid' then
             raise exception 'Only paid, active membership cards can be issued';
         end if;
+    end if;
+
+    if new.collection = 'receiptVerifications'
+       and (
+           not public.dawah_has_permission('manage_payments')
+           or not public.dawah_receipt_matches_verified_transaction(new.data)
+       ) then
+        raise exception 'A public receipt must match a completed or reversed finance record';
     end if;
 
     return new;

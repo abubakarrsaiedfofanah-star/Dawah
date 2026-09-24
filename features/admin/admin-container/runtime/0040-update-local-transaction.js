@@ -17,23 +17,26 @@ function updateLocalTransaction(storeKey, id, patch) {
         return matches ? { ...item, ...patch } : item;
     });
     writeStore(storeKey, items);
-    if (matchedItem?.supabaseId && window.SupabaseBackend?.enabled) {
-        window.SupabaseBackend.updateRecord(storeKey, matchedItem.supabaseId, patch).catch(error => {
-            console.error(`Supabase ${storeKey} status update failed:`, error);
-        });
-    }
-    if (patch?.status === 'Completed' && patch?.receiptNumber && window.SupabaseBackend?.enabled) {
-        window.SupabaseBackend.saveReceiptVerification?.(buildReceiptVerificationRecord(storeKey, { ...matchedItem, ...patch })).catch(error => {
-            console.error('Receipt verification save failed:', error);
-        });
-    }
-    if (patch?.status === 'Reversed' && (matchedItem?.receiptNumber || matchedItem?.receipt_number) && window.SupabaseBackend?.enabled) {
-        window.SupabaseBackend.saveReceiptVerification?.(buildReceiptVerificationRecord(storeKey, {
+    const cloudUpdate = matchedItem?.supabaseId && window.SupabaseBackend?.enabled
+        ? window.SupabaseBackend.updateRecord(storeKey, matchedItem.supabaseId, patch)
+        : Promise.resolve(null);
+    cloudUpdate.catch(error => {
+        console.error(`Supabase ${storeKey} status update failed:`, error);
+    });
+
+    const receiptNumber = patch?.receiptNumber || matchedItem?.receiptNumber || matchedItem?.receipt_number || '';
+    const shouldSaveReceipt = (patch?.status === 'Completed' && receiptNumber)
+        || (patch?.status === 'Reversed' && receiptNumber);
+    if (shouldSaveReceipt && matchedItem?.supabaseId && window.SupabaseBackend?.enabled) {
+        const receiptData = patch?.status === 'Reversed'
+            ? {
             ...matchedItem,
             ...patch,
-            receiptNumber: matchedItem.receiptNumber || matchedItem.receipt_number,
+            receiptNumber,
             status: 'Reversed'
-        })).catch(error => {
+            }
+            : { ...matchedItem, ...patch, receiptNumber };
+        cloudUpdate.then(() => window.SupabaseBackend.saveReceiptVerification?.(buildReceiptVerificationRecord(storeKey, receiptData))).catch(error => {
             console.error('Receipt verification reversal update failed:', error);
         });
     }

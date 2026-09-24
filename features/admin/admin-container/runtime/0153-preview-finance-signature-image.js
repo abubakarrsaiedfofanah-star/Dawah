@@ -1,5 +1,9 @@
 // Runtime slice from admin.js: previewFinanceSignatureImage.
 function previewFinanceSignatureImage() {
+    if (!currentAdmin?.isMainAdmin) {
+        showNotification('Only the main admin can change the official Imam signature.', 'warning');
+        return;
+    }
     const input = document.getElementById('adminFinanceSignatureImageFile');
     const hidden = document.getElementById('adminFinanceSignatureImage');
     const file = input?.files?.[0];

@@ -1,5 +1,24 @@
 // Runtime slice from admin.js: switchAdminView.
+function setAdminSidebarOpen(isOpen) {
+    const container = document.getElementById('adminContainer');
+    if (!container) return;
+    container.classList.toggle('admin-sidebar-open', isOpen);
+    document.getElementById('adminSidebarToggle')?.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
+}
+
+function toggleAdminSidebar() {
+    const container = document.getElementById('adminContainer');
+    setAdminSidebarOpen(!container?.classList.contains('admin-sidebar-open'));
+}
+
+function closeAdminSidebarOnSmallScreens() {
+    if (window.matchMedia('(max-width: 991.98px)').matches) setAdminSidebarOpen(false);
+}
+
+window.toggleAdminSidebar = toggleAdminSidebar;
+
 function switchAdminView(viewName) {
+    closeAdminSidebarOnSmallScreens();
     // Hide all views
     document.querySelectorAll('.admin-content').forEach(view => {
         view.classList.remove('active');
@@ -18,7 +37,6 @@ function switchAdminView(viewName) {
         document.documentElement.scrollTop = 0;
         document.body.scrollTop = 0;
         if (document.scrollingElement) document.scrollingElement.scrollTop = 0;
-        document.getElementById('adminContainer')?.classList.remove('admin-sidebar-open');
         
         // Add active class to nav link
         const activeEvent = typeof event !== 'undefined' ? event : null;

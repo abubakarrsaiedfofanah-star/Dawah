@@ -8,7 +8,6 @@ let lastDashboardDetailType = '';
 let lastDashboardDetailRows = [];
 let editingReligiousActivity = null;
 let adminStudentRequesters = [];
-let roleAssignableMembers = [];
 let cloudAdminStoresPromise = null;
 let cloudAdminStoresLoadedAt = 0;
 
@@ -704,23 +703,26 @@ function updateLocalTransaction(storeKey, id, patch) {
         return matches ? { ...item, ...patch } : item;
     });
     writeStore(storeKey, items);
-    if (matchedItem?.supabaseId && window.SupabaseBackend?.enabled) {
-        window.SupabaseBackend.updateRecord(storeKey, matchedItem.supabaseId, patch).catch(error => {
-            console.error(`Supabase ${storeKey} status update failed:`, error);
-        });
-    }
-    if (patch?.status === 'Completed' && patch?.receiptNumber && window.SupabaseBackend?.enabled) {
-        window.SupabaseBackend.saveReceiptVerification?.(buildReceiptVerificationRecord(storeKey, { ...matchedItem, ...patch })).catch(error => {
-            console.error('Receipt verification save failed:', error);
-        });
-    }
-    if (patch?.status === 'Reversed' && (matchedItem?.receiptNumber || matchedItem?.receipt_number) && window.SupabaseBackend?.enabled) {
-        window.SupabaseBackend.saveReceiptVerification?.(buildReceiptVerificationRecord(storeKey, {
+    const cloudUpdate = matchedItem?.supabaseId && window.SupabaseBackend?.enabled
+        ? window.SupabaseBackend.updateRecord(storeKey, matchedItem.supabaseId, patch)
+        : Promise.resolve(null);
+    cloudUpdate.catch(error => {
+        console.error(`Supabase ${storeKey} status update failed:`, error);
+    });
+
+    const receiptNumber = patch?.receiptNumber || matchedItem?.receiptNumber || matchedItem?.receipt_number || '';
+    const shouldSaveReceipt = (patch?.status === 'Completed' && receiptNumber)
+        || (patch?.status === 'Reversed' && receiptNumber);
+    if (shouldSaveReceipt && matchedItem?.supabaseId && window.SupabaseBackend?.enabled) {
+        const receiptData = patch?.status === 'Reversed'
+            ? {
             ...matchedItem,
             ...patch,
-            receiptNumber: matchedItem.receiptNumber || matchedItem.receipt_number,
+            receiptNumber,
             status: 'Reversed'
-        })).catch(error => {
+            }
+            : { ...matchedItem, ...patch, receiptNumber };
+        cloudUpdate.then(() => window.SupabaseBackend.saveReceiptVerification?.(buildReceiptVerificationRecord(storeKey, receiptData))).catch(error => {
             console.error('Receipt verification reversal update failed:', error);
         });
     }
@@ -1816,14 +1818,12 @@ document.addEventListener('DOMContentLoaded', async function() {
 function handleAdminSharedStoreChange(event) {
     if (!['allMembers', 'payments', 'donations', 'welfareRequests', 'registeredEvents'].includes(event.key)) return;
     loadDashboardStatsFromLocal();
-    // A new officer registration is delivered through the members store. Refresh
-    // the dashboard card as well as the account screen so it appears without a
-    // navigation change or a manual page refresh.
     if (event.key === 'allMembers' && currentAdmin?.isMainAdmin) {
         loadPendingRoleRequests({ localOnly: true });
     }
     const accountView = document.getElementById('accountView');
     if (accountView?.classList.contains('active') && currentAdmin?.isMainAdmin) {
+        loadPendingRoleRequests();
         loadRoleAssignableMembers();
     }
     if (lastDashboardDetailType) {
@@ -1841,6 +1841,7 @@ async function refreshAdminRegistrationCapture() {
     }
     const accountView = document.getElementById('accountView');
     if (accountView?.classList.contains('active') && currentAdmin?.isMainAdmin) {
+        loadPendingRoleRequests();
         loadRoleAssignableMembers();
     }
 }
@@ -2005,7 +2006,7 @@ async function checkAdminAuth() {
 // Runtime slice from admin.js: getLocalAdminPrompt.
 function getLocalAdminPrompt() {
     if (useStaticAdminApi && window.SupabaseBackend?.enabled) {
-        return 'Login with the registered Supabase admin email. Use Register Admin only for the first main admin setup.';
+        return '';
     }
     if (isHostedStaticAdminPage && !window.SupabaseBackend?.enabled) {
         const detail = window.SupabaseBackend?.configError || 'Add SUPABASE_URL and SUPABASE_ANON_KEY in Vercel, then redeploy.';
@@ -2542,21 +2543,6 @@ function showAdminPanel() {
     updateAdminAccessUi();
 }
 
-function showPortalWelcome(user) {
-    const existing = document.getElementById('portalWelcomeOverlay');
-    existing?.remove();
-    const overlay = document.createElement('section');
-    overlay.id = 'portalWelcomeOverlay';
-    overlay.className = 'portal-welcome-overlay';
-    const name = String(user?.fullName || user?.name || user?.email || 'Admin').trim();
-    const role = user?.isMainAdmin ? 'Main Admin' : 'Admin';
-    overlay.innerHTML = '<div class="portal-welcome-card"><img src="assets/umma-university-logo-color.png" alt="UMMA University" class="portal-welcome-logo"><p class="portal-welcome-kicker">UMMA UNIVERSITY DAWAH TEAM</p><h2></h2><p class="portal-welcome-role"></p><div class="portal-welcome-loader" aria-label="Opening your portal"></div><p class="portal-welcome-loading">Loading your dashboard…</p></div>';
-    overlay.querySelector('h2').textContent = `Welcome back, ${name}!`;
-    overlay.querySelector('.portal-welcome-role').textContent = `${role} Portal is ready`;
-    document.body.appendChild(overlay);
-    return new Promise(resolve => window.setTimeout(() => { overlay.classList.add('is-leaving'); window.setTimeout(() => { overlay.remove(); resolve(); }, 220); }, 1250));
-}
-
 // Runtime slice from admin.js: handleAdminLogin.
 async function handleAdminLogin(event) {
     event.preventDefault();
@@ -2600,7 +2586,6 @@ async function handleAdminLogin(event) {
             clearAdminLoginFailures();
             setAdminUser(adminUser);
             showAdminPanel();
-            await showPortalWelcome(adminUser);
             document.getElementById('adminLoginForm').reset();
             startAdminSessionTimer();
             startAdminRealtimeListeners();
@@ -2630,7 +2615,6 @@ async function handleAdminLogin(event) {
         clearAdminLoginFailures();
         setAdminUser(result.data);
         showAdminPanel();
-        await showPortalWelcome(result.data);
         document.getElementById('adminLoginForm').reset();
         startAdminSessionTimer();
         startAdminRealtimeListeners();
@@ -2995,6 +2979,7 @@ window.addEventListener('storage', event => {
 
 // Switch between admin views
 
+// Runtime slice from admin.js: switchAdminView.
 function setAdminSidebarOpen(isOpen) {
     const container = document.getElementById('adminContainer');
     if (!container) return;
@@ -3013,7 +2998,6 @@ function closeAdminSidebarOnSmallScreens() {
 
 window.toggleAdminSidebar = toggleAdminSidebar;
 
-// Runtime slice from admin.js: switchAdminView.
 function switchAdminView(viewName) {
     closeAdminSidebarOnSmallScreens();
     // Hide all views
@@ -3030,6 +3014,10 @@ function switchAdminView(viewName) {
     const viewElement = document.getElementById(viewName + 'View');
     if (viewElement) {
         viewElement.classList.add('active');
+        window.scrollTo({ top: 0, left: 0, behavior: 'auto' });
+        document.documentElement.scrollTop = 0;
+        document.body.scrollTop = 0;
+        if (document.scrollingElement) document.scrollingElement.scrollTop = 0;
         
         // Add active class to nav link
         const activeEvent = typeof event !== 'undefined' ? event : null;
@@ -3346,6 +3334,7 @@ function loadRoleAssignableMembers() {
 }
 
 // Runtime slice from admin.js: renderRoleAssignableMembers.
+let roleAssignableMembers = [];
 function renderRoleAssignableMembers(members) {
     roleAssignableMembers = Array.isArray(members) ? members : [];
     renderRoleAssignableMemberOptions(roleAssignableMembers);
@@ -3660,6 +3649,10 @@ function updateFinanceSignaturePreview(value = '') {
 
 // Runtime slice from admin.js: previewFinanceSignatureImage.
 function previewFinanceSignatureImage() {
+    if (!currentAdmin?.isMainAdmin) {
+        showNotification('Only the main admin can change the official Imam signature.', 'warning');
+        return;
+    }
     const input = document.getElementById('adminFinanceSignatureImageFile');
     const hidden = document.getElementById('adminFinanceSignatureImage');
     const file = input?.files?.[0];
@@ -3685,6 +3678,10 @@ function previewFinanceSignatureImage() {
 
 // Runtime slice from admin.js: removeFinanceSignatureImage.
 function removeFinanceSignatureImage() {
+    if (!currentAdmin?.isMainAdmin) {
+        showNotification('Only the main admin can change the official Imam signature.', 'warning');
+        return;
+    }
     const input = document.getElementById('adminFinanceSignatureImageFile');
     const hidden = document.getElementById('adminFinanceSignatureImage');
     if (input) input.value = '';
@@ -3763,6 +3760,33 @@ function populateAdminSiteSettings(settings = {}) {
     setAdminSettingsValue('adminFinanceSignatureTitle', settings.finance_signature_title);
     setAdminSettingsValue('adminFinanceSignatureImage', settings.finance_signature_image);
     updateFinanceSignaturePreview(settings.finance_signature_image || '');
+    setFinanceSignatureAccess();
+}
+
+function setFinanceSignatureAccess() {
+    const allowed = Boolean(currentAdmin?.isMainAdmin);
+    [
+        'adminFinanceSignatureName',
+        'adminFinanceSignatureTitle',
+        'adminFinanceSignatureImageFile'
+    ].forEach(id => {
+        const control = document.getElementById(id);
+        if (control) control.disabled = !allowed;
+    });
+    const removeButton = document.querySelector('button[onclick="removeFinanceSignatureImage()"]');
+    if (removeButton) removeButton.disabled = !allowed;
+    const imageControl = document.getElementById('adminFinanceSignatureImageFile');
+    if (!imageControl) return;
+    let note = document.getElementById('financeSignatureAccessNote');
+    if (!note) {
+        note = document.createElement('small');
+        note.id = 'financeSignatureAccessNote';
+        note.className = 'd-block mt-2 text-muted';
+        imageControl.closest('.col-md-6')?.appendChild(note);
+    }
+    if (note) note.textContent = allowed
+        ? 'Only the main admin can set the official Imam name and signature.'
+        : 'Official Imam signature controls are locked. Ask the main admin to update them.';
 }
 
 // Runtime slice from admin.js: loadAdminSiteSettings.
@@ -4947,9 +4971,20 @@ function formatRequestMoney(value) {
 // Runtime slice from admin.js: loadDashboardDetail.
 function loadDashboardDetail(type) {
     setActiveDashboardCard(type);
+    const detailTable = document.getElementById('dashboardDetailTable');
+    if (detailTable) detailTable.innerHTML = '<div class="py-4 text-center text-muted"><i class="fas fa-spinner fa-spin"></i> Loading records...</div>';
+    document.getElementById('dashboardView')?.classList.add('dashboard-detail-open');
     refreshCloudAdminStores(true)
         .finally(() => loadDashboardDetailFromLocal(type));
 }
+
+function closeDashboardDetail() {
+    document.getElementById('dashboardView')?.classList.remove('dashboard-detail-open');
+}
+
+document.addEventListener('keydown', event => {
+    if (event.key === 'Escape') closeDashboardDetail();
+});
 
 // Runtime slice from admin.js: loadDashboardDetailFromLocal.
 function loadDashboardDetailFromLocal(type) {

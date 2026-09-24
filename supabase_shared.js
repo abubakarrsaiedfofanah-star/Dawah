@@ -498,8 +498,13 @@ const SupabaseBackendApi = (() => {
     }
 
     async function loadReceiptVerification(receiptNumber) {
-        const records = await listRecords('receiptVerifications');
-        return records.find(item => String(item.receiptNumber || item.receipt_number || '').toLowerCase() === String(receiptNumber || '').toLowerCase()) || null;
+        if (!enabled || !String(receiptNumber || '').trim()) return null;
+        const db = await client();
+        const { data, error } = await db.rpc('dawah_get_public_receipt', {
+            lookup_receipt_number: String(receiptNumber).trim()
+        });
+        if (error) throw error;
+        return data || null;
     }
 
     async function saveMemberVerification(member) {

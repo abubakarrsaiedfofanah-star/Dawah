@@ -3,6 +3,9 @@ async function refreshAdminRegistrationCapture() {
     if (!currentAdmin) return;
     await refreshCloudAdminStores(true);
     loadDashboardStatsFromLocal();
+    if (currentAdmin.isMainAdmin) {
+        loadPendingRoleRequests({ localOnly: true });
+    }
     const accountView = document.getElementById('accountView');
     if (accountView?.classList.contains('active') && currentAdmin?.isMainAdmin) {
         loadPendingRoleRequests();

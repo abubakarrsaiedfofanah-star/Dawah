@@ -28,4 +28,31 @@ function populateAdminSiteSettings(settings = {}) {
     setAdminSettingsValue('adminFinanceSignatureTitle', settings.finance_signature_title);
     setAdminSettingsValue('adminFinanceSignatureImage', settings.finance_signature_image);
     updateFinanceSignaturePreview(settings.finance_signature_image || '');
+    setFinanceSignatureAccess();
+}
+
+function setFinanceSignatureAccess() {
+    const allowed = Boolean(currentAdmin?.isMainAdmin);
+    [
+        'adminFinanceSignatureName',
+        'adminFinanceSignatureTitle',
+        'adminFinanceSignatureImageFile'
+    ].forEach(id => {
+        const control = document.getElementById(id);
+        if (control) control.disabled = !allowed;
+    });
+    const removeButton = document.querySelector('button[onclick="removeFinanceSignatureImage()"]');
+    if (removeButton) removeButton.disabled = !allowed;
+    const imageControl = document.getElementById('adminFinanceSignatureImageFile');
+    if (!imageControl) return;
+    let note = document.getElementById('financeSignatureAccessNote');
+    if (!note) {
+        note = document.createElement('small');
+        note.id = 'financeSignatureAccessNote';
+        note.className = 'd-block mt-2 text-muted';
+        imageControl.closest('.col-md-6')?.appendChild(note);
+    }
+    if (note) note.textContent = allowed
+        ? 'Only the main admin can set the official Imam name and signature.'
+        : 'Official Imam signature controls are locked. Ask the main admin to update them.';
 }

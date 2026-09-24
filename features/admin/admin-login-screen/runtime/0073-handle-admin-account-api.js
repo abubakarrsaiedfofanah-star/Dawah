@@ -108,6 +108,16 @@ async function handleAdminAccountApi(action, method, payload) {
 
 // Initialize admin panel
 document.addEventListener('DOMContentLoaded', async function() {
+    document.querySelectorAll('#dashboardView .dashboard-stat-card[onclick]').forEach(card => {
+        card.setAttribute('role', 'button');
+        card.tabIndex = 0;
+        card.setAttribute('aria-label', `${card.textContent.trim().replace(/\s+/g, ' ')}. Open dashboard details.`);
+        card.addEventListener('keydown', event => {
+            if (event.key !== 'Enter' && event.key !== ' ') return;
+            event.preventDefault();
+            card.click();
+        });
+    });
     if (useStaticAdminApi) {
         loadCloudAdminStores().catch(error => {
             console.warn('Initial cloud admin store preload failed:', error);
@@ -120,6 +130,7 @@ document.addEventListener('DOMContentLoaded', async function() {
     document.getElementById('adminResetWithCodeForm')?.addEventListener('submit', handleAdminResetWithCode);
     document.getElementById('adminCreateForm')?.addEventListener('submit', handleManagedAdminCreate);
     document.getElementById('memberRoleAssignForm')?.addEventListener('submit', handleMemberRoleAssign);
+    document.getElementById('memberRoleSearch')?.addEventListener('input', event => filterRoleAssignableMembers(event.target.value));
     document.getElementById('memberPasswordResetForm')?.addEventListener('submit', handleMemberPasswordReset);
     document.getElementById('adminChangePasswordForm')?.addEventListener('submit', handleAdminPasswordChange);
     window.addEventListener('storage', handleAdminSharedStoreChange);

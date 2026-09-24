@@ -1,5 +1,5 @@
 // Runtime slice from daawah.js: openMemberDigitalCard.
-function openMemberDigitalCard() {
+async function openMemberDigitalCard() {
     if (!currentUser) return;
     const body = document.getElementById('memberDigitalCardBody');
     if (!body) return;
@@ -9,32 +9,46 @@ function openMemberDigitalCard() {
     const status = membershipState.status;
     const role = formatRoleName(currentUser.role || currentRole || 'student');
     const completedMembershipPayment = getCompletedMembershipDuesPayment();
-    const issuedCard = completedMembershipPayment && currentUser.membershipCardAppliedAt
+    const pendingCard = completedMembershipPayment && currentUser.membershipCardAppliedAt
         ? ensureActiveMembershipCard(completedMembershipPayment)
         : null;
-    const cardPaymentStatus = completedMembershipPayment ? 'Paid' : 'No payment';
+    let issuedCard = null;
+    if (pendingCard && window.SupabaseBackend?.enabled && window.SupabaseBackend.hasAuthSession?.()) {
+        try {
+            await saveMembershipCardRecord(pendingCard);
+            const verifiedCard = await window.SupabaseBackend.loadPublicMembershipCard(pendingCard.cardId);
+            if (verifiedCard && String(verifiedCard.status || '').toLowerCase() === 'active'
+                && String(verifiedCard.paymentStatus || '').toLowerCase() === 'paid') {
+                issuedCard = verifiedCard;
+            }
+        } catch (error) {
+            console.error('Online membership card verification failed:', error);
+        }
+    }
+    const cardPaymentStatus = issuedCard ? 'Paid and verified' : (completedMembershipPayment ? 'Awaiting finance verification' : 'No payment');
     const cardApplicationStatus = currentUser.membershipCardAppliedAt
-        ? (completedMembershipPayment ? 'Ready after payment' : 'Applied - awaiting payment')
+        ? (issuedCard ? 'Issued and verified' : 'Application preview')
         : 'Not applied';
-    const cardId = issuedCard?.cardId || currentUser.membershipCardId || 'Not issued';
+    const cardId = issuedCard?.cardId || 'Not issued';
     const verifyUrl = issuedCard ? membershipCardVerificationUrl(cardId) : memberVerificationUrl(currentUser);
-    const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=132x132&data=${encodeURIComponent(verifyUrl)}`;
-    const settings = getLocalSiteSettings();
-    const signatureName = displaySignatureName(settings.finance_signature_name, 'Imam');
-    const signatureTitle = displaySignatureTitle(settings.finance_signature_title, 'Imam');
+    const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=180x180&margin=8&ecc=H&data=${encodeURIComponent(verifyUrl)}`;
+    const signature = issuedCard
+        ? `${displaySignatureName(issuedCard.signatureName, 'Imam')} · ${displaySignatureTitle(issuedCard.signatureTitle, 'Imam')}`
+        : 'Not issued';
+    const signatureImage = issuedCard && isReceiptSignatureImage(issuedCard.signatureImage) ? issuedCard.signatureImage : '';
     const photo = currentUser.profilePhoto || currentUser.profileImage || currentUser.photoUrl || currentUser.avatar || '';
     const initials = name.trim().split(/\s+/).slice(0, 2).map(part => part[0] || '').join('').toUpperCase() || 'M';
     const printButton = document.getElementById('memberDigitalCardPrintButton');
     if (printButton) {
-        printButton.disabled = !completedMembershipPayment || !issuedCard;
-        printButton.title = completedMembershipPayment ? 'Print membership card' : 'Complete membership dues payment before printing';
+        printButton.disabled = !issuedCard;
+        printButton.title = issuedCard ? 'Print verified membership card' : 'Printing unlocks after Finance verifies dues and issues the card online';
     }
     body.innerHTML = `
         <section id="memberDigitalCard" class="member-id-card">
             <header class="member-id-card__header">
                 <img src="assets/umma-university-logo-color.png?v=20260522-logo2" alt="UMMA University logo">
                 <div class="member-id-card__brand"><strong>UMMA UNIVERSITY</strong><span>DAWAH TEAM · MEMBERSHIP CARD</span></div>
-                <span class="badge ${membershipState.badgeClass}">${escapeHtml(status)}</span>
+                <span class="badge ${issuedCard ? membershipState.badgeClass : 'bg-secondary'}">${issuedCard ? escapeHtml(status) : 'Not issued'}</span>
             </header>
             <div class="member-id-card__main">
                 <div class="member-id-card__details">
@@ -53,13 +67,14 @@ function openMemberDigitalCard() {
             <footer class="member-id-card__footer">
                 <div class="member-id-card__meta">
                     <span>Card number</span><strong>${escapeHtml(cardId)}</strong>
-                    <span>Valid until</span><strong>${escapeHtml(formatMembershipDate(issuedCard?.expiresAt || currentUser.membershipCardExpiresAt, 'After issue'))}</strong>
-                    <span>${escapeHtml(signatureName)} · ${escapeHtml(signatureTitle)}</span>
+                    <span>Valid until</span><strong>${escapeHtml(issuedCard ? formatMembershipDate(issuedCard.expiresAt, 'Not set') : 'After issue')}</strong>
+                    <span>${escapeHtml(signature)}</span>
+                    ${signatureImage ? `<img src="${escapeHtml(signatureImage)}" alt="Authorised Imam signature" style="display:block;max-width:150px;max-height:42px;object-fit:contain;margin-top:4px">` : ''}
                 </div>
-                <div class="member-id-card__verify"><img src="${qrUrl}" alt="QR code to verify ${issuedCard ? 'this membership card' : 'this member'}"><span>Scan to verify</span></div>
+                <div class="member-id-card__verify"><img src="${qrUrl}" alt="QR code to verify ${issuedCard ? 'this issued membership card' : 'this member record'}" width="180" height="180"><span>${issuedCard ? 'Verify issued card' : 'Preview only'}</span></div>
             </footer>
         </section>
-        ${completedMembershipPayment && issuedCard ? '' : `<div class="alert alert-warning mt-3 mb-0">${escapeHtml(cardApplicationStatus)}. Printing unlocks after membership dues are paid and the card is issued (${escapeHtml(cardPaymentStatus)}).</div>`}
+        ${issuedCard ? '' : `<div class="alert alert-warning mt-3 mb-0">${escapeHtml(cardApplicationStatus)}. This is a preview only. A usable card and receipt require online finance approval (${escapeHtml(cardPaymentStatus)}).</div>`}
     `;
     bootstrap.Modal.getOrCreateInstance(document.getElementById('memberDigitalCardModal')).show();
 }

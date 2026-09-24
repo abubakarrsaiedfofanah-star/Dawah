@@ -1,5 +1,20 @@
 // Runtime slice from admin.js: renderRoleAssignableMembers.
+let roleAssignableMembers = [];
 function renderRoleAssignableMembers(members) {
+    roleAssignableMembers = Array.isArray(members) ? members : [];
+    renderRoleAssignableMemberOptions(roleAssignableMembers);
+}
+
+function filterRoleAssignableMembers(query = '') {
+    const lookup = String(query).trim().toLowerCase();
+    const matchingMembers = !lookup ? roleAssignableMembers : roleAssignableMembers.filter(member =>
+        [member.first_name, member.last_name, member.username, member.student_id, member.email]
+            .some(value => String(value || '').toLowerCase().includes(lookup))
+    );
+    renderRoleAssignableMemberOptions(matchingMembers);
+}
+
+function renderRoleAssignableMemberOptions(members) {
     const select = document.getElementById('memberRoleUser');
     const passwordSelect = document.getElementById('memberPasswordUser');
     if (!select && !passwordSelect) return;

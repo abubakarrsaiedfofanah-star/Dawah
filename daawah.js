@@ -3658,11 +3658,18 @@ function saveMembershipCardRecord(cardRecord) {
     localCards[cardRecord.cardId] = cardRecord;
     localStorage.setItem('membershipCards', JSON.stringify(localCards));
     if (window.SupabaseBackend?.enabled && window.SupabaseBackend.hasAuthSession()) {
-        window.SupabaseBackend.saveMembershipCard?.(cardRecord).catch(error => {
+        window.__dawahCardSyncs ||= new Map();
+        if (window.__dawahCardSyncs.has(cardRecord.cardId)) return window.__dawahCardSyncs.get(cardRecord.cardId);
+        const savePromise = window.SupabaseBackend.saveMembershipCard?.(cardRecord).catch(error => {
             console.error('Membership card sync failed:', error);
-            showNotification('Card is ready on this device, but cloud verification sync failed. Try again online.', 'warning');
-        });
+            showNotification('Card is saved on this device, but online verification is not ready. Try again later.', 'warning');
+            return null;
+        }) || Promise.resolve(null);
+        window.__dawahCardSyncs.set(cardRecord.cardId, savePromise);
+        savePromise.finally(() => window.__dawahCardSyncs.delete(cardRecord.cardId));
+        return savePromise;
     }
+    return Promise.resolve(null);
 }
 
 // Runtime slice from daawah.js: ensureActiveMembershipCard.
@@ -5912,6 +5919,7 @@ function renderPaymentHistory() {
         </tr>
     `).join('');
 }
+
 // Runtime slice from daawah.js: renderFinanceSummary.
 function renderFinanceSummary(containerId, records) {
     const container = document.getElementById(containerId);
@@ -5956,7 +5964,7 @@ function membershipCardVerificationUrl(cardId) {
 }
 
 // Runtime slice from daawah.js: openMemberDigitalCard.
-function openMemberDigitalCard() {
+async function openMemberDigitalCard() {
     if (!currentUser) return;
     const body = document.getElementById('memberDigitalCardBody');
     if (!body) return;
@@ -5966,32 +5974,46 @@ function openMemberDigitalCard() {
     const status = membershipState.status;
     const role = formatRoleName(currentUser.role || currentRole || 'student');
     const completedMembershipPayment = getCompletedMembershipDuesPayment();
-    const issuedCard = completedMembershipPayment && currentUser.membershipCardAppliedAt
+    const pendingCard = completedMembershipPayment && currentUser.membershipCardAppliedAt
         ? ensureActiveMembershipCard(completedMembershipPayment)
         : null;
-    const cardPaymentStatus = completedMembershipPayment ? 'Paid' : 'No payment';
+    let issuedCard = null;
+    if (pendingCard && window.SupabaseBackend?.enabled && window.SupabaseBackend.hasAuthSession?.()) {
+        try {
+            await saveMembershipCardRecord(pendingCard);
+            const verifiedCard = await window.SupabaseBackend.loadPublicMembershipCard(pendingCard.cardId);
+            if (verifiedCard && String(verifiedCard.status || '').toLowerCase() === 'active'
+                && String(verifiedCard.paymentStatus || '').toLowerCase() === 'paid') {
+                issuedCard = verifiedCard;
+            }
+        } catch (error) {
+            console.error('Online membership card verification failed:', error);
+        }
+    }
+    const cardPaymentStatus = issuedCard ? 'Paid and verified' : (completedMembershipPayment ? 'Awaiting finance verification' : 'No payment');
     const cardApplicationStatus = currentUser.membershipCardAppliedAt
-        ? (completedMembershipPayment ? 'Ready after payment' : 'Applied - awaiting payment')
+        ? (issuedCard ? 'Issued and verified' : 'Application preview')
         : 'Not applied';
-    const cardId = issuedCard?.cardId || currentUser.membershipCardId || 'Not issued';
+    const cardId = issuedCard?.cardId || 'Not issued';
     const verifyUrl = issuedCard ? membershipCardVerificationUrl(cardId) : memberVerificationUrl(currentUser);
-    const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=132x132&data=${encodeURIComponent(verifyUrl)}`;
-    const settings = getLocalSiteSettings();
-    const signatureName = displaySignatureName(settings.finance_signature_name, 'Imam');
-    const signatureTitle = displaySignatureTitle(settings.finance_signature_title, 'Imam');
+    const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=180x180&margin=8&ecc=H&data=${encodeURIComponent(verifyUrl)}`;
+    const signature = issuedCard
+        ? `${displaySignatureName(issuedCard.signatureName, 'Imam')} · ${displaySignatureTitle(issuedCard.signatureTitle, 'Imam')}`
+        : 'Not issued';
+    const signatureImage = issuedCard && isReceiptSignatureImage(issuedCard.signatureImage) ? issuedCard.signatureImage : '';
     const photo = currentUser.profilePhoto || currentUser.profileImage || currentUser.photoUrl || currentUser.avatar || '';
     const initials = name.trim().split(/\s+/).slice(0, 2).map(part => part[0] || '').join('').toUpperCase() || 'M';
     const printButton = document.getElementById('memberDigitalCardPrintButton');
     if (printButton) {
-        printButton.disabled = !completedMembershipPayment || !issuedCard;
-        printButton.title = completedMembershipPayment ? 'Print membership card' : 'Complete membership dues payment before printing';
+        printButton.disabled = !issuedCard;
+        printButton.title = issuedCard ? 'Print verified membership card' : 'Printing unlocks after Finance verifies dues and issues the card online';
     }
     body.innerHTML = `
         <section id="memberDigitalCard" class="member-id-card">
             <header class="member-id-card__header">
                 <img src="assets/umma-university-logo-color.png?v=20260522-logo2" alt="UMMA University logo">
                 <div class="member-id-card__brand"><strong>UMMA UNIVERSITY</strong><span>DAWAH TEAM · MEMBERSHIP CARD</span></div>
-                <span class="badge ${membershipState.badgeClass}">${escapeHtml(status)}</span>
+                <span class="badge ${issuedCard ? membershipState.badgeClass : 'bg-secondary'}">${issuedCard ? escapeHtml(status) : 'Not issued'}</span>
             </header>
             <div class="member-id-card__main">
                 <div class="member-id-card__details">
@@ -6010,16 +6032,18 @@ function openMemberDigitalCard() {
             <footer class="member-id-card__footer">
                 <div class="member-id-card__meta">
                     <span>Card number</span><strong>${escapeHtml(cardId)}</strong>
-                    <span>Valid until</span><strong>${escapeHtml(formatMembershipDate(issuedCard?.expiresAt || currentUser.membershipCardExpiresAt, 'After issue'))}</strong>
-                    <span>${escapeHtml(signatureName)} · ${escapeHtml(signatureTitle)}</span>
+                    <span>Valid until</span><strong>${escapeHtml(issuedCard ? formatMembershipDate(issuedCard.expiresAt, 'Not set') : 'After issue')}</strong>
+                    <span>${escapeHtml(signature)}</span>
+                    ${signatureImage ? `<img src="${escapeHtml(signatureImage)}" alt="Authorised Imam signature" style="display:block;max-width:150px;max-height:42px;object-fit:contain;margin-top:4px">` : ''}
                 </div>
-                <div class="member-id-card__verify"><img src="${qrUrl}" alt="QR code to verify ${issuedCard ? 'this membership card' : 'this member'}"><span>Scan to verify</span></div>
+                <div class="member-id-card__verify"><img src="${qrUrl}" alt="QR code to verify ${issuedCard ? 'this issued membership card' : 'this member record'}" width="180" height="180"><span>${issuedCard ? 'Verify issued card' : 'Preview only'}</span></div>
             </footer>
         </section>
-        ${completedMembershipPayment && issuedCard ? '' : `<div class="alert alert-warning mt-3 mb-0">${escapeHtml(cardApplicationStatus)}. Printing unlocks after membership dues are paid and the card is issued (${escapeHtml(cardPaymentStatus)}).</div>`}
+        ${issuedCard ? '' : `<div class="alert alert-warning mt-3 mb-0">${escapeHtml(cardApplicationStatus)}. This is a preview only. A usable card and receipt require online finance approval (${escapeHtml(cardPaymentStatus)}).</div>`}
     `;
     bootstrap.Modal.getOrCreateInstance(document.getElementById('memberDigitalCardModal')).show();
 }
+
 // Runtime slice from daawah.js: printMemberDigitalCard.
 function printMemberDigitalCard() {
     if (!getCompletedMembershipDuesPayment() || !getActiveMembershipCard()) {
@@ -6042,6 +6066,7 @@ function printMemberDigitalCard() {
 
 window.openMemberDigitalCard = openMemberDigitalCard;
 window.printMemberDigitalCard = printMemberDigitalCard;
+
 // Runtime slice from daawah.js: notifyFinanceStatusChanges.
 function notifyFinanceStatusChanges(kind, records) {
     if (!Array.isArray(records) || !currentUser) return;
@@ -6227,6 +6252,7 @@ function renderPaymentActions(payment, index) {
     }
     return '<span class="text-muted">Pending approval</span>';
 }
+
 // Runtime slice from daawah.js: resendFinanceReceipt.
 function resendFinanceReceipt(kind, index) {
     const records = kind === 'donations' ? donations : payments;
@@ -6428,22 +6454,44 @@ function displaySignatureName(value, fallback = 'Imam') {
 }
 
 // Runtime slice from daawah.js: openOfficialReceipt.
-function openOfficialReceipt(details) {
-    const receiptNumber = details.receiptNumber || details.transactionRef || '';
-    if (!receiptNumber) {
+async function openOfficialReceipt(details = {}) {
+    const receiptNumber = details.receiptNumber || '';
+    if (!receiptNumber || String(details.status || '').toLowerCase() !== 'completed') {
         showNotification?.('This receipt is not ready yet. Finance must approve it first.', 'warning');
         return;
     }
-    const verifyUrl = `${location.origin}${location.pathname.replace(/[^/]*$/, '')}verify-receipt.html?receipt=${encodeURIComponent(receiptNumber)}`;
+    if (!window.SupabaseBackend?.enabled) {
+        showNotification?.('Official receipts need an online verification record. Reconnect and try again.', 'warning');
+        return;
+    }
+    const receiptWindow = window.open('about:blank', '_blank');
+    if (!receiptWindow) {
+        showNotification?.('Allow pop-ups to open the verified receipt.', 'warning');
+        return;
+    }
+    let verifiedReceipt;
+    try {
+        verifiedReceipt = await window.SupabaseBackend.loadReceiptVerification(receiptNumber);
+    } catch (error) {
+        receiptWindow.close();
+        showNotification?.('Could not verify this receipt online. Please try again.', 'danger');
+        return;
+    }
+    if (!verifiedReceipt || String(verifiedReceipt.status || '').toLowerCase() !== 'completed') {
+        receiptWindow.close();
+        showNotification?.('No approved online receipt was found. Contact Finance before using this receipt.', 'warning');
+        return;
+    }
+    details = { ...details, ...verifiedReceipt };
+    const verifyLink = new URL('verify-receipt.html', location.href);
+    verifyLink.searchParams.set('receipt', receiptNumber);
+    const verifyUrl = verifyLink.href;
     const logoUrl = new URL('assets/umma-university-logo-color.png', location.href).href;
-    const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=132x132&data=${encodeURIComponent(verifyUrl)}`;
-    const approvedBy = details.approvedBy || (details.status === 'Completed' ? (currentUser?.fullName || currentUser?.username || 'Treasurer') : 'Pending');
-    const settings = getLocalSiteSettings();
-    const signatureName = displaySignatureName(details.signatureName || settings.finance_signature_name || approvedBy, 'Imam');
-    const signatureTitle = displaySignatureTitle(details.signatureTitle || settings.finance_signature_title, 'Imam');
-    const signatureImage = isReceiptSignatureImage(details.signatureImage)
-        ? details.signatureImage
-        : (isReceiptSignatureImage(settings.finance_signature_image) ? settings.finance_signature_image : '');
+    const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=180x180&margin=8&ecc=H&data=${encodeURIComponent(verifyUrl)}`;
+    const approvedBy = details.approvedBy || 'Finance Team';
+    const signatureName = displaySignatureName(details.signatureName, 'Imam');
+    const signatureTitle = displaySignatureTitle(details.signatureTitle, 'Imam');
+    const signatureImage = isReceiptSignatureImage(details.signatureImage) ? details.signatureImage : '';
     const html = `<!doctype html>
 <html>
 <head>
@@ -6458,23 +6506,23 @@ function openOfficialReceipt(details) {
         .top-brand img { width: 56px; height: 56px; object-fit: contain; }
         h1 { margin: 0; font-size: 24px; letter-spacing: 0; }
         .brand { color: #003040; font-weight: 700; margin-top: 6px; }
-        .badge { display: inline-block; background: #003040; color: #fff; padding: 6px 12px; border-radius: 4px; font-size: 12px; }
+        .badge { display: inline-block; background: #087446; color: #fff; padding: 7px 13px; border-radius: 999px; font-size: 12px; font-weight: 700; }
         table { width: 100%; border-collapse: collapse; margin-top: 24px; }
         td { padding: 12px 10px; border-bottom: 1px solid #e5e7eb; }
         td:first-child { color: #6b7280; width: 34%; }
         .amount { font-size: 28px; font-weight: 700; color: #0060b0; }
         .verify { display: flex; align-items: center; justify-content: space-between; gap: 18px; margin-top: 24px; padding: 16px; border: 1px solid #dbe7e4; background: #f8fffb; }
         .verify p { margin: 6px 0 0; color: #6b7280; }
-        .verify img { width: 132px; height: 132px; }
+        .verify img { width: 180px; height: 180px; padding: 5px; border: 1px solid #dbe7e4; border-radius: 12px; background: #fff; }
         .receipt-footer { display: flex; justify-content: space-between; gap: 24px; align-items: flex-end; margin-top: 30px; }
-        .signature { min-width: 240px; text-align: center; }
+        .signature { min-width: 240px; text-align: center; padding: 12px 18px; border: 1px solid #dbe7e4; border-radius: 12px; background: #fbfefc; }
         .signature-box { height: 76px; border-bottom: 1px solid #17323a; display: flex; align-items: flex-end; justify-content: center; padding: 0 12px 8px; }
         .signature-box img { max-width: 220px; max-height: 64px; object-fit: contain; }
         .signature strong { display: block; margin-top: 10px; color: #17323a; }
         .signature span { display: block; color: #6b7280; font-size: 12px; margin-top: 3px; }
         .actions { width: min(760px, calc(100% - 32px)); margin: 18px auto; display: flex; gap: 10px; justify-content: flex-end; }
         button, a { display: inline-flex; min-height: 44px; align-items: center; justify-content: center; border: 0; background: #111827; color: #fff; padding: 10px 14px; border-radius: 8px; text-decoration: none; cursor: pointer; }
-        @media (max-width: 640px) { body { padding: 12px; } .receipt { width: 100%; margin: 8px auto; padding: 18px; border-radius: 12px; } .top, .verify, .receipt-footer { flex-direction: column; align-items: flex-start; } .top { gap: 12px; } h1 { font-size: 20px; } .verify { width: 100%; } .verify img { width: 112px; height: 112px; align-self: center; } .signature { width: 100%; min-width: 0; } .actions { width: 100%; flex-wrap: wrap; } .actions > * { flex: 1 1 120px; text-align: center; } table { table-layout: fixed; } td { padding: 9px 6px; overflow-wrap: anywhere; } td:first-child { width: 36%; } .amount { font-size: 23px; } }
+        @media (max-width: 640px) { body { padding: 12px; } .receipt { width: 100%; margin: 8px auto; padding: 18px; border-radius: 12px; } .top, .verify, .receipt-footer { flex-direction: column; align-items: flex-start; } .top { gap: 12px; } h1 { font-size: 20px; } .verify { width: 100%; } .verify img { width: 152px; height: 152px; align-self: center; } .signature { width: 100%; min-width: 0; } .actions { width: 100%; flex-wrap: wrap; } .actions > * { flex: 1 1 120px; text-align: center; } table { table-layout: fixed; } td { padding: 9px 6px; overflow-wrap: anywhere; } td:first-child { width: 36%; } .amount { font-size: 23px; } }
         @media print { .actions { display: none; } body { background: #fff; padding: 0; } .receipt { width: 100%; margin: 0; border: 0; box-shadow: none; } }
     </style>
 </head>
@@ -6500,7 +6548,7 @@ function openOfficialReceipt(details) {
             <tr><td>Transaction Reference</td><td>${escapeHtml(details.transactionRef || 'Not recorded')}</td></tr>
             <tr><td>Approved By</td><td>${escapeHtml(approvedBy)}</td></tr>
             <tr><td>Approved At</td><td>${escapeHtml(details.approvedAt || 'Not recorded')}</td></tr>
-            <tr><td>Date</td><td>${escapeHtml(details.date || new Date().toLocaleDateString())}</td></tr>
+            <tr><td>Date</td><td>${escapeHtml(details.date || details.createdAt || new Date().toLocaleDateString())}</td></tr>
             <tr><td>Verify Online</td><td>${escapeHtml(verifyUrl)}</td></tr>
         </table>
         <div class="verify">
@@ -6508,7 +6556,7 @@ function openOfficialReceipt(details) {
                 <strong>Receipt verification QR</strong>
                 <p>Scan to confirm this receipt in the UMMA University Dawah Team system.</p>
             </div>
-            <img src="${qrUrl}" alt="Receipt verification QR code">
+            <img src="${qrUrl}" alt="Scan to verify receipt ${escapeHtml(receiptNumber)} online" width="180" height="180">
         </div>
         <div class="receipt-footer">
             <div>
@@ -6531,8 +6579,9 @@ function openOfficialReceipt(details) {
 </html>`;
     const blob = new Blob([html], { type: 'text/html' });
     const url = URL.createObjectURL(blob);
-    window.open(url, '_blank');
+    receiptWindow.location.href = url;
 }
+
 // Runtime slice from daawah.js: downloadReceipt.
 function downloadReceipt(index) {
     const payment = payments[index];
@@ -6871,6 +6920,7 @@ function renderDonationHistory() {
         </tr>
     `).join('');
 }
+
 // Runtime slice from daawah.js: renderDonationActions.
 function renderDonationActions(donation, index) {
     if (donation.status === 'Completed') {
@@ -6895,6 +6945,7 @@ function renderDonationActions(donation, index) {
     }
     return '<span class="text-muted">Pending approval</span>';
 }
+
 // Runtime slice from daawah.js: confirmDonation.
 function confirmDonation(index) {
     updateLocalDonationStatus(index, 'Completed', 'completed');

@@ -1,11 +1,12 @@
 // Runtime slice from admin.js: loadPendingRoleRequests.
-function loadPendingRoleRequests() {
+function loadPendingRoleRequests(options = {}) {
     const containers = [
         document.getElementById('pendingRoleRequestsList'),
         document.getElementById('dashboardPendingRoleRequestsList')
     ].filter(Boolean);
     if (!containers.length) return;
     renderPendingRoleRequests(getLocalPendingRoleRequests());
+    if (options.localOnly) return;
 
     const cloudMembers = window.SupabaseBackend?.enabled && window.SupabaseBackend.hasAuthSession?.()
         ? window.SupabaseBackend.listMembers()

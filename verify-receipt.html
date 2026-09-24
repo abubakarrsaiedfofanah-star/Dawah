@@ -10,7 +10,7 @@
     <link href="vendor/bootstrap/css/bootstrap.min.css" rel="stylesheet">
     <link href="vendor/fontawesome/css/all.min.css" rel="stylesheet">
     <link href="daawah.css" rel="stylesheet">
-    <link href="responsive-system.css?v=finance-id-20260924-v3" rel="stylesheet">
+    <link href="responsive-system.css?v=finance-id-20260924-v4" rel="stylesheet">
     <script defer src="responsive-system.js?v=mobile-fit-20260924-v1"></script>
 </head>
 <body class="bg-light verification-page">
@@ -35,7 +35,7 @@
     </main>
 
     <script src="supabase_config.js"></script>
-    <script src="supabase_shared.js?v=finance-security-20260924-v3"></script>
+    <script src="supabase_shared.js?v=finance-security-20260924-v4"></script>
     <script>
         const input = document.getElementById('receipt');
         const result = document.getElementById('receiptResult');
@@ -140,6 +140,8 @@
                         <tr><th>Method</th><td>${escapeText(item.method || 'Not specified')}</td></tr>
                         <tr><th>Transaction Reference</th><td>${escapeText(item.transactionRef || 'Not recorded')}</td></tr>
                         <tr><th>Approved By</th><td>${escapeText(item.approvedBy || 'Treasurer')}</td></tr>
+                        <tr><th>Authorised Imam</th><td>${escapeText([item.signatureName, item.signatureTitle].filter(Boolean).join(' · ') || 'Imam')}</td></tr>
+                        ${/^data:image\/(png|jpeg|webp);base64,/i.test(item.signatureImage || '') ? `<tr><th>Signature</th><td><img src="${escapeText(item.signatureImage)}" alt="Authorised Imam signature" style="max-width:180px;max-height:64px;object-fit:contain"></td></tr>` : ''}
                         <tr><th>Approved At</th><td>${escapeText(formatDate(item.approvedAt))}</td></tr>
                         <tr><th>Last Updated</th><td>${escapeText(formatDate(item.updatedAt))}</td></tr>
                     </table>
