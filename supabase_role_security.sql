@@ -367,10 +367,57 @@ begin
     requested_role := lower(replace(replace(trim(coalesce(new.data ->> 'role', 'student')), '-', '_'), ' ', '_'));
     requested_status := lower(trim(coalesce(new.data ->> 'status', '')));
 
+    if tg_op = 'INSERT'
+       and auth.uid() is not null
+       and new.collection in (
+           'members', 'payments', 'donations', 'welfareRequests',
+           'eventRegistrations', 'volunteerRegistrations', 'auditLogs', 'membershipCards'
+       )
+       and (
+           coalesce(new.data ->> 'ownerUid', '') not in ('', auth.uid()::text)
+           or coalesce(new.data ->> 'authUid', '') not in ('', auth.uid()::text)
+           or coalesce(new.data ->> 'uid', '') not in ('', auth.uid()::text)
+       ) then
+        raise exception 'Records must be created for the signed-in account';
+    end if;
+
+    if tg_op = 'UPDATE'
+       and new.collection in (
+           'members', 'payments', 'donations', 'welfareRequests',
+           'eventRegistrations', 'volunteerRegistrations', 'auditLogs', 'membershipCards'
+       )
+       and (
+           coalesce(new.data ->> 'ownerUid', '') is distinct from coalesce(old.data ->> 'ownerUid', '')
+           or coalesce(new.data ->> 'authUid', '') is distinct from coalesce(old.data ->> 'authUid', '')
+           or coalesce(new.data ->> 'uid', '') is distinct from coalesce(old.data ->> 'uid', '')
+       ) then
+        raise exception 'Record ownership cannot be changed';
+    end if;
+
+    if tg_op = 'INSERT' and new.collection = 'members'
+       and (
+           lower(coalesce(new.data ->> 'membershipCardPaymentStatus', '')) in ('paid', 'completed')
+           or lower(coalesce(new.data ->> 'membershipPaymentStatus', '')) in ('paid', 'completed')
+           or lower(coalesce(new.data ->> 'paymentStatus', '')) in ('paid', 'completed')
+           or lower(coalesce(new.data ->> 'membershipCardRecordStatus', '')) = 'active'
+           or coalesce(new.data ->> 'membershipCardId', '') <> ''
+           or coalesce(new.data ->> 'membershipCardPaymentId', '') <> ''
+           or coalesce(new.data ->> 'membershipCardReceiptNumber', '') <> ''
+           or coalesce(new.data ->> 'membershipCardIssuedAt', '') <> ''
+           or coalesce(new.data ->> 'membershipCardExpiresAt', '') <> ''
+       ) then
+        raise exception 'Payment and issued card status must be confirmed by the finance team';
+    end if;
+
     if new.collection in ('payments', 'donations') then
         finance_status := lower(replace(replace(trim(coalesce(new.data ->> 'status', 'pending')), '-', '_'), ' ', '_'));
         finance_amount := trim(coalesce(new.data ->> 'amount', ''));
-        finance_reference := lower(trim(coalesce(new.data ->> 'transactionRef', new.data ->> 'transaction_id', new.data ->> 'mpesaReceipt', '')));
+        finance_reference := lower(trim(coalesce(
+            nullif(new.data ->> 'transactionRef', ''),
+            nullif(new.data ->> 'transaction_id', ''),
+            nullif(new.data ->> 'mpesaReceipt', ''),
+            ''
+        )));
 
         if case
             when finance_amount ~ '^[0-9]+([.][0-9]{1,2})?$' then finance_amount::numeric <= 0
@@ -383,10 +430,14 @@ begin
             if finance_status not in ('pending', 'pending_approval', 'pending_mpesa', 'pending_m_pesa', 'processing') then
                 raise exception 'New payment and donation records must remain pending until verified';
             end if;
-            if coalesce(new.data ->> 'receiptNumber', new.data ->> 'receipt_number',
-                        new.data ->> 'mpesaReceipt', new.data ->> 'mpesa_receipt', '') <> ''
-               or coalesce(new.data ->> 'approvedBy', new.data ->> 'approvedAt',
-                           new.data ->> 'verifiedBy', new.data ->> 'verifiedAt', '') <> '' then
+            if coalesce(
+                    nullif(new.data ->> 'receiptNumber', ''), nullif(new.data ->> 'receipt_number', ''),
+                    nullif(new.data ->> 'mpesaReceipt', ''), nullif(new.data ->> 'mpesa_receipt', ''), ''
+               ) <> ''
+               or coalesce(
+                    nullif(new.data ->> 'approvedBy', ''), nullif(new.data ->> 'approvedAt', ''),
+                    nullif(new.data ->> 'verifiedBy', ''), nullif(new.data ->> 'verifiedAt', ''), ''
+               ) <> '' then
                 raise exception 'Receipt and approval details can only be assigned after payment verification';
             end if;
             if finance_reference <> '' then
@@ -395,7 +446,12 @@ begin
                     select 1
                     from public.app_records existing
                     where existing.collection in ('payments', 'donations')
-                      and lower(trim(coalesce(existing.data ->> 'transactionRef', existing.data ->> 'transaction_id', existing.data ->> 'mpesaReceipt', ''))) = finance_reference
+                      and lower(trim(coalesce(
+                          nullif(existing.data ->> 'transactionRef', ''),
+                          nullif(existing.data ->> 'transaction_id', ''),
+                          nullif(existing.data ->> 'mpesaReceipt', ''),
+                          ''
+                      ))) = finance_reference
                 ) then
                     raise exception 'This transaction reference has already been submitted';
                 end if;
