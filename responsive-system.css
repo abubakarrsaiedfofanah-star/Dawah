@@ -1,0 +1,173 @@
+﻿/* Shared responsive layer for the student, admin, and officer workspaces. */
+:root {
+    --mobile-content-gutter: clamp(12px, 3vw, 28px);
+    --mobile-control-height: 44px;
+}
+
+html { width: 100%; min-width: 320px; scroll-padding-top: 5rem; }
+body { width: 100%; min-width: 320px; overflow-x: clip; }
+img, svg, video, canvas, iframe { max-width: 100%; }
+.container, .container-fluid, .row, [class*="col-"] { min-width: 0; }
+.container-fluid { width: 100%; }
+pre, code { overflow-wrap: anywhere; }
+
+/* Make wide data stay inside its own scroll area instead of moving the page. */
+.table-responsive {
+    width: 100%;
+    max-width: 100%;
+    overflow-x: auto;
+    overscroll-behavior-inline: contain;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: thin;
+}
+.table-responsive > table { min-width: 620px; margin-bottom: 0; }
+.dashboard-container .main-content,
+.admin-container .main-content,
+.dashboard-container .view-container,
+.admin-container .content-card,
+.admin-container .card,
+.dashboard-container .card,
+.dashboard-container .content-card { min-width: 0; }
+.dashboard-container .card-body,
+.admin-container .card-body { min-width: 0; }
+
+/* Give touch controls a comfortable target and let toolbars wrap naturally. */
+.btn, .nav-link, .dropdown-item, .form-check-input { touch-action: manipulation; }
+.form-control, .form-select { max-width: 100%; }
+.input-group { min-width: 0; flex-wrap: nowrap; }
+.input-group > .form-control, .input-group > .form-select { min-width: 0; }
+.btn-toolbar, .dashboard-actions, .admin-actions, .page-header, .section-header,
+.card-header, .admin-header, .admin-user-chip { min-width: 0; }
+.btn-toolbar, .dashboard-actions, .admin-actions { flex-wrap: wrap; gap: .5rem; }
+.card-header, .page-header, .section-header { gap: .75rem; }
+.card-header > *, .page-header > *, .section-header > * { min-width: 0; }
+.card-header .btn, .page-header .btn, .section-header .btn { flex: 0 1 auto; }
+
+/* Keep charts and dashboard tiles inside narrow cards. */
+.dashboard-container .stats-card,
+.dashboard-container .stat-card,
+.admin-container .dashboard-stat-card,
+.admin-container .stat-card { min-width: 0; overflow-wrap: anywhere; }
+.dashboard-container canvas, .admin-container canvas { max-width: 100%; }
+
+@media (max-width: 991.98px) {
+    .landing-page .navbar .container-fluid,
+    .dashboard-container .navbar .container-fluid { padding-inline: var(--mobile-content-gutter); }
+    .dashboard-container .main-content,
+    .admin-container .main-content { padding: var(--mobile-content-gutter); }
+    .dashboard-container .view-container,
+    .admin-container .view-container { width: 100%; }
+    .dashboard-container .row, .admin-container .row { --bs-gutter-x: 1rem; }
+    .admin-container .dashboard-stat-grid,
+    .admin-container .stats-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+
+@media (max-width: 767.98px) {
+    html { scroll-padding-top: 4rem; }
+    body { font-size: 15px; }
+    input, select, textarea, .form-control, .form-select { font-size: 16px !important; }
+    .form-control, .form-select, .btn:not(.btn-sm) { min-height: var(--mobile-control-height); }
+    .dashboard-container .navbar, .landing-page .navbar { min-height: 60px; }
+    .dashboard-container .main-content,
+    .admin-container .main-content { padding: 14px; }
+    .dashboard-container .card-body,
+    .admin-container .card-body { padding: 14px; }
+    .dashboard-container .welcome-banner,
+    .admin-container .admin-welcome-banner { padding: clamp(16px, 4vw, 24px); }
+    .dashboard-container .welcome-banner h1,
+    .admin-container .admin-welcome-banner h1 { font-size: clamp(1.35rem, 5vw, 2rem); }
+    .dashboard-container .row > *, .admin-container .row > * { min-width: 0; }
+    .dashboard-container .table-responsive,
+    .admin-container .table-responsive { margin-inline: 0; border-radius: 10px; }
+    .dashboard-container .table-responsive > table,
+    .admin-container .table-responsive > table { min-width: 600px; font-size: .9rem; }
+    .dashboard-container .table-responsive th,
+    .dashboard-container .table-responsive td,
+    .admin-container .table-responsive th,
+    .admin-container .table-responsive td { white-space: normal; vertical-align: middle; }
+    .dashboard-container .table-responsive td .btn,
+    .admin-container .table-responsive td .btn { margin: 2px; }
+    .dashboard-container .modal-dialog,
+    .admin-container .modal-dialog { margin: 10px; }
+    .dashboard-container .modal-content,
+    .admin-container .modal-content { max-height: calc(100dvh - 20px); overflow: hidden; }
+    .dashboard-container .modal-body,
+    .admin-container .modal-body { overflow-y: auto; overscroll-behavior: contain; }
+    .dashboard-container .modal-footer,
+    .admin-container .modal-footer { flex-wrap: wrap; gap: .5rem; }
+    .dashboard-container .modal-footer > .btn,
+    .admin-container .modal-footer > .btn { flex: 1 1 130px; margin: 0; }
+    .dashboard-container .dropdown-menu { max-width: calc(100vw - 24px); }
+    .dashboard-container .nav-tabs,
+    .admin-container .nav-tabs { flex-wrap: nowrap; overflow-x: auto; overflow-y: hidden; scrollbar-width: thin; }
+    .dashboard-container .nav-tabs .nav-link,
+    .admin-container .nav-tabs .nav-link { white-space: nowrap; }
+    .dashboard-container .d-flex:not(.flex-column),
+    .admin-container .d-flex:not(.flex-column) { min-width: 0; }
+    .admin-container .content-card { overflow: visible; }
+}
+
+@media (max-width: 575.98px) {
+    .landing-section { padding-inline: 12px; }
+    .landing-section .container { padding-inline: 0; }
+    .dashboard-container .main-content,
+    .admin-container .main-content { padding: 10px; }
+    .dashboard-container .card,
+    .dashboard-container .content-card,
+    .admin-container .card,
+    .admin-container .content-card { border-radius: 12px !important; }
+    .dashboard-container .card-body,
+    .admin-container .card-body { padding: 12px; }
+    .dashboard-container .card-header,
+    .admin-container .card-header { padding: 12px; }
+    .dashboard-container .card-header:not(.flex-column),
+    .admin-container .card-header:not(.flex-column) { flex-wrap: wrap; }
+    .dashboard-container .card-header h1,
+    .dashboard-container .card-header h2,
+    .dashboard-container .card-header h3,
+    .dashboard-container .card-header h4,
+    .dashboard-container .card-header h5,
+    .admin-container .card-header h1,
+    .admin-container .card-header h2,
+    .admin-container .card-header h3,
+    .admin-container .card-header h4,
+    .admin-container .card-header h5 { flex: 1 1 100%; font-size: 1.05rem; }
+    .dashboard-container .btn-group,
+    .admin-container .btn-group { display: flex; flex-wrap: wrap; gap: .35rem; }
+    .dashboard-container .btn-group > .btn,
+    .admin-container .btn-group > .btn { border-radius: 8px !important; }
+    .dashboard-container .stats-grid,
+    .admin-container .stats-grid,
+    .admin-container .dashboard-stat-grid { grid-template-columns: 1fr; }
+    .dashboard-container .pagination,
+    .admin-container .pagination { flex-wrap: wrap; gap: .2rem; }
+    .dashboard-container .pagination .page-link,
+    .admin-container .pagination .page-link { padding: .45rem .65rem; }
+    .dashboard-container .modal-dialog,
+    .admin-container .modal-dialog { margin: 8px; }
+    .dashboard-container .modal-content,
+    .admin-container .modal-content { max-height: calc(100dvh - 16px); border-radius: 14px; }
+    .officer-shell { padding: 10px; }
+    .officer-card { width: 100%; }
+    .officer-header, .officer-body { padding: 16px; }
+    .officer-header h1 { font-size: clamp(1.15rem, 5vw, 1.5rem); }
+    .officer-body .nav-tabs { max-width: 100%; }
+    .officer-body .nav-tabs .nav-link { padding-inline: .8rem; }
+    .officer-body .row > * { min-width: 0; }
+    .officer-body .input-group { flex-wrap: wrap; }
+    .officer-body .input-group > .form-control { flex: 1 1 100%; }
+    .officer-body .input-group > .btn { flex: 1 1 auto; }
+}
+
+@media (max-width: 380px) {
+    .dashboard-container .main-content,
+    .admin-container .main-content { padding: 8px; }
+    .dashboard-container .card-body,
+    .admin-container .card-body { padding: 10px; }
+    .officer-brand { align-items: flex-start; }
+    .officer-logo { width: 58px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after { scroll-behavior: auto !important; animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; }
+}
