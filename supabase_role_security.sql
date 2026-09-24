@@ -5,6 +5,44 @@
 alter table public.app_stores enable row level security;
 alter table public.app_records enable row level security;
 alter table public.admin_roles enable row level security;
+-- Admin access can be disabled by changing the role row status. Older main-admin
+-- rows without a status remain active for backwards compatibility.
+create or replace function public.is_dawah_admin(check_uid uuid default auth.uid())
+returns boolean
+language sql
+stable
+security definer
+set search_path = public, pg_temp
+as $$
+    select exists (
+        select 1
+        from public.admin_roles
+        where uid = check_uid
+          and lower(replace(replace(trim(coalesce(data ->> 'status', 'active')), '-', '_'), ' ', '_'))
+              not in ('inactive', 'suspended', 'disabled', 'revoked', 'pending', 'rejected')
+          and (
+              lower(coalesce(data ->> 'role', '')) in ('admin', 'main-admin', 'main admin', 'super-admin', 'super admin')
+              or lower(coalesce(data ->> 'isMainAdmin', 'false')) = 'true'
+          )
+    );
+$$;
+
+create or replace function public.is_dawah_main_admin(check_uid uuid default auth.uid())
+returns boolean
+language sql
+stable
+security definer
+set search_path = public, pg_temp
+as $$
+    select exists (
+        select 1
+        from public.admin_roles
+        where uid = check_uid
+          and lower(replace(replace(trim(coalesce(data ->> 'status', 'active')), '-', '_'), ' ', '_'))
+              not in ('inactive', 'suspended', 'disabled', 'revoked', 'pending', 'rejected')
+          and lower(coalesce(data ->> 'isMainAdmin', 'false')) = 'true'
+    );
+$$;
 
 create or replace function public.dawah_has_permission(check_permission text)
 returns boolean
