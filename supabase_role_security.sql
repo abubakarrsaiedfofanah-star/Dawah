@@ -389,13 +389,16 @@ begin
                            new.data ->> 'verifiedBy', new.data ->> 'verifiedAt', '') <> '' then
                 raise exception 'Receipt and approval details can only be assigned after payment verification';
             end if;
-            if finance_reference <> '' and exists (
-                select 1
-                from public.app_records existing
-                where existing.collection in ('payments', 'donations')
-                  and lower(trim(coalesce(existing.data ->> 'transactionRef', existing.data ->> 'transaction_id', existing.data ->> 'mpesaReceipt', ''))) = finance_reference
-            ) then
-                raise exception 'This transaction reference has already been submitted';
+            if finance_reference <> '' then
+                perform pg_advisory_xact_lock(hashtextextended(finance_reference, 0));
+                if exists (
+                    select 1
+                    from public.app_records existing
+                    where existing.collection in ('payments', 'donations')
+                      and lower(trim(coalesce(existing.data ->> 'transactionRef', existing.data ->> 'transaction_id', existing.data ->> 'mpesaReceipt', ''))) = finance_reference
+                ) then
+                    raise exception 'This transaction reference has already been submitted';
+                end if;
             end if;
         else
             finance_fields_changed :=
