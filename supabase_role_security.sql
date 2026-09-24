@@ -135,6 +135,8 @@ drop policy if exists "Public users can verify receipts and members" on public.a
 drop policy if exists "Users read owned records and admins read all" on public.app_records;
 drop policy if exists "Users create owned records and admins create all" on public.app_records;
 drop policy if exists "Admins delete app records" on public.app_records;
+drop policy if exists "Users and assigned officers read permitted records" on public.app_records;
+drop policy if exists "Users and assigned officers update permitted records" on public.app_records;
 create policy "Users and assigned officers read permitted records"
     on public.app_records for select
     to authenticated
@@ -206,6 +208,7 @@ drop policy if exists "Public users can read app stores" on public.app_stores;
 drop policy if exists "Authenticated users can write app stores" on public.app_stores;
 drop policy if exists "Authenticated users can read allowed app stores" on public.app_stores;
 drop policy if exists "Admins can write app stores" on public.app_stores;
+drop policy if exists "Admins and assigned officers write permitted app stores" on public.app_stores;
 create policy "Authenticated users can read allowed app stores"
     on public.app_stores for select
     to authenticated
