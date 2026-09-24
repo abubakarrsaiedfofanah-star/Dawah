@@ -22,49 +22,44 @@ function openMemberDigitalCard() {
     const settings = getLocalSiteSettings();
     const signatureName = displaySignatureName(settings.finance_signature_name, 'Imam');
     const signatureTitle = displaySignatureTitle(settings.finance_signature_title, 'Imam');
-    const signatureImage = isReceiptSignatureImage(settings.finance_signature_image) ? settings.finance_signature_image : '';
+    const photo = currentUser.profilePhoto || currentUser.profileImage || currentUser.photoUrl || currentUser.avatar || '';
+    const initials = name.trim().split(/\s+/).slice(0, 2).map(part => part[0] || '').join('').toUpperCase() || 'M';
     const printButton = document.getElementById('memberDigitalCardPrintButton');
     if (printButton) {
         printButton.disabled = !completedMembershipPayment || !issuedCard;
         printButton.title = completedMembershipPayment ? 'Print membership card' : 'Complete membership dues payment before printing';
     }
     body.innerHTML = `
-        <section id="memberDigitalCard" class="border rounded p-3 bg-white">
-            <div class="d-flex justify-content-between gap-3 align-items-start">
-                <div>
-                    <div class="small text-muted">UMMA University Dawah Team</div>
-                    <h4 class="mb-1">${escapeHtml(name)}</h4>
-                    <div class="badge ${membershipState.badgeClass}">${escapeHtml(status)}</div>
+        <section id="memberDigitalCard" class="member-id-card">
+            <header class="member-id-card__header">
+                <img src="assets/umma-university-logo-color.png?v=20260522-logo2" alt="UMMA University logo">
+                <div class="member-id-card__brand"><strong>UMMA UNIVERSITY</strong><span>DAWAH TEAM · MEMBERSHIP CARD</span></div>
+                <span class="badge ${membershipState.badgeClass}">${escapeHtml(status)}</span>
+            </header>
+            <div class="member-id-card__main">
+                <div class="member-id-card__details">
+                    <span class="member-id-card__label">Student member</span>
+                    <h2>${escapeHtml(name)}</h2>
+                    <p class="member-id-card__student-number">${escapeHtml(studentId)}</p>
+                    <div class="member-id-card__fields">
+                        <div><span>Course</span><strong>${escapeHtml(currentUser.course || 'Not set')}</strong></div>
+                        <div><span>Role</span><strong>${escapeHtml(role)}</strong></div>
+                    </div>
                 </div>
-                <img src="assets/umma-university-logo-color.png?v=20260522-logo2" alt="UMMA University logo" style="width:64px;height:64px;object-fit:contain;">
-            </div>
-            <hr>
-            <div class="row g-2">
-                <div class="col-12"><small class="text-muted">Unique Card ID</small><br><strong>${escapeHtml(cardId)}</strong></div>
-                <div class="col-6"><small class="text-muted">Student ID</small><br><strong>${escapeHtml(studentId)}</strong></div>
-                <div class="col-6"><small class="text-muted">Role</small><br><strong>${escapeHtml(role)}</strong></div>
-                <div class="col-12"><small class="text-muted">Course</small><br><strong>${escapeHtml(currentUser.course || 'Not set')}</strong></div>
-                <div class="col-6"><small class="text-muted">Card Application</small><br><strong>${escapeHtml(cardApplicationStatus)}</strong></div>
-                <div class="col-6"><small class="text-muted">Payment</small><br><span class="badge ${completedMembershipPayment ? 'bg-success' : 'bg-secondary'}">${escapeHtml(cardPaymentStatus)}</span></div>
-                <div class="col-6"><small class="text-muted">Issued</small><br><strong>${issuedCard?.issuedAt ? escapeHtml(new Date(issuedCard.issuedAt).toLocaleDateString()) : 'After payment'}</strong></div>
-                <div class="col-6"><small class="text-muted">Expires</small><br><strong>${escapeHtml(formatMembershipDate(issuedCard?.expiresAt || currentUser.membershipCardExpiresAt, 'After issue'))}</strong></div>
-                <div class="col-6"><small class="text-muted">Validity</small><br><strong>${escapeHtml(String(issuedCard?.validityYears || currentUser.membershipCardValidityYears || getMembershipValidityYears(currentUser)))} years</strong></div>
-                <div class="col-6"><small class="text-muted">Receipt</small><br><strong>${escapeHtml(issuedCard?.receiptNumber || 'Not issued')}</strong></div>
-            </div>
-            <div class="d-flex justify-content-between align-items-end gap-3 mt-3">
-                <div>
-                    <small class="text-muted d-block">Issuer signature</small>
-                    ${signatureImage ? `<img src="${signatureImage}" alt="Issuer signature" style="max-width:180px;max-height:52px;object-fit:contain;">` : '<div style="height:42px;border-bottom:1px solid #111;width:180px;"></div>'}
-                    <strong class="d-block small">${escapeHtml(signatureName)}</strong>
-                    <span class="small text-muted">${escapeHtml(signatureTitle)}</span>
-                </div>
-                <div class="text-end">
-                <small class="text-muted d-block">Scan to verify this exact card.</small>
-                <img src="${qrUrl}" alt="Member verification QR code" style="width:112px;height:112px;">
+                <div class="member-id-card__photo-wrap">
+                    ${photo ? `<img class="member-id-card__photo" src="${escapeHtml(photo)}" alt="${escapeHtml(name)}">` : `<div class="member-id-card__photo member-id-card__photo--empty" aria-label="No profile photo">${escapeHtml(initials)}</div>`}
                 </div>
             </div>
-            ${completedMembershipPayment ? '' : '<div class="alert alert-warning mt-3 mb-0">Printing is locked until membership dues payment is completed.</div>'}
+            <footer class="member-id-card__footer">
+                <div class="member-id-card__meta">
+                    <span>Card number</span><strong>${escapeHtml(cardId)}</strong>
+                    <span>Valid until</span><strong>${escapeHtml(formatMembershipDate(issuedCard?.expiresAt || currentUser.membershipCardExpiresAt, 'After issue'))}</strong>
+                    <span>${escapeHtml(signatureName)} · ${escapeHtml(signatureTitle)}</span>
+                </div>
+                <div class="member-id-card__verify"><img src="${qrUrl}" alt="QR code to verify ${issuedCard ? 'this membership card' : 'this member'}"><span>Scan to verify</span></div>
+            </footer>
         </section>
+        ${completedMembershipPayment && issuedCard ? '' : `<div class="alert alert-warning mt-3 mb-0">${escapeHtml(cardApplicationStatus)}. Printing unlocks after membership dues are paid and the card is issued (${escapeHtml(cardPaymentStatus)}).</div>`}
     `;
     bootstrap.Modal.getOrCreateInstance(document.getElementById('memberDigitalCardModal')).show();
 }

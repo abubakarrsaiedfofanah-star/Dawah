@@ -6,6 +6,7 @@ function openOfficialReceipt(details) {
         return;
     }
     const verifyUrl = `${location.origin}${location.pathname.replace(/[^/]*$/, '')}verify-receipt.html?receipt=${encodeURIComponent(receiptNumber)}`;
+    const logoUrl = new URL('assets/umma-university-logo-color.png', location.href).href;
     const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=132x132&data=${encodeURIComponent(verifyUrl)}`;
     const approvedBy = details.approvedBy || (details.status === 'Completed' ? (currentUser?.fullName || currentUser?.username || 'Treasurer') : 'Pending');
     const settings = getLocalSiteSettings();
@@ -18,11 +19,14 @@ function openOfficialReceipt(details) {
 <html>
 <head>
     <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>${escapeHtml(receiptNumber)} Receipt</title>
     <style>
         body { font-family: Arial, sans-serif; margin: 0; background: #f3fbf7; color: #17323a; }
-        .receipt { max-width: 760px; margin: 28px auto; background: #fff; border: 1px solid #b9d8d2; padding: 32px; }
+        .receipt { width: min(760px, calc(100% - 32px)); margin: 28px auto; background: #fff; border: 1px solid #b9d8d2; padding: 32px; box-shadow: 0 12px 34px rgba(0,48,64,.1); overflow-wrap: anywhere; }
         .top { display: flex; justify-content: space-between; gap: 24px; border-bottom: 2px solid #40b050; padding-bottom: 18px; }
+        .top-brand { display: flex; align-items: center; gap: 14px; min-width: 0; }
+        .top-brand img { width: 56px; height: 56px; object-fit: contain; }
         h1 { margin: 0; font-size: 24px; letter-spacing: 0; }
         .brand { color: #003040; font-weight: 700; margin-top: 6px; }
         .badge { display: inline-block; background: #003040; color: #fff; padding: 6px 12px; border-radius: 4px; font-size: 12px; }
@@ -39,19 +43,22 @@ function openOfficialReceipt(details) {
         .signature-box img { max-width: 220px; max-height: 64px; object-fit: contain; }
         .signature strong { display: block; margin-top: 10px; color: #17323a; }
         .signature span { display: block; color: #6b7280; font-size: 12px; margin-top: 3px; }
-        .actions { max-width: 760px; margin: 18px auto; display: flex; gap: 10px; justify-content: flex-end; }
-        button, a { border: 0; background: #111827; color: #fff; padding: 10px 14px; border-radius: 4px; text-decoration: none; cursor: pointer; }
-        @media (max-width: 640px) { .top, .verify, .receipt-footer { flex-direction: column; align-items: flex-start; } .signature { width: 100%; } }
-        @media print { .actions { display: none; } body { background: #fff; } .receipt { margin: 0; border: 0; } }
+        .actions { width: min(760px, calc(100% - 32px)); margin: 18px auto; display: flex; gap: 10px; justify-content: flex-end; }
+        button, a { display: inline-flex; min-height: 44px; align-items: center; justify-content: center; border: 0; background: #111827; color: #fff; padding: 10px 14px; border-radius: 8px; text-decoration: none; cursor: pointer; }
+        @media (max-width: 640px) { body { padding: 12px; } .receipt { width: 100%; margin: 8px auto; padding: 18px; border-radius: 12px; } .top, .verify, .receipt-footer { flex-direction: column; align-items: flex-start; } .top { gap: 12px; } h1 { font-size: 20px; } .verify { width: 100%; } .verify img { width: 112px; height: 112px; align-self: center; } .signature { width: 100%; min-width: 0; } .actions { width: 100%; flex-wrap: wrap; } .actions > * { flex: 1 1 120px; text-align: center; } table { table-layout: fixed; } td { padding: 9px 6px; overflow-wrap: anywhere; } td:first-child { width: 36%; } .amount { font-size: 23px; } }
+        @media print { .actions { display: none; } body { background: #fff; padding: 0; } .receipt { width: 100%; margin: 0; border: 0; box-shadow: none; } }
     </style>
 </head>
 <body>
     <div class="actions"><button onclick="window.print()">Print</button><a id="downloadReceipt" download="${escapeHtml(receiptNumber)}.html">Download HTML</a></div>
     <main class="receipt">
         <div class="top">
-            <div>
+            <div class="top-brand">
+                <img src="${escapeHtml(logoUrl)}" alt="UMMA University logo">
+                <div>
                 <h1>Official ${escapeHtml(details.kind)} Receipt</h1>
                 <div class="brand">UMMA University Dawah Team</div>
+                </div>
             </div>
             <div><span class="badge">${escapeHtml(details.status || 'Completed')}</span></div>
         </div>

@@ -1975,7 +1975,7 @@
                                         </button>
                                     </div>
                                 </div>
-                                <table class="table">
+                                <table class="table finance-history-table">
                                     <thead>
                                         <tr>
                                             <th>Date</th>
@@ -2072,7 +2072,7 @@
                                         </button>
                                     </div>
                                 </div>
-                                <table class="table">
+                                <table class="table finance-history-table">
                                     <thead>
                                         <tr>
                                             <th>Date</th>
@@ -2800,8 +2800,8 @@
     </div>
 
     <!-- Payment Modal -->
-    <div class="modal fade" id="paymentModal" tabindex="-1">
-        <div class="modal-dialog">
+    <div class="modal fade finance-modal" id="paymentModal" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
             <div class="modal-content">
                 <div class="modal-header">
                     <h5 class="modal-title">Make Payment</h5>
@@ -2809,6 +2809,7 @@
                 </div>
                 <div class="modal-body">
                     <form id="paymentForm">
+                        <p class="finance-modal__hint">Enter the payment details below. A verified receipt appears after the treasurer confirms your payment.</p>
                         <div class="mb-3">
                             <label class="form-label">Payment Type</label>
                             <select class="form-select" id="paymentType" required>
@@ -2821,7 +2822,7 @@
                         </div>
                         <div class="mb-3">
                             <label class="form-label">Amount</label>
-                            <input type="number" class="form-control" id="paymentAmount" placeholder="KSh" min="1" step="1" required>
+                            <input type="number" inputmode="decimal" class="form-control" id="paymentAmount" placeholder="Amount in KSh" min="1" step="1" required>
                         </div>
                         <div class="mb-3">
                             <label class="form-label">Payment Method</label>
@@ -2836,7 +2837,7 @@
                         <div id="paymentInstructions" class="alert alert-info d-none mb-0"></div>
                         <div class="mb-3 d-none" id="paymentMpesaPhoneGroup">
                             <label class="form-label">M-Pesa Phone Number</label>
-                            <input type="tel" class="form-control" id="paymentMpesaPhone" placeholder="2547XXXXXXXX">
+                            <input type="tel" inputmode="tel" autocomplete="tel" class="form-control" id="paymentMpesaPhone" placeholder="2547XXXXXXXX">
                         </div>
                         <div class="mb-3" id="paymentReferenceGroup">
                             <label class="form-label">Transaction Code / Reference</label>
@@ -2863,8 +2864,8 @@
     </div>
 
     <!-- Donation Modal -->
-    <div class="modal fade" id="donationModal" tabindex="-1">
-        <div class="modal-dialog">
+    <div class="modal fade finance-modal" id="donationModal" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
             <div class="modal-content">
                 <div class="modal-header">
                     <h5 class="modal-title" id="donationModalTitle">Make Donation</h5>
@@ -2872,9 +2873,10 @@
                 </div>
                 <div class="modal-body">
                     <form id="donationForm">
+                        <p class="finance-modal__hint">Choose your amount and payment method. Your receipt will be ready after the donation is confirmed.</p>
                         <div class="mb-3">
                             <label class="form-label">Amount</label>
-                            <input type="number" class="form-control" id="donationAmount" placeholder="KSh" min="1" step="1" required>
+                            <input type="number" inputmode="decimal" class="form-control" id="donationAmount" placeholder="Amount in KSh" min="1" step="1" required>
                         </div>
                         <div class="mb-3">
                             <label class="form-label">Payment Method</label>
@@ -2889,7 +2891,7 @@
                         <div id="donationPaymentInstructions" class="alert alert-info d-none mb-0"></div>
                         <div class="mb-3 d-none" id="donationMpesaPhoneGroup">
                             <label class="form-label">M-Pesa Phone Number</label>
-                            <input type="tel" class="form-control" id="donationMpesaPhone" placeholder="2547XXXXXXXX">
+                            <input type="tel" inputmode="tel" autocomplete="tel" class="form-control" id="donationMpesaPhone" placeholder="2547XXXXXXXX">
                         </div>
                         <div class="mb-3" id="donationReferenceGroup">
                             <label class="form-label">Transaction Code / Reference</label>
@@ -3283,7 +3285,7 @@
     </div>
 
     <div class="modal fade" id="memberDigitalCardModal" tabindex="-1">
-        <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
             <div class="modal-content">
                 <div class="modal-header">
                     <h5 class="modal-title"><i class="fas fa-id-card"></i> Digital Membership Card</h5>

@@ -24,13 +24,13 @@ function renderDonationHistory() {
 
     tbody.innerHTML = visibleDonations.map((donation) => `
         <tr>
-            <td>${donation.date || 'Recently'}</td>
-            <td>${donation.type || 'Donation'}${donation.donor ? `<br><small class="text-muted">${escapeHtml(donation.donor)}</small>` : ''}</td>
-            <td>KSh ${donation.amount}</td>
-            <td>${donation.purpose || "UMMA University Dawah Team donation"}</td>
-            <td>${donation.paymentMethod || 'Not specified'}${donation.transactionRef ? `<br><small class="text-muted">${escapeHtml(donation.transactionRef)}</small>` : ''}${renderProofLink(donation.proofUrl)}</td>
-            <td><span class="badge ${statusBadgeClass(donation.status)}">${donation.status || 'Pending Approval'}</span></td>
-            <td>${renderDonationActions(donation, donation.originalIndex)}</td>
+            <td data-label="Date">${escapeHtml(donation.date || 'Recently')}</td>
+            <td data-label="Donation">${escapeHtml(donation.type || 'Donation')}${donation.donor ? `<br><small class="text-muted">${escapeHtml(donation.donor)}</small>` : ''}</td>
+            <td data-label="Amount" class="finance-history-amount">KSh ${escapeHtml(String(donation.amount ?? 0))}</td>
+            <td data-label="Purpose">${escapeHtml(donation.purpose || 'UMMA University Dawah Team donation')}</td>
+            <td data-label="Method">${escapeHtml(donation.paymentMethod || 'Not specified')}${donation.transactionRef ? `<br><small class="text-muted">Ref: ${escapeHtml(donation.transactionRef)}</small>` : ''}${renderProofLink(donation.proofUrl)}</td>
+            <td data-label="Status"><span class="badge ${statusBadgeClass(donation.status)}">${escapeHtml(donation.status || 'Pending Approval')}</span></td>
+            <td data-label="Receipt" class="finance-history-receipt">${renderDonationActions(donation, donation.originalIndex)}</td>
         </tr>
     `).join('');
 }

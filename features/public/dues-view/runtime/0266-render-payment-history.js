@@ -24,12 +24,12 @@ function renderPaymentHistory() {
 
     tbody.innerHTML = visiblePayments.map((payment) => `
         <tr>
-            <td>${payment.date}</td>
-            <td>${formatPaymentType(payment.type)}${payment.memberName ? `<br><small class="text-muted">${escapeHtml(payment.memberName)}</small>` : ''}</td>
-            <td>KSh ${payment.amount}</td>
-            <td>${payment.paymentMethod || 'Not specified'}${payment.transactionRef ? `<br><small class="text-muted">${escapeHtml(payment.transactionRef)}</small>` : ''}${renderProofLink(payment.proofUrl)}</td>
-            <td><span class="badge ${statusBadgeClass(payment.status)}">${payment.status}</span></td>
-            <td>${renderPaymentActions(payment, payment.originalIndex)}</td>
+            <td data-label="Date">${escapeHtml(payment.date || 'Recently')}</td>
+            <td data-label="Payment">${escapeHtml(formatPaymentType(payment.type))}${payment.memberName ? `<br><small class="text-muted">${escapeHtml(payment.memberName)}</small>` : ''}</td>
+            <td data-label="Amount" class="finance-history-amount">KSh ${escapeHtml(String(payment.amount ?? 0))}</td>
+            <td data-label="Method">${escapeHtml(payment.paymentMethod || 'Not specified')}${payment.transactionRef ? `<br><small class="text-muted">Ref: ${escapeHtml(payment.transactionRef)}</small>` : ''}${renderProofLink(payment.proofUrl)}</td>
+            <td data-label="Status"><span class="badge ${statusBadgeClass(payment.status)}">${escapeHtml(payment.status || 'Pending Approval')}</span></td>
+            <td data-label="Receipt" class="finance-history-receipt">${renderPaymentActions(payment, payment.originalIndex)}</td>
         </tr>
     `).join('');
 }

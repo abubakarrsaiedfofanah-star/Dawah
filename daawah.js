@@ -5888,16 +5888,15 @@ function renderPaymentHistory() {
 
     tbody.innerHTML = visiblePayments.map((payment) => `
         <tr>
-            <td>${payment.date}</td>
-            <td>${formatPaymentType(payment.type)}${payment.memberName ? `<br><small class="text-muted">${escapeHtml(payment.memberName)}</small>` : ''}</td>
-            <td>KSh ${payment.amount}</td>
-            <td>${payment.paymentMethod || 'Not specified'}${payment.transactionRef ? `<br><small class="text-muted">${escapeHtml(payment.transactionRef)}</small>` : ''}${renderProofLink(payment.proofUrl)}</td>
-            <td><span class="badge ${statusBadgeClass(payment.status)}">${payment.status}</span></td>
-            <td>${renderPaymentActions(payment, payment.originalIndex)}</td>
+            <td data-label="Date">${escapeHtml(payment.date || 'Recently')}</td>
+            <td data-label="Payment">${escapeHtml(formatPaymentType(payment.type))}${payment.memberName ? `<br><small class="text-muted">${escapeHtml(payment.memberName)}</small>` : ''}</td>
+            <td data-label="Amount" class="finance-history-amount">KSh ${escapeHtml(String(payment.amount ?? 0))}</td>
+            <td data-label="Method">${escapeHtml(payment.paymentMethod || 'Not specified')}${payment.transactionRef ? `<br><small class="text-muted">Ref: ${escapeHtml(payment.transactionRef)}</small>` : ''}${renderProofLink(payment.proofUrl)}</td>
+            <td data-label="Status"><span class="badge ${statusBadgeClass(payment.status)}">${escapeHtml(payment.status || 'Pending Approval')}</span></td>
+            <td data-label="Receipt" class="finance-history-receipt">${renderPaymentActions(payment, payment.originalIndex)}</td>
         </tr>
     `).join('');
 }
-
 // Runtime slice from daawah.js: renderFinanceSummary.
 function renderFinanceSummary(containerId, records) {
     const container = document.getElementById(containerId);
@@ -5965,53 +5964,47 @@ function openMemberDigitalCard() {
     const settings = getLocalSiteSettings();
     const signatureName = displaySignatureName(settings.finance_signature_name, 'Imam');
     const signatureTitle = displaySignatureTitle(settings.finance_signature_title, 'Imam');
-    const signatureImage = isReceiptSignatureImage(settings.finance_signature_image) ? settings.finance_signature_image : '';
+    const photo = currentUser.profilePhoto || currentUser.profileImage || currentUser.photoUrl || currentUser.avatar || '';
+    const initials = name.trim().split(/\s+/).slice(0, 2).map(part => part[0] || '').join('').toUpperCase() || 'M';
     const printButton = document.getElementById('memberDigitalCardPrintButton');
     if (printButton) {
         printButton.disabled = !completedMembershipPayment || !issuedCard;
         printButton.title = completedMembershipPayment ? 'Print membership card' : 'Complete membership dues payment before printing';
     }
     body.innerHTML = `
-        <section id="memberDigitalCard" class="border rounded p-3 bg-white">
-            <div class="d-flex justify-content-between gap-3 align-items-start">
-                <div>
-                    <div class="small text-muted">UMMA University Dawah Team</div>
-                    <h4 class="mb-1">${escapeHtml(name)}</h4>
-                    <div class="badge ${membershipState.badgeClass}">${escapeHtml(status)}</div>
+        <section id="memberDigitalCard" class="member-id-card">
+            <header class="member-id-card__header">
+                <img src="assets/umma-university-logo-color.png?v=20260522-logo2" alt="UMMA University logo">
+                <div class="member-id-card__brand"><strong>UMMA UNIVERSITY</strong><span>DAWAH TEAM · MEMBERSHIP CARD</span></div>
+                <span class="badge ${membershipState.badgeClass}">${escapeHtml(status)}</span>
+            </header>
+            <div class="member-id-card__main">
+                <div class="member-id-card__details">
+                    <span class="member-id-card__label">Student member</span>
+                    <h2>${escapeHtml(name)}</h2>
+                    <p class="member-id-card__student-number">${escapeHtml(studentId)}</p>
+                    <div class="member-id-card__fields">
+                        <div><span>Course</span><strong>${escapeHtml(currentUser.course || 'Not set')}</strong></div>
+                        <div><span>Role</span><strong>${escapeHtml(role)}</strong></div>
+                    </div>
                 </div>
-                <img src="assets/umma-university-logo-color.png?v=20260522-logo2" alt="UMMA University logo" style="width:64px;height:64px;object-fit:contain;">
-            </div>
-            <hr>
-            <div class="row g-2">
-                <div class="col-12"><small class="text-muted">Unique Card ID</small><br><strong>${escapeHtml(cardId)}</strong></div>
-                <div class="col-6"><small class="text-muted">Student ID</small><br><strong>${escapeHtml(studentId)}</strong></div>
-                <div class="col-6"><small class="text-muted">Role</small><br><strong>${escapeHtml(role)}</strong></div>
-                <div class="col-12"><small class="text-muted">Course</small><br><strong>${escapeHtml(currentUser.course || 'Not set')}</strong></div>
-                <div class="col-6"><small class="text-muted">Card Application</small><br><strong>${escapeHtml(cardApplicationStatus)}</strong></div>
-                <div class="col-6"><small class="text-muted">Payment</small><br><span class="badge ${completedMembershipPayment ? 'bg-success' : 'bg-secondary'}">${escapeHtml(cardPaymentStatus)}</span></div>
-                <div class="col-6"><small class="text-muted">Issued</small><br><strong>${issuedCard?.issuedAt ? escapeHtml(new Date(issuedCard.issuedAt).toLocaleDateString()) : 'After payment'}</strong></div>
-                <div class="col-6"><small class="text-muted">Expires</small><br><strong>${escapeHtml(formatMembershipDate(issuedCard?.expiresAt || currentUser.membershipCardExpiresAt, 'After issue'))}</strong></div>
-                <div class="col-6"><small class="text-muted">Validity</small><br><strong>${escapeHtml(String(issuedCard?.validityYears || currentUser.membershipCardValidityYears || getMembershipValidityYears(currentUser)))} years</strong></div>
-                <div class="col-6"><small class="text-muted">Receipt</small><br><strong>${escapeHtml(issuedCard?.receiptNumber || 'Not issued')}</strong></div>
-            </div>
-            <div class="d-flex justify-content-between align-items-end gap-3 mt-3">
-                <div>
-                    <small class="text-muted d-block">Issuer signature</small>
-                    ${signatureImage ? `<img src="${signatureImage}" alt="Issuer signature" style="max-width:180px;max-height:52px;object-fit:contain;">` : '<div style="height:42px;border-bottom:1px solid #111;width:180px;"></div>'}
-                    <strong class="d-block small">${escapeHtml(signatureName)}</strong>
-                    <span class="small text-muted">${escapeHtml(signatureTitle)}</span>
-                </div>
-                <div class="text-end">
-                <small class="text-muted d-block">Scan to verify this exact card.</small>
-                <img src="${qrUrl}" alt="Member verification QR code" style="width:112px;height:112px;">
+                <div class="member-id-card__photo-wrap">
+                    ${photo ? `<img class="member-id-card__photo" src="${escapeHtml(photo)}" alt="${escapeHtml(name)}">` : `<div class="member-id-card__photo member-id-card__photo--empty" aria-label="No profile photo">${escapeHtml(initials)}</div>`}
                 </div>
             </div>
-            ${completedMembershipPayment ? '' : '<div class="alert alert-warning mt-3 mb-0">Printing is locked until membership dues payment is completed.</div>'}
+            <footer class="member-id-card__footer">
+                <div class="member-id-card__meta">
+                    <span>Card number</span><strong>${escapeHtml(cardId)}</strong>
+                    <span>Valid until</span><strong>${escapeHtml(formatMembershipDate(issuedCard?.expiresAt || currentUser.membershipCardExpiresAt, 'After issue'))}</strong>
+                    <span>${escapeHtml(signatureName)} · ${escapeHtml(signatureTitle)}</span>
+                </div>
+                <div class="member-id-card__verify"><img src="${qrUrl}" alt="QR code to verify ${issuedCard ? 'this membership card' : 'this member'}"><span>Scan to verify</span></div>
+            </footer>
         </section>
+        ${completedMembershipPayment && issuedCard ? '' : `<div class="alert alert-warning mt-3 mb-0">${escapeHtml(cardApplicationStatus)}. Printing unlocks after membership dues are paid and the card is issued (${escapeHtml(cardPaymentStatus)}).</div>`}
     `;
     bootstrap.Modal.getOrCreateInstance(document.getElementById('memberDigitalCardModal')).show();
 }
-
 // Runtime slice from daawah.js: printMemberDigitalCard.
 function printMemberDigitalCard() {
     if (!getCompletedMembershipDuesPayment() || !getActiveMembershipCard()) {
@@ -6026,13 +6019,14 @@ function printMemberDigitalCard() {
         return;
     }
     win.document.open();
-    win.document.write(`<!doctype html><html><head><meta charset="utf-8"><title>Member Card</title><link href="vendor/bootstrap/css/bootstrap.min.css" rel="stylesheet"></head><body class="p-4">${card.outerHTML}<script>window.print()<\/script></body></html>`);
+    win.document.write(`<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Member Card</title><style>
+        @page{size:85.6mm 54mm;margin:0}*{box-sizing:border-box}html,body{margin:0;width:85.6mm;height:54mm;font-family:Arial,sans-serif;color:#12343d}.member-id-card{width:85.6mm;height:54mm;overflow:hidden;border:1px solid #b9d8d2;border-radius:3mm;background:#fff;display:grid;grid-template-rows:11mm 1fr 15mm}.member-id-card__header{display:flex;align-items:center;gap:2mm;padding:1.5mm 3mm;background:#003b4d;color:#fff}.member-id-card__header>img{width:8mm;height:8mm;object-fit:contain;background:#fff;border-radius:1mm}.member-id-card__brand{display:grid;gap:.5mm;flex:1}.member-id-card__brand strong{font-size:7pt}.member-id-card__brand span{font-size:5pt;letter-spacing:.4pt}.member-id-card__header .badge{font-size:5.5pt}.member-id-card__main{display:flex;justify-content:space-between;gap:2mm;padding:2mm 3mm}.member-id-card__details{min-width:0;flex:1}.member-id-card__label,.member-id-card__fields span,.member-id-card__meta span{display:block;color:#647b80;font-size:5.5pt}.member-id-card__details h2{margin:1mm 0;font-size:11pt;line-height:1.1;overflow-wrap:anywhere}.member-id-card__student-number{margin:0;color:#145b42;font-size:7pt;font-weight:bold}.member-id-card__fields{display:flex;gap:5mm;margin-top:2mm}.member-id-card__fields>div{min-width:0}.member-id-card__fields strong,.member-id-card__meta strong{display:block;font-size:6pt;overflow-wrap:anywhere}.member-id-card__photo-wrap{flex:0 0 17mm}.member-id-card__photo{width:17mm;height:21mm;object-fit:cover;border:1px solid #d5e3e3;border-radius:1mm}.member-id-card__photo--empty{display:grid;place-items:center;background:#eaf4f0;color:#0f5132;font-size:12pt;font-weight:bold}.member-id-card__footer{display:flex;justify-content:space-between;align-items:center;gap:2mm;padding:1mm 3mm;background:#f1f7f5;border-top:1px solid #dce8e6}.member-id-card__meta{display:grid;grid-template-columns:auto auto;column-gap:2mm;align-items:center}.member-id-card__meta span:last-child{grid-column:1/-1;margin-top:1mm}.member-id-card__verify{display:grid;justify-items:center;gap:.5mm}.member-id-card__verify img{width:12mm;height:12mm}.member-id-card__verify span{font-size:5pt}.actions{display:none}@media screen{body{width:auto;height:auto;display:grid;place-items:center;padding:16px;background:#eff5f3}.member-id-card{width:min(85.6mm,calc(100vw - 24px));height:auto;min-height:54mm;aspect-ratio:85.6/54;grid-template-rows:auto 1fr auto;box-shadow:0 12px 32px rgba(0,48,64,.18)}}
+    </style></head><body>${card.outerHTML}<script>window.print()<\/script></body></html>`);
     win.document.close();
 }
 
 window.openMemberDigitalCard = openMemberDigitalCard;
 window.printMemberDigitalCard = printMemberDigitalCard;
-
 // Runtime slice from daawah.js: notifyFinanceStatusChanges.
 function notifyFinanceStatusChanges(kind, records) {
     if (!Array.isArray(records) || !currentUser) return;
@@ -6183,10 +6177,10 @@ function renderProofLink(proofUrl) {
 function renderPaymentActions(payment, index) {
     if (payment.status === 'Completed') {
         return `
-            <div class="btn-group btn-group-sm">
-                <button class="btn btn-outline-primary" onclick="downloadReceipt(${index})">Download</button>
-                <button class="btn btn-outline-success" onclick="verifyFinanceReceipt('payments', ${index})">Verify</button>
-                <button class="btn btn-outline-secondary" onclick="resendFinanceReceipt('payments', ${index})">Resend</button>
+            <div class="finance-history-actions">
+                <button class="btn btn-sm btn-outline-primary" onclick="downloadReceipt(${index})"><i class="fas fa-download" aria-hidden="true"></i> Download</button>
+                <button class="btn btn-sm btn-outline-success" onclick="verifyFinanceReceipt('payments', ${index})"><i class="fas fa-shield-halved" aria-hidden="true"></i> Verify</button>
+                <button class="btn btn-sm btn-outline-secondary" onclick="resendFinanceReceipt('payments', ${index})"><i class="fas fa-share" aria-hidden="true"></i> Resend</button>
             </div>
         `;
     }
@@ -6195,15 +6189,16 @@ function renderPaymentActions(payment, index) {
     }
     if (hasPermission('manage_payments')) {
         return `
-            <button class="btn btn-sm btn-outline-primary" onclick="reviewPayment(${index})">Review</button>
-            <button class="btn btn-sm btn-success" onclick="confirmPayment(${index})">Approve</button>
-            <button class="btn btn-sm btn-outline-danger" onclick="rejectPayment(${index})">Reject</button>
-            <button class="btn btn-sm btn-outline-secondary" onclick="waivePayment(${index})">Waive</button>
+            <div class="finance-history-actions">
+                <button class="btn btn-sm btn-outline-primary" onclick="reviewPayment(${index})">Review</button>
+                <button class="btn btn-sm btn-success" onclick="confirmPayment(${index})">Approve</button>
+                <button class="btn btn-sm btn-outline-danger" onclick="rejectPayment(${index})">Reject</button>
+                <button class="btn btn-sm btn-outline-secondary" onclick="waivePayment(${index})">Waive</button>
+            </div>
         `;
     }
     return '<span class="text-muted">Pending approval</span>';
 }
-
 // Runtime slice from daawah.js: resendFinanceReceipt.
 function resendFinanceReceipt(kind, index) {
     const records = kind === 'donations' ? donations : payments;
@@ -6412,6 +6407,7 @@ function openOfficialReceipt(details) {
         return;
     }
     const verifyUrl = `${location.origin}${location.pathname.replace(/[^/]*$/, '')}verify-receipt.html?receipt=${encodeURIComponent(receiptNumber)}`;
+    const logoUrl = new URL('assets/umma-university-logo-color.png', location.href).href;
     const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=132x132&data=${encodeURIComponent(verifyUrl)}`;
     const approvedBy = details.approvedBy || (details.status === 'Completed' ? (currentUser?.fullName || currentUser?.username || 'Treasurer') : 'Pending');
     const settings = getLocalSiteSettings();
@@ -6424,11 +6420,14 @@ function openOfficialReceipt(details) {
 <html>
 <head>
     <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>${escapeHtml(receiptNumber)} Receipt</title>
     <style>
         body { font-family: Arial, sans-serif; margin: 0; background: #f3fbf7; color: #17323a; }
-        .receipt { max-width: 760px; margin: 28px auto; background: #fff; border: 1px solid #b9d8d2; padding: 32px; }
+        .receipt { width: min(760px, calc(100% - 32px)); margin: 28px auto; background: #fff; border: 1px solid #b9d8d2; padding: 32px; box-shadow: 0 12px 34px rgba(0,48,64,.1); overflow-wrap: anywhere; }
         .top { display: flex; justify-content: space-between; gap: 24px; border-bottom: 2px solid #40b050; padding-bottom: 18px; }
+        .top-brand { display: flex; align-items: center; gap: 14px; min-width: 0; }
+        .top-brand img { width: 56px; height: 56px; object-fit: contain; }
         h1 { margin: 0; font-size: 24px; letter-spacing: 0; }
         .brand { color: #003040; font-weight: 700; margin-top: 6px; }
         .badge { display: inline-block; background: #003040; color: #fff; padding: 6px 12px; border-radius: 4px; font-size: 12px; }
@@ -6445,19 +6444,22 @@ function openOfficialReceipt(details) {
         .signature-box img { max-width: 220px; max-height: 64px; object-fit: contain; }
         .signature strong { display: block; margin-top: 10px; color: #17323a; }
         .signature span { display: block; color: #6b7280; font-size: 12px; margin-top: 3px; }
-        .actions { max-width: 760px; margin: 18px auto; display: flex; gap: 10px; justify-content: flex-end; }
-        button, a { border: 0; background: #111827; color: #fff; padding: 10px 14px; border-radius: 4px; text-decoration: none; cursor: pointer; }
-        @media (max-width: 640px) { .top, .verify, .receipt-footer { flex-direction: column; align-items: flex-start; } .signature { width: 100%; } }
-        @media print { .actions { display: none; } body { background: #fff; } .receipt { margin: 0; border: 0; } }
+        .actions { width: min(760px, calc(100% - 32px)); margin: 18px auto; display: flex; gap: 10px; justify-content: flex-end; }
+        button, a { display: inline-flex; min-height: 44px; align-items: center; justify-content: center; border: 0; background: #111827; color: #fff; padding: 10px 14px; border-radius: 8px; text-decoration: none; cursor: pointer; }
+        @media (max-width: 640px) { body { padding: 12px; } .receipt { width: 100%; margin: 8px auto; padding: 18px; border-radius: 12px; } .top, .verify, .receipt-footer { flex-direction: column; align-items: flex-start; } .top { gap: 12px; } h1 { font-size: 20px; } .verify { width: 100%; } .verify img { width: 112px; height: 112px; align-self: center; } .signature { width: 100%; min-width: 0; } .actions { width: 100%; flex-wrap: wrap; } .actions > * { flex: 1 1 120px; text-align: center; } table { table-layout: fixed; } td { padding: 9px 6px; overflow-wrap: anywhere; } td:first-child { width: 36%; } .amount { font-size: 23px; } }
+        @media print { .actions { display: none; } body { background: #fff; padding: 0; } .receipt { width: 100%; margin: 0; border: 0; box-shadow: none; } }
     </style>
 </head>
 <body>
     <div class="actions"><button onclick="window.print()">Print</button><a id="downloadReceipt" download="${escapeHtml(receiptNumber)}.html">Download HTML</a></div>
     <main class="receipt">
         <div class="top">
-            <div>
+            <div class="top-brand">
+                <img src="${escapeHtml(logoUrl)}" alt="UMMA University logo">
+                <div>
                 <h1>Official ${escapeHtml(details.kind)} Receipt</h1>
                 <div class="brand">UMMA University Dawah Team</div>
+                </div>
             </div>
             <div><span class="badge">${escapeHtml(details.status || 'Completed')}</span></div>
         </div>
@@ -6503,7 +6505,6 @@ function openOfficialReceipt(details) {
     const url = URL.createObjectURL(blob);
     window.open(url, '_blank');
 }
-
 // Runtime slice from daawah.js: downloadReceipt.
 function downloadReceipt(index) {
     const payment = payments[index];
@@ -6817,24 +6818,24 @@ function renderDonationHistory() {
 
     tbody.innerHTML = visibleDonations.map((donation) => `
         <tr>
-            <td>${donation.date || 'Recently'}</td>
-            <td>${donation.type || 'Donation'}${donation.donor ? `<br><small class="text-muted">${escapeHtml(donation.donor)}</small>` : ''}</td>
-            <td>KSh ${donation.amount}</td>
-            <td>${donation.purpose || "UMMA University Dawah Team donation"}</td>
-            <td>${donation.paymentMethod || 'Not specified'}${donation.transactionRef ? `<br><small class="text-muted">${escapeHtml(donation.transactionRef)}</small>` : ''}${renderProofLink(donation.proofUrl)}</td>
-            <td><span class="badge ${statusBadgeClass(donation.status)}">${donation.status || 'Pending Approval'}</span></td>
-            <td>${renderDonationActions(donation, donation.originalIndex)}</td>
+            <td data-label="Date">${escapeHtml(donation.date || 'Recently')}</td>
+            <td data-label="Donation">${escapeHtml(donation.type || 'Donation')}${donation.donor ? `<br><small class="text-muted">${escapeHtml(donation.donor)}</small>` : ''}</td>
+            <td data-label="Amount" class="finance-history-amount">KSh ${escapeHtml(String(donation.amount ?? 0))}</td>
+            <td data-label="Purpose">${escapeHtml(donation.purpose || 'UMMA University Dawah Team donation')}</td>
+            <td data-label="Method">${escapeHtml(donation.paymentMethod || 'Not specified')}${donation.transactionRef ? `<br><small class="text-muted">Ref: ${escapeHtml(donation.transactionRef)}</small>` : ''}${renderProofLink(donation.proofUrl)}</td>
+            <td data-label="Status"><span class="badge ${statusBadgeClass(donation.status)}">${escapeHtml(donation.status || 'Pending Approval')}</span></td>
+            <td data-label="Receipt" class="finance-history-receipt">${renderDonationActions(donation, donation.originalIndex)}</td>
         </tr>
     `).join('');
 }
-
 // Runtime slice from daawah.js: renderDonationActions.
 function renderDonationActions(donation, index) {
     if (donation.status === 'Completed') {
         return `
-            <div class="btn-group btn-group-sm">
-                <button class="btn btn-outline-primary" onclick="downloadDonationReceipt(${index})">Download</button>
-                <button class="btn btn-outline-success" onclick="verifyFinanceReceipt('donations', ${index})">Verify</button>
+            <div class="finance-history-actions">
+                <button class="btn btn-sm btn-outline-primary" onclick="downloadDonationReceipt(${index})"><i class="fas fa-download" aria-hidden="true"></i> Download</button>
+                <button class="btn btn-sm btn-outline-success" onclick="verifyFinanceReceipt('donations', ${index})"><i class="fas fa-shield-halved" aria-hidden="true"></i> Verify</button>
+                <button class="btn btn-sm btn-outline-secondary" onclick="resendFinanceReceipt('donations', ${index})"><i class="fas fa-share" aria-hidden="true"></i> Resend</button>
             </div>
         `;
     }
@@ -6843,13 +6844,14 @@ function renderDonationActions(donation, index) {
     }
     if (hasPermission('manage_payments')) {
         return `
-            <button class="btn btn-sm btn-success" onclick="confirmDonation(${index})">Confirm</button>
-            <button class="btn btn-sm btn-outline-danger" onclick="rejectDonation(${index})">Reject</button>
+            <div class="finance-history-actions">
+                <button class="btn btn-sm btn-success" onclick="confirmDonation(${index})">Confirm</button>
+                <button class="btn btn-sm btn-outline-danger" onclick="rejectDonation(${index})">Reject</button>
+            </div>
         `;
     }
     return '<span class="text-muted">Pending approval</span>';
 }
-
 // Runtime slice from daawah.js: confirmDonation.
 function confirmDonation(index) {
     updateLocalDonationStatus(index, 'Completed', 'completed');
