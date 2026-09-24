@@ -410,3 +410,187 @@ body > .alert.position-fixed {
     .admin-container .list-group-item { padding: .8rem; }
     #notificationContainer { width: calc(100vw - 24px); }
 }
+
+/* One shared sign-in and registration experience for all three portals. */
+:root {
+    --portal-auth-background:
+        radial-gradient(circle at 14% 14%, rgba(120, 217, 134, .2), transparent 30%),
+        radial-gradient(circle at 88% 82%, rgba(0, 148, 190, .2), transparent 34%),
+        linear-gradient(135deg, #003040 0%, #005477 56%, #167b47 118%);
+    --portal-auth-panel: linear-gradient(145deg, rgba(0, 48, 64, .96), rgba(0, 70, 82, .96) 58%, rgba(13, 91, 58, .97));
+}
+body #loginPage.auth-page,
+body #adminLoginScreen,
+body .officer-shell {
+    min-height: 100svh;
+    height: auto;
+    align-items: flex-start;
+    justify-content: center;
+    padding: clamp(14px, 3.5vw, 34px);
+    background: var(--portal-auth-background) !important;
+}
+body #loginPage.auth-page { overflow: visible; }
+body #loginPage .auth-container { width: min(100%, 760px); max-width: 760px; margin-block: auto; }
+body #adminLoginScreen .admin-login-card,
+body .officer-shell .officer-card,
+body #loginPage .auth-card {
+    width: min(100%, 760px);
+    max-width: 760px;
+    margin-block: auto;
+    padding: clamp(20px, 4vw, 38px);
+    border: 1px solid rgba(255, 255, 255, .2) !important;
+    border-radius: 22px !important;
+    background: var(--portal-auth-panel) !important;
+    color: #fff !important;
+    box-shadow: 0 28px 72px rgba(0, 20, 30, .34) !important;
+    backdrop-filter: blur(12px);
+}
+body #loginPage .auth-card,
+body #adminLoginScreen .admin-login-card,
+body .officer-shell .officer-card { animation: portal-auth-enter .32s ease-out both; }
+@keyframes portal-auth-enter { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+body #loginPage .auth-card :is(h1, h2, h3, h4, h5, p, label, small, .form-text),
+body #adminLoginScreen .admin-login-card :is(h1, h2, h3, h4, h5, p, label, small, .form-text),
+body .officer-shell .officer-card :is(h1, h2, h3, h4, h5, p, label, small, .form-text) { color: #f2fbf8 !important; }
+body #loginPage .auth-card .alert,
+body #adminLoginScreen .admin-login-card .alert,
+body .officer-shell .officer-card .alert { color: #f2fbf8; border-color: rgba(255, 255, 255, .18); background: rgba(255, 255, 255, .1); }
+body #loginPage .auth-card .alert-danger,
+body #adminLoginScreen .admin-login-card .alert-danger,
+body .officer-shell .officer-card .alert-danger { color: #fff !important; border-color: rgba(255, 185, 185, .35); background: rgba(160, 28, 43, .42); }
+body .officer-shell .officer-card .officer-note,
+body .officer-shell .officer-card .officer-note :is(p, strong, span) { color: #17323a !important; }
+body #loginPage .auth-card .text-muted,
+body #adminLoginScreen .admin-login-card .text-muted,
+body .officer-shell .officer-card .text-muted { color: #c1d8d8 !important; }
+body #loginPage .auth-card input,
+body #loginPage .auth-card select,
+body #loginPage .auth-card textarea,
+body #adminLoginScreen .admin-login-card input,
+body #adminLoginScreen .admin-login-card select,
+body #adminLoginScreen .admin-login-card textarea,
+body .officer-shell .officer-card input,
+body .officer-shell .officer-card select,
+body .officer-shell .officer-card textarea {
+    min-height: 48px;
+    border: 1px solid rgba(0, 59, 92, .2);
+    border-radius: 10px;
+    background: #fff;
+    color: #17323a;
+}
+body #loginPage .auth-card input::placeholder,
+body #adminLoginScreen .admin-login-card input::placeholder,
+body .officer-shell .officer-card input::placeholder { color: #71858b; opacity: 1; }
+body #loginPage .auth-card .form-label,
+body #adminLoginScreen .admin-login-card .form-label,
+body .officer-shell .officer-card .form-label { margin-bottom: .45rem; font-weight: 750; }
+body #loginPage .auth-card .auth-tabs .nav-link,
+body #adminLoginScreen .admin-auth-tabs .nav-link,
+body .officer-shell .officer-card .nav-tabs .nav-link {
+    min-height: 46px;
+    border: 1px solid rgba(255, 255, 255, .22);
+    border-radius: 999px;
+    background: rgba(255, 255, 255, .07);
+    color: #edf8f5 !important;
+    font-weight: 800;
+}
+body #loginPage .auth-card .auth-tabs .nav-link.active,
+body #adminLoginScreen .admin-auth-tabs .nav-link.active,
+body .officer-shell .officer-card .nav-tabs .nav-link.active {
+    border-color: rgba(255, 255, 255, .62);
+    background: linear-gradient(120deg, #087a48, #006494);
+    color: #fff !important;
+    box-shadow: 0 7px 18px rgba(0, 20, 30, .18);
+}
+body #loginPage .auth-card :is(.btn-primary, .btn-success),
+body #adminLoginScreen .admin-login-card :is(.btn-primary, .btn-success),
+body .officer-shell .officer-card :is(.btn-primary, .btn-success) {
+    min-height: 48px;
+    border: 1px solid rgba(255, 255, 255, .18);
+    border-radius: 11px;
+    background: linear-gradient(120deg, #35a854, #006bb8);
+    color: #fff;
+    font-weight: 800;
+}
+body #loginPage .auth-card a:not(.btn),
+body #adminLoginScreen .admin-login-card a:not(.btn),
+body .officer-shell .officer-card a:not(.btn) { color: #a9efb6 !important; }
+body #loginPage .auth-logo,
+body #adminLoginScreen .admin-login-logo { width: min(220px, 60vw) !important; max-width: 100%; height: auto; }
+body .officer-shell .officer-header { border-bottom-color: rgba(255, 255, 255, .16); background: rgba(255, 255, 255, .06); }
+body .officer-shell .officer-header h1 { color: #fff !important; }
+body .officer-shell .officer-brand { min-width: 0; }
+body .officer-shell .officer-logo { width: clamp(64px, 12vw, 92px); height: auto; }
+body .officer-shell .officer-body { padding: clamp(16px, 3vw, 28px); }
+body #loginPage .auth-card .nav-tabs,
+body #adminLoginScreen .admin-auth-tabs,
+body .officer-shell .officer-card .nav-tabs { display: flex; flex-wrap: wrap; gap: .5rem; border: 0; }
+body #loginPage .auth-card .nav-tabs .nav-link,
+body #adminLoginScreen .admin-auth-tabs .nav-link,
+body .officer-shell .officer-card .nav-tabs .nav-link { flex: 1 1 auto; white-space: nowrap; }
+body #loginPage .auth-card .input-group > .form-control,
+body #adminLoginScreen .admin-login-card .input-group > .form-control,
+body .officer-shell .officer-card .input-group > .form-control { min-width: 0; }
+body #loginPage .auth-card .password-visibility-toggle,
+body #adminLoginScreen .admin-login-card [data-password-toggle],
+body .officer-shell .officer-card [data-password-toggle] { flex: 0 0 48px; min-height: 48px; color: #31525b; }
+body #loginPage .auth-card .registration-form .row,
+body #adminLoginScreen .admin-login-card form .row,
+body .officer-shell .officer-card form .row { --bs-gutter-x: 1rem; }
+
+@media (max-width: 767.98px) {
+    body #loginPage.auth-page,
+    body #adminLoginScreen,
+    body .officer-shell { padding: 12px; }
+    body #loginPage .auth-card,
+    body #adminLoginScreen .admin-login-card,
+    body .officer-shell .officer-card { border-radius: 17px !important; }
+    body #loginPage .auth-card .auth-tabs .nav-link,
+    body #adminLoginScreen .admin-auth-tabs .nav-link,
+    body .officer-shell .officer-card .nav-tabs .nav-link { padding-inline: .7rem; font-size: .9rem; }
+    body .officer-shell .officer-header { padding: 18px; }
+    body .officer-shell .officer-header { align-items: flex-start; flex-direction: column; }
+    body .officer-shell .officer-brand { align-items: flex-start; }
+}
+@media (max-width: 575.98px) {
+    body #loginPage.auth-page,
+    body #adminLoginScreen,
+    body .officer-shell { padding: 8px; }
+    body #loginPage .auth-container { width: 100%; }
+    body #loginPage .auth-card,
+    body #adminLoginScreen .admin-login-card,
+    body .officer-shell .officer-card { padding: 18px 14px; border-radius: 15px !important; }
+    body #loginPage .auth-card .text-center.mb-4 { margin-bottom: 1rem !important; }
+    body #loginPage .auth-card .brand-title,
+    body #adminLoginScreen .admin-login-card h1,
+    body .officer-shell .officer-header h1 { font-size: clamp(1.2rem, 5vw, 1.55rem); line-height: 1.25; }
+    body #loginPage .auth-card .nav-tabs,
+    body #adminLoginScreen .admin-auth-tabs,
+    body .officer-shell .officer-card .nav-tabs { flex-wrap: nowrap; overflow-x: auto; overflow-y: hidden; padding-bottom: .3rem; scrollbar-width: thin; }
+    body #loginPage .auth-card .nav-tabs .nav-link,
+    body #adminLoginScreen .admin-auth-tabs .nav-link,
+    body .officer-shell .officer-card .nav-tabs .nav-link { flex: 1 0 auto; min-width: max-content; }
+    body #loginPage .auth-card .registration-form .row > *,
+    body #adminLoginScreen .admin-login-card form .row > *,
+    body .officer-shell .officer-card form .row > * { width: 100%; }
+    body #loginPage .auth-card :is(input, select, textarea),
+    body #adminLoginScreen .admin-login-card :is(input, select, textarea),
+    body .officer-shell .officer-card :is(input, select, textarea) { font-size: 16px; }
+    body #loginPage .auth-card .btn.w-100,
+    body #adminLoginScreen .admin-login-card form > .btn,
+    body .officer-shell .officer-card form > .btn { width: 100%; }
+    body .officer-shell .officer-body { padding: 14px; }
+    body .officer-shell .officer-body .input-group { flex-wrap: nowrap; }
+}
+@media (max-width: 360px) {
+    body #loginPage .auth-card,
+    body #adminLoginScreen .admin-login-card,
+    body .officer-shell .officer-card { padding: 15px 12px; }
+    body .officer-shell .officer-brand { gap: 8px; }
+    body .officer-shell .officer-logo { width: 56px; }
+}
+@media (prefers-reduced-motion: reduce) {
+    body #loginPage .auth-card,
+    body #adminLoginScreen .admin-login-card,
+    body .officer-shell .officer-card { animation: none !important; }
+}
