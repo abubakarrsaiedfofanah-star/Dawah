@@ -662,3 +662,27 @@ body .officer-shell .officer-card form .row { --bs-gutter-x: 1rem; }
     .table-responsive > table > tbody > tr > td,
     .table-responsive > table > tbody > tr > th { grid-template-columns: minmax(4.5rem, 35%) minmax(0, 1fr); gap: .35rem; }
 }
+
+/* Membership card polish and compact print layout. */
+.member-id-card {
+    border-color: rgba(0, 59, 92, .2);
+    box-shadow: 0 16px 38px rgba(0, 48, 64, .16);
+}
+.member-id-card__student-number {
+    display: inline-flex;
+    padding: .32rem .62rem;
+    border: 1px solid rgba(8, 116, 70, .18);
+    border-radius: 999px;
+    background: #effaf3;
+}
+.member-id-card__verify img { padding: 3px; border: 1px solid #d7e5e1; border-radius: 10px; background: #fff; }
+@media (max-width: 480px) {
+    .member-id-card__main { align-items: flex-start; }
+    .member-id-card__fields { gap: 9px 14px; }
+    .member-id-card__footer { align-items: center; }
+    .member-id-card__meta { grid-template-columns: minmax(5.3rem, 38%) minmax(0, 1fr); }
+    .member-id-card__verify img { width: 68px; height: 68px; }
+}
+@media print {
+    .member-id-card { max-width: 760px; break-inside: avoid; box-shadow: none; }
+}

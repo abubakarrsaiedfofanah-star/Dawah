@@ -206,6 +206,7 @@ const SupabaseBackendApi = (() => {
         'members',
         'payments',
         'donations',
+        'membershipCards',
         'welfareRequests',
         'eventRegistrations',
         'volunteerRegistrations',
@@ -522,11 +523,19 @@ const SupabaseBackendApi = (() => {
     }
 
     async function saveMembershipCard(card) {
+        const existing = await findRecordByJsonField('membershipCards', 'cardId', card?.cardId).catch(() => null);
+        if (existing?.supabaseId) return existing;
         return createRecord('membershipCards', card);
     }
 
     async function loadPublicMembershipCard(cardId) {
-        return loadRecord('membershipCards', cardId);
+        if (!enabled || !String(cardId || '').trim()) return null;
+        const db = await client();
+        const { data, error } = await db.rpc('dawah_get_public_membership_card', {
+            lookup_card_id: String(cardId).trim()
+        });
+        if (error) throw error;
+        return data || null;
     }
 
     async function saveMember(member) {

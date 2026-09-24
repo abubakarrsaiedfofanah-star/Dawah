@@ -44,6 +44,36 @@ as $$
     );
 $$;
 
+-- Public verification returns only the fields needed to validate a card.
+create or replace function public.dawah_get_public_membership_card(lookup_card_id text)
+returns jsonb
+language sql
+stable
+security definer
+set search_path = public, pg_temp
+as $$
+    select jsonb_build_object(
+        'cardId', data ->> 'cardId',
+        'fullName', coalesce(data ->> 'fullName', data ->> 'name', data ->> 'username'),
+        'username', data ->> 'username',
+        'studentId', data ->> 'studentId',
+        'course', data ->> 'course',
+        'status', data ->> 'status',
+        'paymentStatus', data ->> 'paymentStatus',
+        'issuedAt', data ->> 'issuedAt',
+        'expiresAt', data ->> 'expiresAt',
+        'validityYears', data ->> 'validityYears',
+        'receiptNumber', data ->> 'receiptNumber'
+    )
+    from public.app_records
+    where collection = 'membershipCards'
+      and data ->> 'cardId' = lookup_card_id
+    order by updated_at desc, created_at desc
+    limit 1;
+$$;
+revoke all on function public.dawah_get_public_membership_card(text) from public;
+grant execute on function public.dawah_get_public_membership_card(text) to anon, authenticated;
+
 create or replace function public.dawah_has_permission(check_permission text)
 returns boolean
 language plpgsql
@@ -181,7 +211,8 @@ create policy "Users and assigned officers read permitted records"
     using (
         public.is_dawah_admin()
         or public.dawah_record_is_owned(data)
-        or collection in ('receiptVerifications', 'memberVerifications', 'membershipCards')
+        or collection in ('receiptVerifications', 'memberVerifications')
+        or (collection = 'membershipCards' and public.dawah_record_is_owned(data))
         or (collection = 'members' and public.dawah_has_permission('manage_members'))
         or (collection in ('payments', 'donations') and public.dawah_has_permission('manage_payments'))
         or (collection = 'welfareRequests' and public.dawah_has_permission('manage_welfare'))
@@ -191,7 +222,7 @@ create policy "Users and assigned officers read permitted records"
 create policy "Public users can verify receipts and members"
     on public.app_records for select
     to anon
-    using (collection in ('receiptVerifications', 'memberVerifications', 'membershipCards'));
+    using (collection in ('receiptVerifications', 'memberVerifications'));
 
 -- Students may insert only their own account and transaction records. The trigger below
 -- requires every requested officer role to remain pending until an admin approves it.
@@ -203,7 +234,7 @@ create policy "Users create owned records and admins create all"
         or (
             collection in (
                 'members', 'payments', 'donations', 'welfareRequests',
-                'eventRegistrations', 'volunteerRegistrations', 'auditLogs'
+                'eventRegistrations', 'volunteerRegistrations', 'auditLogs', 'membershipCards'
             )
             and public.dawah_record_is_owned(data)
             and lower(coalesce(data ->> 'role', 'student')) not in ('admin', 'main-admin', 'super-admin')
@@ -323,6 +354,11 @@ as $$
 declare
     requested_role text;
     requested_status text;
+    finance_status text;
+    finance_amount text;
+    finance_reference text;
+    finance_fields_changed boolean := false;
+    linked_paid_dues boolean := false;
 begin
     if public.is_dawah_admin(auth.uid()) then
         return new;
@@ -330,6 +366,62 @@ begin
 
     requested_role := lower(replace(replace(trim(coalesce(new.data ->> 'role', 'student')), '-', '_'), ' ', '_'));
     requested_status := lower(trim(coalesce(new.data ->> 'status', '')));
+
+    if new.collection in ('payments', 'donations') then
+        finance_status := lower(replace(replace(trim(coalesce(new.data ->> 'status', 'pending')), '-', '_'), ' ', '_'));
+        finance_amount := trim(coalesce(new.data ->> 'amount', ''));
+        finance_reference := lower(trim(coalesce(new.data ->> 'transactionRef', new.data ->> 'transaction_id', new.data ->> 'mpesaReceipt', '')));
+
+        if case
+            when finance_amount ~ '^[0-9]+([.][0-9]{1,2})?$' then finance_amount::numeric <= 0
+            else true
+        end then
+            raise exception 'Payment amount must be a positive amount with no more than two decimal places';
+        end if;
+
+        if tg_op = 'INSERT' then
+            if finance_status not in ('pending', 'pending_approval', 'pending_mpesa', 'pending_m_pesa', 'processing') then
+                raise exception 'New payment and donation records must remain pending until verified';
+            end if;
+            if coalesce(new.data ->> 'receiptNumber', new.data ->> 'receipt_number',
+                        new.data ->> 'mpesaReceipt', new.data ->> 'mpesa_receipt', '') <> ''
+               or coalesce(new.data ->> 'approvedBy', new.data ->> 'approvedAt',
+                           new.data ->> 'verifiedBy', new.data ->> 'verifiedAt', '') <> '' then
+                raise exception 'Receipt and approval details can only be assigned after payment verification';
+            end if;
+            if finance_reference <> '' and exists (
+                select 1
+                from public.app_records existing
+                where existing.collection in ('payments', 'donations')
+                  and lower(trim(coalesce(existing.data ->> 'transactionRef', existing.data ->> 'transaction_id', existing.data ->> 'mpesaReceipt', ''))) = finance_reference
+            ) then
+                raise exception 'This transaction reference has already been submitted';
+            end if;
+        else
+            finance_fields_changed :=
+                coalesce(new.data ->> 'amount', '') is distinct from coalesce(old.data ->> 'amount', '')
+                or coalesce(new.data ->> 'status', '') is distinct from coalesce(old.data ->> 'status', '')
+                or coalesce(new.data ->> 'receiptNumber', new.data ->> 'receipt_number', '')
+                    is distinct from coalesce(old.data ->> 'receiptNumber', old.data ->> 'receipt_number', '')
+                or coalesce(new.data ->> 'approvedBy', '') is distinct from coalesce(old.data ->> 'approvedBy', '')
+                or coalesce(new.data ->> 'approvedAt', '') is distinct from coalesce(old.data ->> 'approvedAt', '')
+                or coalesce(new.data ->> 'verifiedBy', '') is distinct from coalesce(old.data ->> 'verifiedBy', '')
+                or coalesce(new.data ->> 'verifiedAt', '') is distinct from coalesce(old.data ->> 'verifiedAt', '');
+
+            if finance_fields_changed and not public.dawah_has_permission('manage_payments') then
+                raise exception 'Only an authorized finance officer can verify or change payment records';
+            end if;
+            if lower(coalesce(old.data ->> 'status', '')) = 'completed'
+               and finance_status <> 'completed'
+               and not public.is_dawah_main_admin(auth.uid()) then
+                raise exception 'Only the main admin can reverse a completed transaction';
+            end if;
+            if finance_status = 'completed'
+               and coalesce(new.data ->> 'receiptNumber', new.data ->> 'receipt_number', '') = '' then
+                raise exception 'A verified transaction must have a receipt number';
+            end if;
+        end if;
+    end if;
 
     if tg_op = 'INSERT' then
         if new.collection = 'members' then
@@ -342,6 +434,35 @@ begin
             end if;
             if requested_role <> 'student' and requested_status not in ('pending', 'pending approval') then
                 raise exception 'Officer roles must be approved by the main admin';
+            end if;
+        end if;
+        if new.collection = 'membershipCards' then
+            select exists (
+                select 1
+                from public.app_records payment
+                where payment.collection = 'payments'
+                  and lower(coalesce(payment.data ->> 'type', payment.data ->> 'payment_type', '')) = 'membershipdues'
+                  and lower(coalesce(payment.data ->> 'status', '')) = 'completed'
+                  and coalesce(payment.data ->> 'id', payment.id::text) = coalesce(new.data ->> 'paymentId', '')
+                  and coalesce(payment.data ->> 'ownerUid', payment.data ->> 'authUid', payment.data ->> 'uid', '') = auth.uid()::text
+            ) into linked_paid_dues;
+            if not linked_paid_dues then
+                raise exception 'A membership card requires a verified membership dues payment';
+            end if;
+            if coalesce(new.data ->> 'cardId', '') = '' then
+                raise exception 'A membership card ID is required';
+            end if;
+            if lower(coalesce(new.data ->> 'status', '')) <> 'active'
+               or lower(coalesce(new.data ->> 'paymentStatus', '')) <> 'paid' then
+                raise exception 'Only paid, active membership cards can be issued';
+            end if;
+            if exists (
+                select 1
+                from public.app_records duplicate_card
+                where duplicate_card.collection = 'membershipCards'
+                  and duplicate_card.data ->> 'cardId' = new.data ->> 'cardId'
+            ) then
+                raise exception 'This membership card ID has already been issued';
             end if;
         end if;
         return new;
@@ -362,8 +483,37 @@ begin
         or coalesce(new.data ->> 'ownerUid', '') is distinct from coalesce(old.data ->> 'ownerUid', '')
         or coalesce(new.data ->> 'authEmail', '') is distinct from coalesce(old.data ->> 'authEmail', '')
         or coalesce(new.data ->> 'ownerEmail', '') is distinct from coalesce(old.data ->> 'ownerEmail', '')
+        or coalesce(new.data ->> 'membershipCardPaymentStatus', '') is distinct from coalesce(old.data ->> 'membershipCardPaymentStatus', '')
+        or coalesce(new.data ->> 'membershipPaymentStatus', '') is distinct from coalesce(old.data ->> 'membershipPaymentStatus', '')
+        or coalesce(new.data ->> 'paymentStatus', '') is distinct from coalesce(old.data ->> 'paymentStatus', '')
+        or coalesce(new.data ->> 'membershipCardStatus', '') is distinct from coalesce(old.data ->> 'membershipCardStatus', '')
+        or coalesce(new.data ->> 'membershipCardRecordStatus', '') is distinct from coalesce(old.data ->> 'membershipCardRecordStatus', '')
+        or coalesce(new.data ->> 'membershipCardId', '') is distinct from coalesce(old.data ->> 'membershipCardId', '')
+        or coalesce(new.data ->> 'membershipCardPaymentId', '') is distinct from coalesce(old.data ->> 'membershipCardPaymentId', '')
+        or coalesce(new.data ->> 'membershipCardReceiptNumber', '') is distinct from coalesce(old.data ->> 'membershipCardReceiptNumber', '')
+        or coalesce(new.data ->> 'membershipCardIssuedAt', '') is distinct from coalesce(old.data ->> 'membershipCardIssuedAt', '')
+        or coalesce(new.data ->> 'membershipCardExpiresAt', '') is distinct from coalesce(old.data ->> 'membershipCardExpiresAt', '')
     ) then
-        raise exception 'Officer roles, approval, and account identity fields can only be changed by an admin';
+        raise exception 'Officer roles, approval, identity, and issued membership card fields can only be changed by an admin';
+    end if;
+
+    if new.collection = 'membershipCards' then
+        select exists (
+            select 1
+            from public.app_records payment
+            where payment.collection = 'payments'
+              and lower(coalesce(payment.data ->> 'type', payment.data ->> 'payment_type', '')) = 'membershipdues'
+              and lower(coalesce(payment.data ->> 'status', '')) = 'completed'
+              and coalesce(payment.data ->> 'id', payment.id::text) = coalesce(new.data ->> 'paymentId', '')
+              and coalesce(payment.data ->> 'ownerUid', payment.data ->> 'authUid', payment.data ->> 'uid', '') = auth.uid()::text
+        ) into linked_paid_dues;
+        if not linked_paid_dues then
+            raise exception 'A membership card requires a verified membership dues payment';
+        end if;
+        if lower(coalesce(new.data ->> 'status', '')) <> 'active'
+           or lower(coalesce(new.data ->> 'paymentStatus', '')) <> 'paid' then
+            raise exception 'Only paid, active membership cards can be issued';
+        end if;
     end if;
 
     return new;
