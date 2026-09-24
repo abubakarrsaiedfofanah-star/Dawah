@@ -235,3 +235,20 @@ pre, code { overflow-wrap: anywhere; }
     .admin-container #dashboardView .dashboard-stat-card { min-height: 96px; padding: 10px; }
     .dashboard-container .profile-meter { flex-direction: column; }
 }
+
+/* Small verification pages are often opened from a phone camera or receipt link. */
+.verification-page main { width: min(760px, calc(100% - 24px)); max-width: 760px; padding-block: clamp(16px, 5vw, 48px) !important; }
+.verification-page main > section { min-width: 0; padding: clamp(14px, 4vw, 24px) !important; border-radius: 16px !important; }
+.verification-page #memberVerifyResult > table,
+.verification-page #receiptResult > table { width: 100%; min-width: 0 !important; table-layout: fixed; }
+.verification-page #memberVerifyResult th,
+.verification-page #memberVerifyResult td,
+.verification-page #receiptResult th,
+.verification-page #receiptResult td { max-width: 0; padding: .6rem; overflow-wrap: anywhere; vertical-align: top; }
+.verification-page #memberVerifyResult th,
+.verification-page #receiptResult th { width: 38%; }
+.verification-page .input-group > .form-control { font-size: 16px; }
+.verification-page .input-group > .btn { min-height: 44px; white-space: nowrap; }
+.verification-page .table-responsive > table { min-width: 600px; }
+.install-page main { width: min(520px, calc(100% - 24px)); }
+.install-page button { min-height: 48px; padding-inline: 1.25rem; }
