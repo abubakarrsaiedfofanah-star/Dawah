@@ -1,6 +1,6 @@
 // Runtime slice from daawah.js: renderRoleWorkspace.
 function renderRoleWorkspace() {
-    const role = currentRole || currentUser?.role || 'student';
+    const role = String(currentUser?.role || '').trim().toLowerCase().replace(/[\s-]+/g, '_');
     const roleBadge = document.getElementById('dashboardRoleBadge');
     const summary = document.getElementById('dashboardRoleSummary');
     const actions = document.getElementById('roleQuickActions');
@@ -22,10 +22,13 @@ function renderRoleWorkspace() {
         admin: [['Students', 'memberDatabase', 'fa-user-graduate', 'Manage students'], ['Leadership', 'leadership', 'fa-user-tie', 'Public officers'], ['Reports', 'reports', 'fa-chart-pie', 'System overview']],
         student: [['Profile', 'profile', 'fa-id-card', 'Your record'], ['Events', 'events', 'fa-calendar', 'Join programmes'], ['Volunteer', 'volunteer', 'fa-hands-helping', 'Serve the Jamaat'], ['Dues', 'dues', 'fa-money-bill', 'Payment status']]
     };
-    const items = actionMap[role] || actionMap.student;
+    const items = (actionMap[role] || []).filter(([, view]) => {
+        const permission = getViewPermission(view);
+        return permission && hasPermission(permission);
+    });
     if (roleBadge) roleBadge.textContent = formatRoleName(role);
     if (summary) summary.textContent = getRoleDashboardMessage();
-    actions.innerHTML = items.map(([label, view, icon, helper]) => `
+    actions.innerHTML = items.length ? items.map(([label, view, icon, helper]) => `
         <button type="button" class="btn btn-outline-primary btn-sm role-action-card" onclick="switchView('${view}')">
             <i class="fas ${icon}"></i>
             <span>
@@ -33,7 +36,7 @@ function renderRoleWorkspace() {
                 <small>${escapeHtml(helper || '')}</small>
             </span>
         </button>
-    `).join('');
+    `).join('') : '<p class="text-muted mb-0">No tools are assigned to this role.</p>';
     if (responsibilities) {
         responsibilities.innerHTML = renderRoleResponsibilities(role);
     }

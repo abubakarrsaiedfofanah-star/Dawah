@@ -1,5 +1,18 @@
 // Runtime slice from daawah.js: printSystemReport.
 function printSystemReport(type) {
+    const requiredPermission = {
+        students: 'manage_members',
+        members: 'manage_members',
+        payments: 'manage_payments',
+        donations: 'manage_payments',
+        officers: 'manage_leadership',
+        research: 'generate_reports'
+    }[type];
+    if (!requiredPermission || !hasPermission(requiredPermission)) {
+        showNotification('Your role cannot open this report.', 'warning');
+        return;
+    }
+
     const sourceMap = {
         students: { title: 'Students Report', rows: allMembers },
         members: { title: 'Paid Members Report', rows: getPaidMemberRecordsForReport() },

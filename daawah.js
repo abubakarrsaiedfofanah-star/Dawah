@@ -2774,9 +2774,16 @@ function refreshActiveRoleView() {
 // Runtime slice from daawah.js: switchView.
 function switchView(viewName) {
     const requiredPermission = getViewPermission(viewName);
-    if (requiredPermission && !hasPermission(requiredPermission)) {
+    const publicViews = ['dashboard', 'settings'];
+    if (!publicViews.includes(viewName) && (!requiredPermission || !hasPermission(requiredPermission))) {
         showNotification('Your role does not have access to that section.', 'warning');
         switchView('dashboard');
+        return;
+    }
+
+    const viewElement = document.getElementById(viewName + 'View');
+    if (!viewElement) {
+        showNotification('That dashboard section is unavailable.', 'warning');
         return;
     }
 
@@ -2788,10 +2795,7 @@ function switchView(viewName) {
         link.classList.remove('active');
     });
 
-    const viewElement = document.getElementById(viewName + 'View');
-    if (viewElement) {
-        viewElement.classList.add('active');
-    }
+    viewElement.classList.add('active');
 
     const activeEvent = typeof event !== 'undefined' ? event : null;
     const clickedLink = activeEvent?.target?.closest?.('.sidebar-menu .nav-link, .navbar .nav-link');
@@ -6146,6 +6150,19 @@ function getPaidMemberRecordsForReport() {
 
 // Runtime slice from daawah.js: printSystemReport.
 function printSystemReport(type) {
+    const requiredPermission = {
+        students: 'manage_members',
+        members: 'manage_members',
+        payments: 'manage_payments',
+        donations: 'manage_payments',
+        officers: 'manage_leadership',
+        research: 'generate_reports'
+    }[type];
+    if (!requiredPermission || !hasPermission(requiredPermission)) {
+        showNotification('Your role cannot open this report.', 'warning');
+        return;
+    }
+
     const sourceMap = {
         students: { title: 'Students Report', rows: allMembers },
         members: { title: 'Paid Members Report', rows: getPaidMemberRecordsForReport() },
@@ -6608,14 +6625,18 @@ function syncTreasurerDonationRecords() {
 
 // Runtime slice from daawah.js: loadReportsData.
 function loadReportsData() {
-    const activeMembers = allMembers.filter(member => String(member.status || '').toLowerCase() === 'active').length;
-    const completedDonations = donations
+    const canViewMembers = hasPermission('manage_members');
+    const canViewFinance = hasPermission('manage_payments');
+    const canViewEvents = hasPermission('manage_events');
+    const canViewWelfare = hasPermission('manage_welfare');
+    const activeMembers = canViewMembers ? allMembers.filter(member => String(member.status || '').toLowerCase() === 'active').length : 0;
+    const completedDonations = canViewFinance ? donations
         .filter(donation => String(donation.status || '').toLowerCase() === 'completed')
-        .reduce((sum, donation) => sum + Number(donation.amount || 0), 0);
-    const completedEvents = allEvents.filter(event => ['completed', 'held'].includes(String(event.status || '').toLowerCase())).length;
+        .reduce((sum, donation) => sum + Number(donation.amount || 0), 0) : 0;
+    const completedEvents = canViewEvents ? allEvents.filter(event => ['completed', 'held'].includes(String(event.status || '').toLowerCase())).length : 0;
 
     const reportValues = {
-        reportTotalMembers: allMembers.length,
+        reportTotalMembers: canViewMembers ? allMembers.length : 0,
         reportActiveMembers: activeMembers,
         reportTotalDonations: completedDonations ? formatCurrency(completedDonations) : '0',
         reportEventsHeld: completedEvents
@@ -6625,7 +6646,18 @@ function loadReportsData() {
         const element = document.getElementById(id);
         if (element) element.textContent = String(value);
     });
-    renderWelfareReportRows();
+    const toggleReportPanel = (selector, visible) => {
+        const element = document.querySelector(selector);
+        if (element) element.closest('.col-md-3, .col-md-6, .card')?.classList.toggle('d-none', !visible);
+    };
+    toggleReportPanel('#reportTotalMembers', canViewMembers);
+    toggleReportPanel('#reportActiveMembers', canViewMembers);
+    toggleReportPanel('#reportTotalDonations', canViewFinance);
+    toggleReportPanel('#reportEventsHeld', canViewEvents);
+    toggleReportPanel('#membershipChart', canViewMembers);
+    toggleReportPanel('#donationChart', canViewFinance);
+    toggleReportPanel('#welfareReportRows', canViewWelfare);
+    if (canViewWelfare) renderWelfareReportRows();
 }
 
 // Runtime slice from daawah.js: renderWelfareReportRows.
@@ -7929,7 +7961,7 @@ function configureDashboardReports() {
 
 // Runtime slice from daawah.js: renderRoleWorkspace.
 function renderRoleWorkspace() {
-    const role = currentRole || currentUser?.role || 'student';
+    const role = String(currentUser?.role || '').trim().toLowerCase().replace(/[\s-]+/g, '_');
     const roleBadge = document.getElementById('dashboardRoleBadge');
     const summary = document.getElementById('dashboardRoleSummary');
     const actions = document.getElementById('roleQuickActions');
@@ -7951,10 +7983,13 @@ function renderRoleWorkspace() {
         admin: [['Students', 'memberDatabase', 'fa-user-graduate', 'Manage students'], ['Leadership', 'leadership', 'fa-user-tie', 'Public officers'], ['Reports', 'reports', 'fa-chart-pie', 'System overview']],
         student: [['Profile', 'profile', 'fa-id-card', 'Your record'], ['Events', 'events', 'fa-calendar', 'Join programmes'], ['Volunteer', 'volunteer', 'fa-hands-helping', 'Serve the Jamaat'], ['Dues', 'dues', 'fa-money-bill', 'Payment status']]
     };
-    const items = actionMap[role] || actionMap.student;
+    const items = (actionMap[role] || []).filter(([, view]) => {
+        const permission = getViewPermission(view);
+        return permission && hasPermission(permission);
+    });
     if (roleBadge) roleBadge.textContent = formatRoleName(role);
     if (summary) summary.textContent = getRoleDashboardMessage();
-    actions.innerHTML = items.map(([label, view, icon, helper]) => `
+    actions.innerHTML = items.length ? items.map(([label, view, icon, helper]) => `
         <button type="button" class="btn btn-outline-primary btn-sm role-action-card" onclick="switchView('${view}')">
             <i class="fas ${icon}"></i>
             <span>
@@ -7962,7 +7997,7 @@ function renderRoleWorkspace() {
                 <small>${escapeHtml(helper || '')}</small>
             </span>
         </button>
-    `).join('');
+    `).join('') : '<p class="text-muted mb-0">No tools are assigned to this role.</p>';
     if (responsibilities) {
         responsibilities.innerHTML = renderRoleResponsibilities(role);
     }
