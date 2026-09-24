@@ -21,10 +21,11 @@ async function handleLogin(e) {
         return;
     }
 
+    let cloudMember = null;
     if (frontendOnly && window.SupabaseBackend?.enabled) {
         try {
             await window.SupabaseBackend.loginEmail(username, password);
-            const cloudMember = await loadSharedMemberStore();
+            cloudMember = await loadSharedMemberStore();
             if (!cloudMember) {
                 recordFailedLoginAttempt('Supabase login worked, but no student profile was found. Please register your student profile or contact admin.');
                 return;
@@ -45,19 +46,22 @@ async function handleLogin(e) {
         return;
     }
 
-    const user = getRegisteredUser(username);
+    const localUser = getRegisteredUser(username);
+    const authenticatedBySupabase = frontendOnly && window.SupabaseBackend?.enabled && window.SupabaseBackend.hasAuthSession?.();
+    const user = authenticatedBySupabase && cloudMember
+        ? { ...localUser, ...cloudMember, password: localUser?.password }
+        : localUser;
     if (!user) {
         recordFailedLoginAttempt('No registered account found. Please register first.');
         return;
     }
 
-    const authenticatedBySupabase = frontendOnly && window.SupabaseBackend?.enabled && window.SupabaseBackend.hasAuthSession?.();
     if (!authenticatedBySupabase && user.password !== password) {
         recordFailedLoginAttempt('Invalid password.');
         return;
     }
 
-    if (['inactive', 'pending', 'suspended'].includes(String(user.status || 'Active').toLowerCase())) {
+    if (['inactive', 'pending', 'suspended', 'rejected', 'disabled'].includes(String(user.status || 'Active').trim().toLowerCase())) {
         recordFailedLoginAttempt('This account is pending approval or inactive. Please contact the admin.');
         return;
     }

@@ -296,12 +296,21 @@ function mergeMemberIntoList(members, member) {
 }
 
 // Runtime slice from officer.js: loadOfficerSharedMembers.
-async function loadOfficerSharedMembers() {
-    if (!window.SupabaseBackend?.enabled || !window.SupabaseBackend.hasAuthSession()) return;
-    const member = await window.SupabaseBackend.loadMyMember().catch(() => null);
+async function loadOfficerSharedMembers(options = {}) {
+    if (!window.SupabaseBackend?.enabled || !window.SupabaseBackend.hasAuthSession()) {
+        if (options.required) throw new Error('Sign in through the secure officer login before continuing.');
+        return null;
+    }
+    const member = await window.SupabaseBackend.loadMyMember().catch(error => {
+        if (options.required) throw new Error('Could not verify your officer profile. Check your connection and try again.');
+        console.warn('Officer profile could not be refreshed:', error);
+        return null;
+    });
     if (member) {
         writeLocalMembers(mergeMemberIntoList(readLocalMembers(), member));
     }
+    if (!member && options.required) throw new Error('No approved officer profile is linked to this login. Contact the main admin.');
+    return member || null;
 }
 
 // Runtime slice from officer.js: findLocalMember.
@@ -784,7 +793,7 @@ async function handleOfficerLogin(event) {
                 await window.SupabaseBackend.ensureRealtimeAuth?.(username, password).catch(error => {
                     console.warn('Realtime auth unavailable for officer dashboard:', error);
                 });
-                await loadOfficerSharedMembers();
+                await loadOfficerSharedMembers({ required: true });
             } else {
                 await officerCloudReadyPromise;
             }
@@ -792,7 +801,7 @@ async function handleOfficerLogin(event) {
             localStorage.setItem('currentUser', JSON.stringify(user));
             localStorage.setItem('currentRole', user.role);
             localStorage.setItem('DawaahAccountClearVersion', ACCOUNT_CLEAR_VERSION);
-            showPortalWelcome(user, 'index.html?dashboard=1');
+            window.location.href = 'index.html?dashboard=1';
         } catch (error) {
             const message = /invalid path specified|failed to construct|invalid url/i.test(error.message || '')
                 ? 'Supabase URL is not the project API URL. In Vercel set SUPABASE_URL to https://PROJECT_REF.supabase.co, then redeploy.'
@@ -830,7 +839,7 @@ async function handleOfficerLogin(event) {
     .then(user => {
         localStorage.setItem('currentUser', JSON.stringify(user));
         localStorage.setItem('currentRole', user.role);
-        showPortalWelcome(user, 'index.html?dashboard=1');
+        window.location.href = 'index.html';
     })
     .catch(error => {
         showOfficerAlert(error.message || 'Officer login failed.', 'danger');

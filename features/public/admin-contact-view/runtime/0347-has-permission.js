@@ -98,12 +98,17 @@ function hasPermission(permission) {
         ]
     };
 
+    const user = currentUser;
+    if (!user || !permission || !Object.values(rolePermissions).some(list => list.includes(permission))) return false;
+    const role = String(user.role || '').trim().toLowerCase().replace(/[\s-]+/g, '_');
+    const roleStatus = String(user.status || 'Active').trim().toLowerCase();
+    if (!rolePermissions[role] || ['inactive', 'pending', 'suspended', 'rejected', 'disabled'].includes(roleStatus)) return false;
     const overrides = readStoredObject('rolePermissionOverrides', []);
-    const override = Array.isArray(overrides) ? overrides.find(item => item.role === currentRole) : null;
+    const override = Array.isArray(overrides) ? overrides.find(item => item.role === role) : null;
     if (override && Array.isArray(override.permissions)) {
         return override.permissions.includes(permission);
     }
-    return rolePermissions[currentRole]?.includes(permission) || false;
+    return rolePermissions[role].includes(permission);
 }
 
 // Export & Download

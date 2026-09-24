@@ -13,11 +13,18 @@ async function initializeApp() {
     allEvents = readList('allEvents');
     cloudStoresReadyPromise = loadSharedMemberStore();
 
-    if (new URLSearchParams(location.search).get('dashboard') === '1' && window.SupabaseBackend?.enabled && window.SupabaseBackend.hasAuthSession()) {
-        const cloudMember = await window.SupabaseBackend.loadMyMember().catch(() => null);
-        if (cloudMember && String(cloudMember.status || '').toLowerCase() === 'active') {
-            localStorage.setItem('currentUser', JSON.stringify(cloudMember));
-            localStorage.setItem('currentRole', cloudMember.role || 'student');
+    if (new URLSearchParams(location.search).get('dashboard') === '1' && window.SupabaseBackend?.enabled) {
+        const cloudMember = window.SupabaseBackend.hasAuthSession()
+            ? await window.SupabaseBackend.loadMyMember().catch(() => null)
+            : null;
+        if (cloudMember && String(cloudMember.status || '').trim().toLowerCase() === 'active') {
+            const stored = getStoredCurrentUser() || {};
+            const verifiedUser = { ...stored, ...cloudMember };
+            localStorage.setItem('currentUser', JSON.stringify(verifiedUser));
+            localStorage.setItem('currentRole', verifiedUser.role || 'student');
+        } else {
+            localStorage.removeItem('currentUser');
+            localStorage.removeItem('currentRole');
         }
     }
 

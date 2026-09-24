@@ -1273,11 +1273,18 @@ async function initializeApp() {
     allEvents = readList('allEvents');
     cloudStoresReadyPromise = loadSharedMemberStore();
 
-    if (new URLSearchParams(location.search).get('dashboard') === '1' && window.SupabaseBackend?.enabled && window.SupabaseBackend.hasAuthSession()) {
-        const cloudMember = await window.SupabaseBackend.loadMyMember().catch(() => null);
-        if (cloudMember && String(cloudMember.status || '').toLowerCase() === 'active') {
-            localStorage.setItem('currentUser', JSON.stringify(cloudMember));
-            localStorage.setItem('currentRole', cloudMember.role || 'student');
+    if (new URLSearchParams(location.search).get('dashboard') === '1' && window.SupabaseBackend?.enabled) {
+        const cloudMember = window.SupabaseBackend.hasAuthSession()
+            ? await window.SupabaseBackend.loadMyMember().catch(() => null)
+            : null;
+        if (cloudMember && String(cloudMember.status || '').trim().toLowerCase() === 'active') {
+            const stored = getStoredCurrentUser() || {};
+            const verifiedUser = { ...stored, ...cloudMember };
+            localStorage.setItem('currentUser', JSON.stringify(verifiedUser));
+            localStorage.setItem('currentRole', verifiedUser.role || 'student');
+        } else {
+            localStorage.removeItem('currentUser');
+            localStorage.removeItem('currentRole');
         }
     }
 
@@ -1777,10 +1784,11 @@ async function handleLogin(e) {
         return;
     }
 
+    let cloudMember = null;
     if (frontendOnly && window.SupabaseBackend?.enabled) {
         try {
             await window.SupabaseBackend.loginEmail(username, password);
-            const cloudMember = await loadSharedMemberStore();
+            cloudMember = await loadSharedMemberStore();
             if (!cloudMember) {
                 recordFailedLoginAttempt('Supabase login worked, but no student profile was found. Please register your student profile or contact admin.');
                 return;
@@ -1801,19 +1809,22 @@ async function handleLogin(e) {
         return;
     }
 
-    const user = getRegisteredUser(username);
+    const localUser = getRegisteredUser(username);
+    const authenticatedBySupabase = frontendOnly && window.SupabaseBackend?.enabled && window.SupabaseBackend.hasAuthSession?.();
+    const user = authenticatedBySupabase && cloudMember
+        ? { ...localUser, ...cloudMember, password: localUser?.password }
+        : localUser;
     if (!user) {
         recordFailedLoginAttempt('No registered account found. Please register first.');
         return;
     }
 
-    const authenticatedBySupabase = frontendOnly && window.SupabaseBackend?.enabled && window.SupabaseBackend.hasAuthSession?.();
     if (!authenticatedBySupabase && user.password !== password) {
         recordFailedLoginAttempt('Invalid password.');
         return;
     }
 
-    if (['inactive', 'pending', 'suspended'].includes(String(user.status || 'Active').toLowerCase())) {
+    if (['inactive', 'pending', 'suspended', 'rejected', 'disabled'].includes(String(user.status || 'Active').trim().toLowerCase())) {
         recordFailedLoginAttempt('This account is pending approval or inactive. Please contact the admin.');
         return;
     }
@@ -7658,12 +7669,17 @@ function hasPermission(permission) {
         ]
     };
 
+    const user = currentUser;
+    if (!user || !permission || !Object.values(rolePermissions).some(list => list.includes(permission))) return false;
+    const role = String(user.role || '').trim().toLowerCase().replace(/[\s-]+/g, '_');
+    const roleStatus = String(user.status || 'Active').trim().toLowerCase();
+    if (!rolePermissions[role] || ['inactive', 'pending', 'suspended', 'rejected', 'disabled'].includes(roleStatus)) return false;
     const overrides = readStoredObject('rolePermissionOverrides', []);
-    const override = Array.isArray(overrides) ? overrides.find(item => item.role === currentRole) : null;
+    const override = Array.isArray(overrides) ? overrides.find(item => item.role === role) : null;
     if (override && Array.isArray(override.permissions)) {
         return override.permissions.includes(permission);
     }
-    return rolePermissions[currentRole]?.includes(permission) || false;
+    return rolePermissions[role].includes(permission);
 }
 
 // Export & Download
