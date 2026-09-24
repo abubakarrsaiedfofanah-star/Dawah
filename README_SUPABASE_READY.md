@@ -6,9 +6,10 @@ This folder is a copy of the existing Dawah app with the source features preserv
 
 1. Create a Supabase project.
 2. Run `supabase_schema.sql` in the Supabase SQL editor.
-3. Put your Supabase project URL and anon key in `supabase_config.js`.
-4. Add your live domain to `enabledHosts`.
-5. Open `index.html`, `officer.html`, or `admin.html`.
+3. Run `supabase_role_security.sql` in the SQL editor to enable role-scoped database access.
+4. Put your Supabase project URL and anon key in `supabase_config.js`.
+5. Add your live domain to `enabledHosts`.
+6. Open `index.html`, `officer.html`, or `admin.html`.
 
 ## Vercel Deployment (Supabase)
 
@@ -39,9 +40,9 @@ The app still uses the old `window.SupabaseBackend` API name so the existing fea
 - `app_records`: generic records grouped by `collection`, matching the current Supabase collection-style calls.
 - `admin_roles`: admin authority by Supabase Auth user id.
 
-## Important Next Step
+## Role Security Migration
 
-The included RLS policies are permissive enough for migration testing. Before production, tighten them per feature role: students, officers, treasurer, secretary, chairperson, and main admin.
+`supabase_role_security.sql` adds database-side checks for active approved officer roles, scopes member/finance/welfare/event records and shared app-store writes to assigned permissions, and prevents a user from inserting an already-approved officer profile. Run it after `supabase_schema.sql` before relying on officer permissions in production.
 
 After creating your first admin user in Supabase Auth, bootstrap that account in the SQL editor:
 
