@@ -60,7 +60,7 @@
     <link rel="stylesheet" href="vendor/fontawesome/css/all.min.css?v=local-20260523">
     <link rel="stylesheet" href="daawah.css?v=workspace-auth-layout-20260919-v4">
     <link rel="stylesheet" href="ui-refresh.css?v=connect-links-20260922-v1">
-    <link rel="stylesheet" href="responsive-system.css?v=finance-id-20260924-v3">
+    <link rel="stylesheet" href="responsive-system.css?v=finance-id-20260924-v5">
     <script defer src="responsive-system.js?v=mobile-fit-20260924-v1"></script>
     <link rel="stylesheet" href="registration-logo.css?v=20260919-v1">
     <link rel="stylesheet" href="ai_assistant_widget.css?v=dashboard-chat-20260924-v1">
@@ -490,6 +490,12 @@
                     <!-- Register Tab -->
                     <div id="registerTab" class="tab-pane fade">
                         <form id="registrationForm" class="registration-form">
+                            <div class="registration-intro">
+                                <h3>Create your student account</h3>
+                                <p>Enter your personal and study details, then create a secure password. Membership becomes active after finance confirms your dues.</p>
+                            </div>
+                            <div id="registrationNotice" class="alert d-none" role="status" aria-live="polite"></div>
+                            <h4 class="registration-group-heading">Personal details</h4>
                             <div class="row">
                                 <div class="col-md-6 mb-3">
                                     <label class="form-label">Full Name</label>
@@ -502,6 +508,7 @@
                                 </div>
                             </div>
 
+                            <h4 class="registration-group-heading">Study information</h4>
                             <div class="mb-3">
                                 <label class="form-label">School</label>
                                 <select class="form-select" id="school" required>
@@ -598,21 +605,22 @@
                                 </div>
                             </div>
 
+                            <h4 class="registration-group-heading">Contact and sign-in</h4>
                             <div class="row">
                                 <div class="col-md-6 mb-3">
                                     <label class="form-label">Phone Number</label>
-                                    <input type="tel" class="form-control" id="phone" placeholder="Phone number" required>
+                                    <input type="tel" class="form-control" id="phone" autocomplete="tel" inputmode="tel" placeholder="Phone number" required>
                                 </div>
                                 <div class="col-md-6 mb-3">
                                     <label class="form-label">Email</label>
-                                    <input type="email" class="form-control" id="email" placeholder="Email address" required>
+                                    <input type="email" class="form-control" id="email" autocomplete="email" placeholder="Email address" required>
                                 </div>
                             </div>
 
                             <div class="mb-3">
                                 <label class="form-label">Password</label>
                                 <div class="input-group">
-                                    <input type="password" class="form-control" id="regPassword" placeholder="Enter password" required>
+                                    <input type="password" class="form-control" id="regPassword" autocomplete="new-password" minlength="8" placeholder="Enter password" required>
                                     <button class="btn btn-outline-secondary password-visibility-toggle" type="button" id="toggleRegPassword" aria-label="Show password" aria-pressed="false" title="Show password">
                                         <svg class="password-visibility-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M2 12s3.5-6 10-6 10 6 10 6-3.5 6-10 6S2 12 2 12Z"/><circle cx="12" cy="12" r="2.75"/></svg>
                                     </button>
@@ -626,14 +634,14 @@
                             <div class="mb-3">
                                 <label class="form-label">Confirm Password</label>
                                 <div class="input-group">
-                                    <input type="password" class="form-control" id="confirmPassword" placeholder="Confirm password" required>
+                                    <input type="password" class="form-control" id="confirmPassword" autocomplete="new-password" minlength="8" placeholder="Confirm password" required>
                                     <button class="btn btn-outline-secondary password-visibility-toggle" type="button" id="toggleConfirmPassword" aria-label="Show confirm password" aria-pressed="false" title="Show confirm password">
                                         <svg class="password-visibility-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M2 12s3.5-6 10-6 10 6 10 6-3.5 6-10 6S2 12 2 12Z"/><circle cx="12" cy="12" r="2.75"/></svg>
                                     </button>
                                 </div>
                             </div>
 
-                            <button type="submit" class="btn btn-success w-100">Register</button>
+                            <button type="submit" id="registrationSubmitButton" class="btn btn-success w-100">Create student account</button>
                         </form>
                     </div>
                 </div>
@@ -3311,7 +3319,7 @@
     <script src="ai_worker_config.js?v=cloudflare-ai-20260613-1"></script>
     <script src="ai_assistant_widget.js?v=dashboard-chat-20260924-v1"></script>
     <script src="supabase_config.js?v=dawah-supabase-config-20260707"></script>
-    <script src="supabase_shared.js?v=finance-security-20260924-v4"></script>
+    <script src="supabase_shared.js?v=finance-security-20260924-v5"></script>
     <script>
         (function() {
             function isStandaloneApp() {
@@ -3365,6 +3373,6 @@
             document.addEventListener('DOMContentLoaded', updateFooterInstallButton);
         })();
     </script>
-    <script src="daawah.js?v=finance-signature-20260924-v1"></script>
+    <script src="daawah.js?v=registration-security-20260924-v1"></script>
 </body>
 </html>

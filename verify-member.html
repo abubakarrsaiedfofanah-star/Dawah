@@ -10,7 +10,7 @@
     <link href="vendor/bootstrap/css/bootstrap.min.css" rel="stylesheet">
     <link href="vendor/fontawesome/css/all.min.css" rel="stylesheet">
     <link href="daawah.css" rel="stylesheet">
-    <link href="responsive-system.css?v=finance-id-20260924-v3" rel="stylesheet">
+    <link href="responsive-system.css?v=finance-id-20260924-v5" rel="stylesheet">
     <script defer src="responsive-system.js?v=mobile-fit-20260924-v1"></script>
 </head>
 <body class="bg-light verification-page">
@@ -22,7 +22,7 @@
                 Only paid and active membership cards are valid for official membership use. A registered student record alone is not proof of paid membership.
             </div>
             <form id="memberVerifyForm" class="mb-3">
-                <label class="form-label" for="memberId">Card ID, student ID, username, or email</label>
+                <label class="form-label" for="memberId">Card ID or student ID</label>
                 <div class="input-group">
                     <input class="form-control" id="memberId" required>
                     <button class="btn btn-primary" type="submit"><i class="fas fa-id-card"></i> Verify</button>
@@ -32,7 +32,7 @@
         </section>
     </main>
     <script src="supabase_config.js"></script>
-    <script src="supabase_shared.js?v=finance-security-20260924-v4"></script>
+    <script src="supabase_shared.js?v=finance-security-20260924-v5"></script>
     <script>
         const input = document.getElementById('memberId');
         const result = document.getElementById('memberVerifyResult');

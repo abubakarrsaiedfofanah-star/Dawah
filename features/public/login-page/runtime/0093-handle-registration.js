@@ -1,4 +1,15 @@
 // Runtime slice from daawah.js: handleRegistration.
+function showRegistrationNotice(message, type = 'danger') {
+    const notice = document.getElementById('registrationNotice');
+    if (!notice) {
+        alert(message);
+        return;
+    }
+    notice.className = `alert alert-${type}`;
+    notice.textContent = message;
+    notice.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+}
+
 async function handleRegistration(e) {
     e.preventDefault();
 
@@ -11,43 +22,44 @@ async function handleRegistration(e) {
     const role = 'student';
 
     if (password !== confirmPassword) {
-        alert('Passwords do not match.');
+        showRegistrationNotice('Passwords do not match.');
         return;
     }
 
     if (!isValidStudentId(studentId)) {
-        alert('Enter a valid Student ID like BSCS/2025/53736.');
+        showRegistrationNotice('Enter a valid Student ID like BSCS/2025/53736.');
         return;
     }
 
     const passwordError = getPasswordRequirementError(password);
     if (passwordError) {
-        alert(passwordError);
+        showRegistrationNotice(passwordError);
         return;
     }
 
     const supabaseRegistration = Boolean(frontendOnly && window.SupabaseBackend?.enabled);
 
+    if (frontendOnly && !supabaseRegistration && location.protocol !== 'file:'
+        && !['localhost', '127.0.0.1'].includes(location.hostname)) {
+        showRegistrationNotice('Secure registration is unavailable right now. Please try again later or contact the main admin.');
+        return;
+    }
+
     if (!supabaseRegistration && (getRegisteredUser(studentId) || getRegisteredUser(email))) {
         recordSuspiciousActivity('duplicate_registration_attempt', { studentId, email, reason: 'registered user match' });
-        alert('A user with this Student ID or email is already registered. Please login or use forgot password.');
+        showRegistrationNotice('A user with this Student ID or email is already registered. Please login or use forgot password.');
         return;
     }
 
     if (!supabaseRegistration && allMembers.some(member => normalizeStudentId(member.studentId || member.username) === studentId || String(member.email || '').toLowerCase() === email || (phone && String(member.phone || '').trim() === phone))) {
         recordSuspiciousActivity('duplicate_registration_attempt', { studentId, email, phone, reason: 'student/email/phone match' });
-        alert('This Student ID, email, or phone number is already registered. Please login or contact admin.');
-        return;
-    }
-
-    if (frontendOnly && !supabaseRegistration && allMembers.some(member => member.password && member.password === password)) {
-        alert('Please choose a different password. Each student must use a unique password.');
+        showRegistrationNotice('This Student ID, email, or phone number is already registered. Please login or contact admin.');
         return;
     }
 
     const existingRoleHolder = getExistingRoleHolder(role);
     if (existingRoleHolder) {
-        alert(`${role.charAt(0).toUpperCase() + role.slice(1)} role is already requested or assigned. Main admin must approve/reject or remove the existing holder first.`);
+        showRegistrationNotice(`${role.charAt(0).toUpperCase() + role.slice(1)} role is already requested or assigned. Contact the main admin.`);
         return;
     }
 
@@ -56,6 +68,9 @@ async function handleRegistration(e) {
     if (passportPhotoFile && !validateUploadFile(passportPhotoFile, 'profilePhoto')) {
         return;
     }
+
+    const notice = document.getElementById('registrationNotice');
+    if (notice) { notice.className = 'alert d-none'; notice.textContent = ''; }
 
     const newUser = {
         username: studentId,
@@ -85,7 +100,7 @@ async function handleRegistration(e) {
                 continueRegistration(newUser, fullName, password);
             })
             .catch(() => {
-                alert('Could not read the selected passport photo. Please choose another image.');
+                showRegistrationNotice('Could not read the selected passport photo. Please choose another image.');
             });
         return;
     }

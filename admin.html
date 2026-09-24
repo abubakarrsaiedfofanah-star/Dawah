@@ -1599,7 +1599,7 @@
         @media (max-width: 575.98px) { #dashboardDetailCard { inset: 10px; padding: 14px; border-radius: 14px; } #adminLoginScreen .admin-login-card { padding: 1.1rem; border-radius: 16px; } }
     </style>
     <link rel="stylesheet" href="ui-refresh.css?v=responsive-ui-20260918-v5">
-    <link rel="stylesheet" href="responsive-system.css?v=finance-id-20260924-v3">
+    <link rel="stylesheet" href="responsive-system.css?v=finance-id-20260924-v5">
     <script defer src="responsive-system.js?v=mobile-fit-20260924-v1"></script>
 </head>
 <body>
@@ -1676,7 +1676,7 @@
                         <button type="submit" id="adminRegisterButton" class="btn btn-danger w-100">
                             <i class="fas fa-user-plus"></i> Create Admin Account
                         </button>
-                        <p class="text-muted small mt-2 mb-0">The main admin can register directly here. Other admins are added inside the panel.</p>
+                        <p class="text-muted small mt-2 mb-0">Public admin registration is closed. Ask the main admin to create or approve an admin account.</p>
                     </form>
                 </div>
                 <div id="adminForgotTab" class="tab-pane fade" role="tabpanel">
@@ -2892,7 +2892,7 @@
     <script src="ai_worker_config.js?v=cloudflare-ai-20260613-1"></script>
     <script src="ai_assistant_widget.js?v=dashboard-chat-20260924-v1"></script>
     <script src="supabase_config.js?v=dawah-supabase-config-20260707"></script>
-    <script src="supabase_shared.js?v=finance-security-20260924-v4"></script>
+    <script src="supabase_shared.js?v=finance-security-20260924-v5"></script>
     <script>
         (function() {
             function isStandaloneApp() {
@@ -2930,6 +2930,6 @@
             document.addEventListener('DOMContentLoaded', updateAdminInstallButton);
         })();
     </script>
-    <script src="admin.js?v=finance-signature-20260924-v1"></script>
+    <script src="admin.js?v=registration-security-20260924-v1"></script>
 </body>
 </html>

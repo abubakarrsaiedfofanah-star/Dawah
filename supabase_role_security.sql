@@ -88,6 +88,37 @@ $$;
 revoke all on function public.dawah_get_public_membership_card(text) from public;
 grant execute on function public.dawah_get_public_membership_card(text) to anon, authenticated;
 
+-- Return only the fields the public member checker needs. Anonymous users never
+-- receive table access to the member verification collection itself.
+create or replace function public.dawah_get_public_member_verification(lookup_identifier text)
+returns jsonb
+language sql
+stable
+security definer
+set search_path = public, pg_temp
+as $$
+    select jsonb_build_object(
+        'fullName', coalesce(verification.data ->> 'fullName', verification.data ->> 'name'),
+        'studentId', coalesce(verification.data ->> 'studentId', verification.data ->> 'student_id'),
+        'username', verification.data ->> 'username',
+        'role', verification.data ->> 'role',
+        'status', verification.data ->> 'status',
+        'course', verification.data ->> 'course'
+    )
+    from public.app_records verification
+    where verification.collection = 'memberVerifications'
+      and lower(coalesce(verification.data ->> 'status', 'active')) in ('active', 'approved')
+      and (
+          lower(coalesce(verification.data ->> 'studentId', verification.data ->> 'student_id', '')) = lower(trim(lookup_identifier))
+          or lower(coalesce(verification.data ->> 'username', '')) = lower(trim(lookup_identifier))
+          or lower(coalesce(verification.data ->> 'registrationNumber', '')) = lower(trim(lookup_identifier))
+      )
+    order by verification.updated_at desc, verification.created_at desc
+    limit 1;
+$$;
+revoke all on function public.dawah_get_public_member_verification(text) from public;
+grant execute on function public.dawah_get_public_member_verification(text) to anon, authenticated;
+
 -- Receipt QR lookups expose only a single approved receipt's public fields.
 create or replace function public.dawah_get_public_receipt(lookup_receipt_number text)
 returns jsonb
@@ -345,7 +376,7 @@ create policy "Users and assigned officers read permitted records"
     using (
         public.is_dawah_admin()
         or public.dawah_record_is_owned(data)
-        or collection = 'memberVerifications'
+        or (collection = 'memberVerifications' and (public.dawah_record_is_owned(data) or public.dawah_has_permission('manage_members')))
         or (collection = 'receiptVerifications' and public.dawah_has_permission('manage_payments'))
         or (collection = 'membershipCards' and public.dawah_record_is_owned(data))
         or (collection = 'members' and public.dawah_has_permission('manage_members'))
@@ -353,11 +384,6 @@ create policy "Users and assigned officers read permitted records"
         or (collection = 'welfareRequests' and public.dawah_has_permission('manage_welfare'))
         or (collection in ('eventRegistrations', 'volunteerRegistrations') and public.dawah_has_permission('manage_events'))
     );
-
-create policy "Public users can verify receipts and members"
-    on public.app_records for select
-    to anon
-    using (collection = 'memberVerifications');
 
 -- Students may insert only their own account and transaction records. The trigger below
 -- requires every requested officer role to remain pending until an admin approves it.
@@ -497,8 +523,16 @@ declare
     finance_reference text;
     finance_fields_changed boolean := false;
     linked_paid_dues boolean := false;
+    normalized_student_id text;
+    normalized_member_email text;
+    identity_lock_key text;
 begin
     if public.is_dawah_admin(auth.uid()) then
+        return new;
+    end if;
+
+    -- Trusted server-side jobs use the service role and may not have an auth user.
+    if coalesce(auth.role(), '') = 'service_role' then
         return new;
     end if;
 
@@ -622,6 +656,46 @@ begin
 
     if tg_op = 'INSERT' then
         if new.collection = 'members' then
+            normalized_student_id := regexp_replace(upper(trim(coalesce(new.data ->> 'studentId', new.data ->> 'student_id', new.data ->> 'username', ''))), '[^A-Z0-9]', '', 'g');
+            normalized_member_email := lower(trim(coalesce(new.data ->> 'email', new.data ->> 'authEmail', new.data ->> 'ownerEmail', '')));
+
+            if normalized_student_id = '' or normalized_member_email = '' then
+                raise exception 'A student ID and account email are required';
+            end if;
+            if normalized_member_email <> lower(trim(coalesce(auth.jwt() ->> 'email', ''))) then
+                raise exception 'The member email must match the signed-in account email';
+            end if;
+
+            -- Serialize duplicate checks so simultaneous signups cannot claim the
+            -- same official student ID or email address.
+            for identity_lock_key in
+                select lock_key
+                from unnest(array[
+                    case when normalized_student_id <> '' then 'member-student:' || normalized_student_id end,
+                    case when normalized_member_email <> '' then 'member-email:' || normalized_member_email end
+                ]) as identity_keys(lock_key)
+                where lock_key is not null
+                order by lock_key
+            loop
+                perform pg_advisory_xact_lock(hashtextextended(identity_lock_key, 0));
+            end loop;
+
+            if exists (
+                select 1
+                from public.app_records existing_member
+                where existing_member.collection = 'members'
+                  and (
+                      (normalized_student_id <> '' and regexp_replace(upper(trim(coalesce(
+                          existing_member.data ->> 'studentId', existing_member.data ->> 'student_id', existing_member.data ->> 'username', ''
+                      ))), '[^A-Z0-9]', '', 'g') = normalized_student_id)
+                      or (normalized_member_email <> '' and lower(trim(coalesce(
+                          existing_member.data ->> 'email', existing_member.data ->> 'authEmail', existing_member.data ->> 'ownerEmail', ''
+                      ))) = normalized_member_email)
+                  )
+            ) then
+                raise exception 'This student ID or email is already registered';
+            end if;
+
             if requested_role not in (
                 'student', 'chairlady', 'vice_chairlady_1', 'vice_chairlady_2',
                 'secretary', 'vice_secretary', 'treasurer', 'vice_treasurer',
@@ -687,6 +761,10 @@ begin
         or coalesce(new.data ->> 'ownerUid', '') is distinct from coalesce(old.data ->> 'ownerUid', '')
         or coalesce(new.data ->> 'authEmail', '') is distinct from coalesce(old.data ->> 'authEmail', '')
         or coalesce(new.data ->> 'ownerEmail', '') is distinct from coalesce(old.data ->> 'ownerEmail', '')
+        or coalesce(new.data ->> 'studentId', '') is distinct from coalesce(old.data ->> 'studentId', '')
+        or coalesce(new.data ->> 'student_id', '') is distinct from coalesce(old.data ->> 'student_id', '')
+        or coalesce(new.data ->> 'username', '') is distinct from coalesce(old.data ->> 'username', '')
+        or coalesce(new.data ->> 'email', '') is distinct from coalesce(old.data ->> 'email', '')
         or coalesce(new.data ->> 'membershipCardPaymentStatus', '') is distinct from coalesce(old.data ->> 'membershipCardPaymentStatus', '')
         or coalesce(new.data ->> 'membershipPaymentStatus', '') is distinct from coalesce(old.data ->> 'membershipPaymentStatus', '')
         or coalesce(new.data ->> 'paymentStatus', '') is distinct from coalesce(old.data ->> 'paymentStatus', '')

@@ -226,7 +226,7 @@
         @media (max-width: 575.98px) { .officer-header, .officer-body { padding: 20px; } .officer-logo { width: 78px; } }
     </style>
     <link rel="stylesheet" href="ui-refresh.css?v=responsive-ui-20260918-v5">
-    <link rel="stylesheet" href="responsive-system.css?v=finance-id-20260924-v3">
+    <link rel="stylesheet" href="responsive-system.css?v=finance-id-20260924-v5">
     <script defer src="responsive-system.js?v=mobile-fit-20260924-v1"></script>
 </head>
 <body>
@@ -284,14 +284,20 @@
 
                     <div id="officerRegisterTab" class="tab-pane fade" role="tabpanel">
                         <form id="officerRegisterForm">
+                            <div class="registration-intro">
+                                <h3>Request officer access</h3>
+                                <p>Your request stays pending until the main admin approves the role. Use your university email so the request can be securely linked to your account.</p>
+                            </div>
+                            <div id="officerRegistrationNotice" class="alert d-none" role="status" aria-live="polite"></div>
                             <div class="row">
+                                <div class="col-12"><h4 class="registration-group-heading">Personal and contact details</h4></div>
                                 <div class="col-md-6 mb-3">
                                     <label class="form-label">Full Name</label>
-                                    <input type="text" class="form-control" id="officerFullName" required>
+                                    <input type="text" class="form-control" id="officerFullName" autocomplete="name" required>
                                 </div>
                                 <div class="col-md-6 mb-3">
                                     <label class="form-label">Student/Staff ID</label>
-                                    <input type="text" class="form-control" id="officerId" required>
+                                    <input type="text" class="form-control" id="officerId" autocomplete="username" required>
                                 </div>
                                 <div class="col-md-6 mb-3">
                                     <label class="form-label">Email</label>
@@ -299,8 +305,9 @@
                                 </div>
                                 <div class="col-md-6 mb-3">
                                     <label class="form-label">Phone</label>
-                                    <input type="tel" class="form-control" id="officerPhone" required>
+                                    <input type="tel" class="form-control" id="officerPhone" autocomplete="tel" inputmode="tel" required>
                                 </div>
+                                <div class="col-12"><h4 class="registration-group-heading">Study and requested role</h4></div>
                                 <div class="col-md-6 mb-3">
                                     <label class="form-label">Officer Role</label>
                                     <select class="form-select" id="officerRole" required>
@@ -367,10 +374,11 @@
                                         <option value="12">Semester 12</option>
                                     </select>
                                 </div>
+                                <div class="col-12"><h4 class="registration-group-heading">Create your sign-in</h4></div>
                                 <div class="col-md-6 mb-3">
                                     <label class="form-label">Password</label>
                                     <div class="input-group">
-                                        <input type="password" class="form-control" id="officerPassword" autocomplete="new-password" minlength="6" required>
+                                        <input type="password" class="form-control" id="officerPassword" autocomplete="new-password" minlength="10" required>
                                         <button class="btn btn-outline-secondary" type="button" data-password-toggle="officerPassword" aria-label="Show password">
                                             <i class="fas fa-eye"></i>
                                         </button>
@@ -379,7 +387,7 @@
                                 <div class="col-md-6 mb-3">
                                     <label class="form-label">Confirm Password</label>
                                     <div class="input-group">
-                                        <input type="password" class="form-control" id="officerConfirmPassword" autocomplete="new-password" minlength="6" required>
+                                        <input type="password" class="form-control" id="officerConfirmPassword" autocomplete="new-password" minlength="10" required>
                                         <button class="btn btn-outline-secondary" type="button" data-password-toggle="officerConfirmPassword" aria-label="Show password">
                                             <i class="fas fa-eye"></i>
                                         </button>
@@ -483,7 +491,7 @@
     <script src="ai_worker_config.js?v=cloudflare-ai-20260613-1"></script>
     <script src="ai_assistant_widget.js?v=dashboard-chat-20260924-v1"></script>
     <script src="supabase_config.js?v=dawah-supabase-config-20260707"></script>
-    <script src="supabase_shared.js?v=finance-security-20260924-v4"></script>
+    <script src="supabase_shared.js?v=finance-security-20260924-v5"></script>
     <script>
         (function() {
             function isStandaloneApp() {
@@ -534,6 +542,6 @@
             document.addEventListener('DOMContentLoaded', updateFooterInstallButton);
         })();
     </script>
-    <script src="officer.js?v=dawah-supabase-vercel-20260613-2"></script>
+    <script src="officer.js?v=registration-security-20260924-v1"></script>
 </body>
 </html>

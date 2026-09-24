@@ -1937,6 +1937,17 @@ function updateLoginLockoutButton() {
 }
 
 // Runtime slice from daawah.js: handleRegistration.
+function showRegistrationNotice(message, type = 'danger') {
+    const notice = document.getElementById('registrationNotice');
+    if (!notice) {
+        alert(message);
+        return;
+    }
+    notice.className = `alert alert-${type}`;
+    notice.textContent = message;
+    notice.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+}
+
 async function handleRegistration(e) {
     e.preventDefault();
 
@@ -1949,43 +1960,44 @@ async function handleRegistration(e) {
     const role = 'student';
 
     if (password !== confirmPassword) {
-        alert('Passwords do not match.');
+        showRegistrationNotice('Passwords do not match.');
         return;
     }
 
     if (!isValidStudentId(studentId)) {
-        alert('Enter a valid Student ID like BSCS/2025/53736.');
+        showRegistrationNotice('Enter a valid Student ID like BSCS/2025/53736.');
         return;
     }
 
     const passwordError = getPasswordRequirementError(password);
     if (passwordError) {
-        alert(passwordError);
+        showRegistrationNotice(passwordError);
         return;
     }
 
     const supabaseRegistration = Boolean(frontendOnly && window.SupabaseBackend?.enabled);
 
+    if (frontendOnly && !supabaseRegistration && location.protocol !== 'file:'
+        && !['localhost', '127.0.0.1'].includes(location.hostname)) {
+        showRegistrationNotice('Secure registration is unavailable right now. Please try again later or contact the main admin.');
+        return;
+    }
+
     if (!supabaseRegistration && (getRegisteredUser(studentId) || getRegisteredUser(email))) {
         recordSuspiciousActivity('duplicate_registration_attempt', { studentId, email, reason: 'registered user match' });
-        alert('A user with this Student ID or email is already registered. Please login or use forgot password.');
+        showRegistrationNotice('A user with this Student ID or email is already registered. Please login or use forgot password.');
         return;
     }
 
     if (!supabaseRegistration && allMembers.some(member => normalizeStudentId(member.studentId || member.username) === studentId || String(member.email || '').toLowerCase() === email || (phone && String(member.phone || '').trim() === phone))) {
         recordSuspiciousActivity('duplicate_registration_attempt', { studentId, email, phone, reason: 'student/email/phone match' });
-        alert('This Student ID, email, or phone number is already registered. Please login or contact admin.');
-        return;
-    }
-
-    if (frontendOnly && !supabaseRegistration && allMembers.some(member => member.password && member.password === password)) {
-        alert('Please choose a different password. Each student must use a unique password.');
+        showRegistrationNotice('This Student ID, email, or phone number is already registered. Please login or contact admin.');
         return;
     }
 
     const existingRoleHolder = getExistingRoleHolder(role);
     if (existingRoleHolder) {
-        alert(`${role.charAt(0).toUpperCase() + role.slice(1)} role is already requested or assigned. Main admin must approve/reject or remove the existing holder first.`);
+        showRegistrationNotice(`${role.charAt(0).toUpperCase() + role.slice(1)} role is already requested or assigned. Contact the main admin.`);
         return;
     }
 
@@ -1994,6 +2006,9 @@ async function handleRegistration(e) {
     if (passportPhotoFile && !validateUploadFile(passportPhotoFile, 'profilePhoto')) {
         return;
     }
+
+    const notice = document.getElementById('registrationNotice');
+    if (notice) { notice.className = 'alert d-none'; notice.textContent = ''; }
 
     const newUser = {
         username: studentId,
@@ -2023,7 +2038,7 @@ async function handleRegistration(e) {
                 continueRegistration(newUser, fullName, password);
             })
             .catch(() => {
-                alert('Could not read the selected passport photo. Please choose another image.');
+                showRegistrationNotice('Could not read the selected passport photo. Please choose another image.');
             });
         return;
     }
@@ -2042,48 +2057,66 @@ function readImageAsDataUrl(file) {
 }
 
 // Runtime slice from daawah.js: continueRegistration.
-function continueRegistration(newUser, fullName, password) {
-    if (frontendOnly && window.SupabaseBackend?.enabled) {
-        window.SupabaseBackend.registerEmail(newUser.email, password)
-            .then(async () => {
-                const cloudMembers = await window.SupabaseBackend.listMembers?.().catch(error => {
-                    console.warn('Could not verify cloud duplicate members before profile save:', error);
-                    return null;
+async function continueRegistration(newUser, fullName, password) {
+    const button = document.getElementById('registrationSubmitButton');
+    if (button?.disabled) return;
+    if (button) {
+        button.disabled = true;
+        button.dataset.originalText ||= button.textContent.trim();
+        button.textContent = 'Creating your account…';
+    }
+
+    try {
+        if (frontendOnly && window.SupabaseBackend?.enabled) {
+            let authResult;
+            try {
+                authResult = await window.SupabaseBackend.registerEmail(newUser.email, password, fullName);
+            } catch (error) {
+                if (!/already registered|already exists|user already/i.test(error.message || '')) throw error;
+                authResult = await window.SupabaseBackend.loginEmail(newUser.email, password);
+            }
+
+            if (authResult?.requiresEmailConfirmation || !window.SupabaseBackend.hasAuthSession?.()) {
+                throw new Error('Check your email and confirm your account. Then return here, enter the same details, and submit again to finish registration.');
+            }
+
+            const cloudMembers = await window.SupabaseBackend.listMembers?.().catch(error => {
+                console.warn('Could not verify cloud duplicate members before profile save:', error);
+                return null;
+            });
+            if (Array.isArray(cloudMembers)) {
+                const studentId = normalizeStudentId(newUser.studentId || newUser.username);
+                const email = String(newUser.email || '').trim().toLowerCase();
+                const currentUid = window.SupabaseBackend.currentUid?.() || '';
+                const duplicate = cloudMembers.find(member => {
+                    const sameCurrentUser = currentUid && String(member.authUid || member.uid || '').trim() === currentUid;
+                    if (sameCurrentUser) return false;
+                    return normalizeStudentId(member.studentId || member.username) === studentId
+                        || String(member.email || member.authEmail || '').trim().toLowerCase() === email;
                 });
-                if (Array.isArray(cloudMembers)) {
-                    const studentId = normalizeStudentId(newUser.studentId || newUser.username);
-                    const email = String(newUser.email || '').trim().toLowerCase();
-                    const currentUid = window.SupabaseBackend.currentUid?.() || '';
-                    const duplicate = cloudMembers.find(member => {
-                        const sameCurrentUser = currentUid && String(member.authUid || member.uid || '').trim() === currentUid;
-                        if (sameCurrentUser) return false;
-                        return normalizeStudentId(member.studentId || member.username) === studentId
-                            || String(member.email || member.authEmail || '').trim().toLowerCase() === email;
-                    });
-                    if (duplicate) {
-                        throw new Error('A user with this Student ID or email is already registered.');
-                    }
-                }
-                return completeLocalRegistration(newUser);
-            })
-            .catch(error => {
-                console.error('Supabase Auth registration error:', error);
-                alert(getFriendlyRegistrationError(error));
-            });
-        return;
-    }
+                if (duplicate) throw new Error('A user with this Student ID or email is already registered.');
+            }
 
-    if (!frontendOnly) {
-        saveRegistrationToDatabase(newUser, fullName, password)
-            .then(savedUser => completeLocalRegistration(savedUser))
-            .catch(error => {
-                console.error('Registration database error:', error);
-                alert(getFriendlyRegistrationError(error));
-            });
-        return;
-    }
+            await completeLocalRegistration(newUser);
+            return;
+        }
 
-    completeLocalRegistration({ ...newUser, password });
+        if (!frontendOnly) {
+            const savedUser = await saveRegistrationToDatabase(newUser, fullName, password);
+            await completeLocalRegistration(savedUser);
+            return;
+        }
+
+        await completeLocalRegistration({ ...newUser, password });
+    } catch (error) {
+        console.error('Registration could not be completed:', error);
+        showRegistrationNotice(getFriendlyRegistrationError(error));
+    } finally {
+        if (button) {
+            button.disabled = false;
+            button.textContent = button.dataset.originalText || 'Create student account';
+        }
+    }
 }
 
 // Runtime slice from daawah.js: completeLocalRegistration.

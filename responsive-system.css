@@ -686,3 +686,34 @@ body .officer-shell .officer-card form .row { --bs-gutter-x: 1rem; }
 @media print {
     .member-id-card { max-width: 760px; break-inside: avoid; box-shadow: none; }
 }
+/* Signup forms: clear sections and comfortable touch spacing at every width. */
+.registration-intro {
+    margin-bottom: .8rem;
+    padding: 1rem 1.1rem;
+    border: 1px solid rgba(120, 217, 134, .4);
+    border-radius: 14px;
+    background: rgba(120, 217, 134, .1);
+}
+.registration-intro h3 { margin: 0 0 .3rem; font-size: 1.12rem; font-weight: 750; }
+.registration-intro p { margin: 0; line-height: 1.5; opacity: .82; }
+.registration-group-heading {
+    margin: .55rem 0 .1rem;
+    padding-bottom: .45rem;
+    border-bottom: 1px solid currentColor;
+    color: inherit;
+    font-size: .86rem;
+    font-weight: 800;
+    letter-spacing: .035em;
+}
+#loginPage .registration-intro { color: #fff; background: rgba(255,255,255,.08); }
+#loginPage .registration-group-heading { color: rgba(255,255,255,.92); }
+#officerRegisterTab .registration-intro { color: #17323a; }
+#officerRegisterTab .registration-group-heading { color: #003040; }
+#registrationNotice, #officerRegistrationNotice { scroll-margin-block: 1rem; }
+@media (max-width: 575.98px) {
+    .registration-intro { padding: .85rem; }
+    #registrationForm .row, #officerRegisterForm .row { --bs-gutter-x: .7rem; }
+    #registrationForm .form-control, #registrationForm .form-select,
+    #officerRegisterForm .form-control, #officerRegisterForm .form-select { min-height: 48px; font-size: 16px; }
+    #registrationForm .input-group > .btn, #officerRegisterForm .input-group > .btn { min-width: 48px; }
+}

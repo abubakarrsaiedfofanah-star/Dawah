@@ -5,7 +5,7 @@ async function refreshAdminSetupUi() {
     const loginButton = document.getElementById('adminLoginTabBtn');
     try {
         if (useStaticAdminApi && window.SupabaseBackend?.enabled && !window.SupabaseBackend.hasAuthSession()) {
-            registerItem?.classList.remove('d-none');
+            registerItem?.classList.add('d-none');
             if (loginButton) {
                 bootstrap.Tab.getOrCreateInstance(loginButton).show();
             }

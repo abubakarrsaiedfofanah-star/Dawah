@@ -12,6 +12,10 @@ async function handleAdminRegistration(event) {
         error.textContent = '';
         error.classList.remove('active');
     }
+    if (useStaticAdminApi && window.SupabaseBackend?.enabled) {
+        showAdminLogin('Public admin registration is closed. Ask the main admin to create or approve an admin account.');
+        return;
+    }
     if (password !== confirmPassword) {
         showAdminLogin('Passwords do not match.');
         return;

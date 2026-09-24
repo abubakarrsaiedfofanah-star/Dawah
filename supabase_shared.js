@@ -243,7 +243,9 @@ const SupabaseBackendApi = (() => {
         if (error) throw error;
         if (data?.session) return saveAuthSession(data.session);
         if (data?.user) {
-            saveAuthSession(data.user);
+            if (Array.isArray(data.user.identities) && data.user.identities.length === 0) {
+                throw new Error('This email is already registered. Please login or use forgot password.');
+            }
             return { user: data.user, session: null, requiresEmailConfirmation: true };
         }
 
@@ -522,9 +524,13 @@ const SupabaseBackendApi = (() => {
     }
 
     async function loadPublicMemberVerification(identifier) {
-        const needle = String(identifier || '').toLowerCase();
-        const records = await listRecords('memberVerifications');
-        return records.find(item => [item.id, item.studentId, item.email, item.registrationNumber].some(value => String(value || '').toLowerCase() === needle)) || null;
+        if (!enabled || !String(identifier || '').trim()) return null;
+        const db = await client();
+        const { data, error } = await db.rpc('dawah_get_public_member_verification', {
+            lookup_identifier: String(identifier).trim()
+        });
+        if (error) throw error;
+        return data || null;
     }
 
     async function saveMembershipCard(card) {

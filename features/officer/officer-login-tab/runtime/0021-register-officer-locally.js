@@ -1,5 +1,5 @@
 // Runtime slice from officer.js: registerOfficerLocally.
-function registerOfficerLocally(data) {
+function registerOfficerLocally(data, options = {}) {
     const members = readLocalMembers();
     if (findLocalMember(data.student_id) || findLocalMember(data.email)) {
         throw new Error('This Student ID or email is already registered. Please login or contact admin.');
@@ -19,7 +19,7 @@ function registerOfficerLocally(data) {
         username: data.student_id,
         fullName: data.fullName,
         studentId: data.student_id,
-        password: data.password,
+        ...(options.keepLocalPassword ? { password: data.password } : {}),
         role: data.role,
         status: 'Pending',
         school: data.school,
@@ -31,7 +31,9 @@ function registerOfficerLocally(data) {
         email: data.email,
         created_at: new Date().toISOString()
     };
-    members.push(member);
-    writeLocalMembers(members);
+    if (options.persist !== false) {
+        members.push(member);
+        writeLocalMembers(members);
+    }
     return member;
 }

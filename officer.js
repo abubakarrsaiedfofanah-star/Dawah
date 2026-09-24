@@ -327,7 +327,7 @@ function findLocalMember(identifier) {
 }
 
 // Runtime slice from officer.js: registerOfficerLocally.
-function registerOfficerLocally(data) {
+function registerOfficerLocally(data, options = {}) {
     const members = readLocalMembers();
     if (findLocalMember(data.student_id) || findLocalMember(data.email)) {
         throw new Error('This Student ID or email is already registered. Please login or contact admin.');
@@ -347,7 +347,7 @@ function registerOfficerLocally(data) {
         username: data.student_id,
         fullName: data.fullName,
         studentId: data.student_id,
-        password: data.password,
+        ...(options.keepLocalPassword ? { password: data.password } : {}),
         role: data.role,
         status: 'Pending',
         school: data.school,
@@ -359,8 +359,10 @@ function registerOfficerLocally(data) {
         email: data.email,
         created_at: new Date().toISOString()
     };
-    members.push(member);
-    writeLocalMembers(members);
+    if (options.persist !== false) {
+        members.push(member);
+        writeLocalMembers(members);
+    }
     return member;
 }
 
@@ -627,25 +629,40 @@ function validateOfficerRegistration(data) {
     if (data.password !== data.confirmPassword) {
         return 'Passwords do not match.';
     }
-    if (data.password.length < 6) {
-        return 'Password must be at least 6 characters.';
+    if (data.password.length < 10 || !/[a-z]/.test(data.password) || !/[A-Z]/.test(data.password)
+        || !/[0-9]/.test(data.password) || !/[^A-Za-z0-9]/.test(data.password)) {
+        return 'Use at least 10 characters with uppercase, lowercase, a number, and a symbol.';
     }
     if (!data.fullName || !data.student_id || !data.email || !data.phone || !data.school || !data.course || !data.year_of_study || !data.semester) {
         return 'Please fill in all required fields.';
+    }
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(data.email)) {
+        return 'Enter a valid email address.';
     }
     return '';
 }
 
 // Runtime slice from officer.js: handleOfficerRegistration.
+function showOfficerRegistrationAlert(message, type = 'info') {
+    const notice = document.getElementById('officerRegistrationNotice');
+    showOfficerAlert(message, type);
+    if (!notice) return;
+    notice.className = `alert alert-${type}`;
+    notice.textContent = message;
+    notice.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+}
+
 async function handleOfficerRegistration(event) {
     event.preventDefault();
     localStorage.setItem(PORTAL_AUDIENCE_KEY, 'officer');
     clearOfficerAlert();
+    const registrationNotice = document.getElementById('officerRegistrationNotice');
+    if (registrationNotice) { registrationNotice.className = 'alert d-none'; registrationNotice.textContent = ''; }
     await officerCloudReadyPromise;
     const data = getOfficerRegistrationData();
     const validationMessage = validateOfficerRegistration(data);
     if (validationMessage) {
-        showOfficerAlert(validationMessage, 'warning');
+        showOfficerRegistrationAlert(validationMessage, 'warning');
         return;
     }
 
@@ -655,25 +672,40 @@ async function handleOfficerRegistration(event) {
     if (frontendOnly) {
         try {
             if (window.SupabaseBackend?.enabled) {
-                await window.SupabaseBackend.registerEmail(data.email, data.password);
+                let authResult;
+                try {
+                    authResult = await window.SupabaseBackend.registerEmail(data.email, data.password, data.fullName);
+                } catch (error) {
+                    if (!/already registered|already exists|user already/i.test(error.message || '')) throw error;
+                    authResult = await window.SupabaseBackend.loginEmail(data.email, data.password);
+                }
+                if (authResult?.requiresEmailConfirmation || !window.SupabaseBackend.hasAuthSession?.()) {
+                    throw new Error('Check your email and confirm your account. Then return here, enter the same details, and submit again to finish your officer request.');
+                }
                 await window.SupabaseBackend.ensureRealtimeAuth?.(data.email, data.password).catch(error => {
                     console.warn('Realtime auth unavailable after officer registration:', error);
                 });
-                await loadOfficerSharedMembers();
+                const member = registerOfficerLocally(data, { persist: false });
+                const savedMember = await window.SupabaseBackend.saveMember(member);
+                writeLocalMembers(mergeMemberIntoList(readLocalMembers(), { ...member, ...(savedMember || {}), password: undefined }));
+                showOfficerRegistrationAlert('Officer request submitted. The main admin must approve it before this account can open the officer dashboard.', 'success');
+                document.getElementById('officerRegisterForm').reset();
+                document.getElementById('officerCourse').disabled = true;
+                document.getElementById('officerCourse').innerHTML = '<option value="" disabled selected>Select school first</option>';
+                document.getElementById('officerLoginTabBtn')?.click();
+                return;
             }
-            const member = registerOfficerLocally(data);
-            if (window.SupabaseBackend?.enabled && window.SupabaseBackend.hasAuthSession?.()) {
-                await window.SupabaseBackend.saveMember(member).catch(error => {
-                    console.warn('Officer member profile sync failed:', error);
-                });
+            if (!['localhost', '127.0.0.1'].includes(location.hostname)) {
+                throw new Error('Secure registration is unavailable right now. Please try again later or contact the main admin.');
             }
-            showOfficerAlert('Officer registration submitted. The main admin must approve this role before login.', 'success');
+            registerOfficerLocally(data, { keepLocalPassword: true });
+            showOfficerRegistrationAlert('Officer registration submitted. The main admin must approve this role before login.', 'success');
             document.getElementById('officerRegisterForm').reset();
             document.getElementById('officerCourse').disabled = true;
             document.getElementById('officerCourse').innerHTML = '<option value="" disabled selected>Select school first</option>';
             document.getElementById('officerLoginTabBtn')?.click();
         } catch (error) {
-            showOfficerAlert(error.message || 'Officer registration failed.', 'danger');
+            showOfficerRegistrationAlert(error.message || 'Officer registration failed.', 'danger');
         } finally {
             setButtonLoading(button, false, '<i class="fas fa-user-plus"></i> Submit Officer Registration');
         }
@@ -698,14 +730,14 @@ async function handleOfficerRegistration(event) {
         return registerOfficerStudentRecord(result.data.user_id, data);
     })
     .then(() => {
-        showOfficerAlert('Officer registration submitted. The main admin must approve this role before login.', 'success');
+        showOfficerRegistrationAlert('Officer registration submitted. The main admin must approve this role before login.', 'success');
         document.getElementById('officerRegisterForm').reset();
         document.getElementById('officerCourse').disabled = true;
         document.getElementById('officerCourse').innerHTML = '<option value="" disabled selected>Select school first</option>';
         document.getElementById('officerLoginTabBtn')?.click();
     })
     .catch(error => {
-        showOfficerAlert(error.message || 'Officer registration failed.', 'danger');
+        showOfficerRegistrationAlert(error.message || 'Officer registration failed.', 'danger');
     })
     .finally(() => setButtonLoading(button, false, '<i class="fas fa-user-plus"></i> Submit Officer Registration'));
 }
