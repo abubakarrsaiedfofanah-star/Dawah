@@ -261,14 +261,15 @@
 
                 <div class="tab-content">
                     <div id="officerLoginTab" class="tab-pane fade show active" role="tabpanel">
+                        <div class="auth-form-note"><i class="fas fa-shield-halved" aria-hidden="true"></i><span>For approved officers. New role requests stay pending until the main admin approves them.</span></div>
                         <form id="officerLoginForm">
                             <div class="row">
                                 <div class="col-md-6 mb-3">
-                                    <label class="form-label">Email</label>
+                                    <label class="form-label" for="officerLoginUsername">Email</label>
                                     <input type="email" class="form-control" id="officerLoginUsername" autocomplete="email" required>
                                 </div>
                                 <div class="col-md-6 mb-3">
-                                    <label class="form-label">Password</label>
+                                    <label class="form-label" for="officerLoginPassword">Password</label>
                                     <div class="input-group">
                                         <input type="password" class="form-control" id="officerLoginPassword" autocomplete="current-password" required>
                                         <button class="btn btn-outline-secondary" type="button" data-password-toggle="officerLoginPassword" aria-label="Show password">
@@ -286,30 +287,30 @@
                         <form id="officerRegisterForm">
                             <div class="registration-intro">
                                 <h3>Request officer access</h3>
-                                <p>Your request stays pending until the main admin approves the role. Use your university email so the request can be securely linked to your account.</p>
+                                <p>Your request stays pending until the main admin approves the role. Use your university email. If asked, confirm it, then return here and submit your request again.</p>
                             </div>
                             <div id="officerRegistrationNotice" class="alert d-none" role="status" aria-live="polite"></div>
                             <div class="row">
                                 <div class="col-12"><h4 class="registration-group-heading">Personal and contact details</h4></div>
                                 <div class="col-md-6 mb-3">
-                                    <label class="form-label">Full Name</label>
+                                    <label class="form-label" for="officerFullName">Full Name</label>
                                     <input type="text" class="form-control" id="officerFullName" autocomplete="name" required>
                                 </div>
                                 <div class="col-md-6 mb-3">
-                                    <label class="form-label">Student/Staff ID</label>
+                                    <label class="form-label" for="officerId">Student/Staff ID</label>
                                     <input type="text" class="form-control" id="officerId" autocomplete="username" required>
                                 </div>
                                 <div class="col-md-6 mb-3">
-                                    <label class="form-label">Email</label>
+                                    <label class="form-label" for="officerEmail">Email</label>
                                     <input type="email" class="form-control" id="officerEmail" autocomplete="email" required>
                                 </div>
                                 <div class="col-md-6 mb-3">
-                                    <label class="form-label">Phone</label>
+                                    <label class="form-label" for="officerPhone">Phone</label>
                                     <input type="tel" class="form-control" id="officerPhone" autocomplete="tel" inputmode="tel" required>
                                 </div>
                                 <div class="col-12"><h4 class="registration-group-heading">Study and requested role</h4></div>
                                 <div class="col-md-6 mb-3">
-                                    <label class="form-label">Officer Role</label>
+                                    <label class="form-label" for="officerRole">Officer Role</label>
                                     <select class="form-select" id="officerRole" required>
                                         <option value="" disabled selected>Select role</option>
                                         <option value="chairlady">Chairlady / Welfare Lead</option>
@@ -325,7 +326,7 @@
                                     </select>
                                 </div>
                                 <div class="col-md-6 mb-3">
-                                    <label class="form-label">Gender</label>
+                                    <label class="form-label" for="officerGender">Gender</label>
                                     <select class="form-select" id="officerGender" required>
                                         <option value="" disabled selected>Select gender</option>
                                         <option value="male">Male</option>
@@ -333,19 +334,19 @@
                                     </select>
                                 </div>
                                 <div class="col-md-6 mb-3">
-                                    <label class="form-label">School</label>
+                                    <label class="form-label" for="officerSchool">School</label>
                                     <select class="form-select" id="officerSchool" required>
                                         <option value="" disabled selected>Loading schools...</option>
                                     </select>
                                 </div>
                                 <div class="col-md-6 mb-3">
-                                    <label class="form-label">Course</label>
+                                    <label class="form-label" for="officerCourse">Course</label>
                                     <select class="form-select" id="officerCourse" required disabled>
                                         <option value="" disabled selected>Select school first</option>
                                     </select>
                                 </div>
                                 <div class="col-md-6 mb-3">
-                                    <label class="form-label">Year of Study</label>
+                                    <label class="form-label" for="officerYear">Year of Study</label>
                                     <select class="form-select" id="officerYear" required>
                                         <option value="" disabled selected>Select year</option>
                                         <option value="1">Year 1</option>
@@ -357,7 +358,7 @@
                                     </select>
                                 </div>
                                 <div class="col-md-6 mb-3">
-                                    <label class="form-label">Semester</label>
+                                    <label class="form-label" for="officerSemester">Semester</label>
                                     <select class="form-select" id="officerSemester" required>
                                         <option value="" disabled selected>Select semester</option>
                                         <option value="1">Semester 1</option>
@@ -376,7 +377,7 @@
                                 </div>
                                 <div class="col-12"><h4 class="registration-group-heading">Create your sign-in</h4></div>
                                 <div class="col-md-6 mb-3">
-                                    <label class="form-label">Password</label>
+                                    <label class="form-label" for="officerPassword">Password</label>
                                     <div class="input-group">
                                         <input type="password" class="form-control" id="officerPassword" autocomplete="new-password" minlength="10" required>
                                         <button class="btn btn-outline-secondary" type="button" data-password-toggle="officerPassword" aria-label="Show password">
@@ -385,7 +386,7 @@
                                     </div>
                                 </div>
                                 <div class="col-md-6 mb-3">
-                                    <label class="form-label">Confirm Password</label>
+                                    <label class="form-label" for="officerConfirmPassword">Confirm Password</label>
                                     <div class="input-group">
                                         <input type="password" class="form-control" id="officerConfirmPassword" autocomplete="new-password" minlength="10" required>
                                         <button class="btn btn-outline-secondary" type="button" data-password-toggle="officerConfirmPassword" aria-label="Show password">

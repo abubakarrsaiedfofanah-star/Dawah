@@ -717,3 +717,34 @@ body .officer-shell .officer-card form .row { --bs-gutter-x: 1rem; }
     #officerRegisterForm .form-control, #officerRegisterForm .form-select { min-height: 48px; font-size: 16px; }
     #registrationForm .input-group > .btn, #officerRegisterForm .input-group > .btn { min-width: 48px; }
 }
+
+/* Short, actionable guidance on account entry screens. */
+.auth-form-note {
+    display: flex;
+    align-items: flex-start;
+    gap: .7rem;
+    margin: 0 0 1rem;
+    padding: .8rem .95rem;
+    border: 1px solid rgba(165, 226, 190, .25);
+    border-radius: 12px;
+    background: rgba(255, 255, 255, .08);
+    color: #effaf4;
+    font-size: .94rem;
+    line-height: 1.5;
+}
+.auth-form-note i { margin-top: .2rem; color: #a5e2be; }
+.auth-form-shortcut {
+    display: block;
+    width: fit-content;
+    margin: .85rem auto 0;
+    padding: .35rem .5rem;
+    border: 0;
+    border-radius: 7px;
+    background: transparent;
+    color: #b7edc4;
+    font-weight: 700;
+    text-align: center;
+}
+.auth-form-shortcut:hover,
+.auth-form-shortcut:focus-visible { color: #fff; text-decoration: underline; }
+.auth-form-shortcut:focus-visible { outline: 2px solid #b7edc4; outline-offset: 3px; }

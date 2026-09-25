@@ -470,11 +470,11 @@
                     <div id="loginTab" class="tab-pane fade show active">
                         <form id="loginForm">
                             <div class="mb-3">
-                                <label class="form-label">Email</label>
+                                <label class="form-label" for="loginUsername">Email</label>
                                 <input type="email" class="form-control" id="loginUsername" placeholder="Enter registered email" autocomplete="email" required>
                             </div>
                             <div class="mb-3">
-                                <label class="form-label">Password</label>
+                                <label class="form-label" for="loginPassword">Password</label>
                                 <div class="input-group">
                                     <input type="password" class="form-control" id="loginPassword" placeholder="Enter password" autocomplete="current-password" required>
                                     <button class="btn btn-outline-secondary password-visibility-toggle" type="button" id="togglePassword" aria-label="Show password" aria-pressed="false" title="Show password">
@@ -484,6 +484,7 @@
                             </div>
                             <button type="submit" class="btn btn-primary w-100 mb-2" id="loginSubmitBtn">Login</button>
                             <button type="button" class="btn btn-link w-100" onclick="showForgotPassword()">Forgot Password?</button>
+                            <button type="button" class="auth-form-shortcut" data-bs-toggle="tab" data-bs-target="#registerTab">New student? Create an account</button>
                         </form>
                     </div>
 
@@ -492,17 +493,17 @@
                         <form id="registrationForm" class="registration-form">
                             <div class="registration-intro">
                                 <h3>Create your student account</h3>
-                                <p>Enter your personal and study details, then create a secure password. Membership becomes active after finance confirms your dues.</p>
+                                <p>Enter your details and create a secure password. If asked, confirm your email, return here, and submit again. Membership activates after finance confirms your dues.</p>
                             </div>
                             <div id="registrationNotice" class="alert d-none" role="status" aria-live="polite"></div>
                             <h4 class="registration-group-heading">Personal details</h4>
                             <div class="row">
                                 <div class="col-md-6 mb-3">
-                                    <label class="form-label">Full Name</label>
+                                    <label class="form-label" for="fullName">Full Name</label>
                                     <input type="text" class="form-control" id="fullName" placeholder="Enter full name" autocomplete="name" required>
                                 </div>
                                 <div class="col-md-6 mb-3">
-                                    <label class="form-label">Student ID</label>
+                                    <label class="form-label" for="studentId">Student ID</label>
                                     <input type="text" class="form-control" id="studentId" placeholder="e.g. BSCS/2025/53736" autocomplete="username" pattern="[A-Za-z]{2,10}/[0-9]{4}/[0-9]{3,8}" title="Use format like BSCS/2025/53736" required>
                                     <div class="form-text">Use your official student ID, for example BSCS/2025/53736.</div>
                                 </div>
@@ -510,19 +511,19 @@
 
                             <h4 class="registration-group-heading">Study information</h4>
                             <div class="mb-3">
-                                <label class="form-label">School</label>
+                                <label class="form-label" for="school">School</label>
                                 <select class="form-select" id="school" required>
                                     <option value="" disabled selected>Select School</option>
                                     <option value="School of Business &amp; Technology">School of Business &amp; Technology</option>
                                     <option value="School of Sharia &amp; Islamic Studies">School of Sharia &amp; Islamic Studies</option>
-                                    <option value="School of Law and ShariÃ¢â‚¬â„¢a">School of Law and ShariÃ¢â‚¬â„¢a</option>
+                                    <option value="School of Law and Sharia">School of Law and Sharia</option>
                                     <option value="School of Education &amp; Social Sciences">School of Education &amp; Social Sciences</option>
                                     <option value="School of Nursing &amp; Midwifery">School of Nursing &amp; Midwifery</option>
                                 </select>
                             </div>
 
                             <div class="mb-3">
-                                <label class="form-label">Course</label>
+                                <label class="form-label" for="course">Course</label>
                                 <select class="form-select" id="course" required>
                                     <option value="">Select Course</option>
                                     <optgroup label="Undergraduate Courses">
@@ -574,7 +575,7 @@
 
                             <div class="row">
                                 <div class="col-md-6 mb-3">
-                                    <label class="form-label">Year of Study</label>
+                                    <label class="form-label" for="yearOfStudy">Year of Study</label>
                                     <select class="form-select" id="yearOfStudy" required>
                                         <option value="">Select Year</option>
                                         <option value="1">Year 1</option>
@@ -586,7 +587,7 @@
                                     </select>
                                 </div>
                                 <div class="col-md-6 mb-3">
-                                    <label class="form-label">Semester</label>
+                                    <label class="form-label" for="semester">Semester</label>
                                     <select class="form-select" id="semester" required disabled>
                                         <option value="">Select Semester</option>
                                         <option value="1">Semester 1</option>
@@ -608,17 +609,17 @@
                             <h4 class="registration-group-heading">Contact and sign-in</h4>
                             <div class="row">
                                 <div class="col-md-6 mb-3">
-                                    <label class="form-label">Phone Number</label>
+                                    <label class="form-label" for="phone">Phone Number</label>
                                     <input type="tel" class="form-control" id="phone" autocomplete="tel" inputmode="tel" placeholder="Phone number" required>
                                 </div>
                                 <div class="col-md-6 mb-3">
-                                    <label class="form-label">Email</label>
+                                    <label class="form-label" for="email">Email</label>
                                     <input type="email" class="form-control" id="email" autocomplete="email" placeholder="Email address" required>
                                 </div>
                             </div>
 
                             <div class="mb-3">
-                                <label class="form-label">Password</label>
+                                <label class="form-label" for="regPassword">Password</label>
                                 <div class="input-group">
                                     <input type="password" class="form-control" id="regPassword" autocomplete="new-password" minlength="8" placeholder="Enter password" required>
                                     <button class="btn btn-outline-secondary password-visibility-toggle" type="button" id="toggleRegPassword" aria-label="Show password" aria-pressed="false" title="Show password">
@@ -632,7 +633,7 @@
                             </div>
 
                             <div class="mb-3">
-                                <label class="form-label">Confirm Password</label>
+                                <label class="form-label" for="confirmPassword">Confirm Password</label>
                                 <div class="input-group">
                                     <input type="password" class="form-control" id="confirmPassword" autocomplete="new-password" minlength="8" placeholder="Confirm password" required>
                                     <button class="btn btn-outline-secondary password-visibility-toggle" type="button" id="toggleConfirmPassword" aria-label="Show confirm password" aria-pressed="false" title="Show confirm password">
@@ -642,6 +643,7 @@
                             </div>
 
                             <button type="submit" id="registrationSubmitButton" class="btn btn-success w-100">Create student account</button>
+                            <button type="button" class="auth-form-shortcut" data-bs-toggle="tab" data-bs-target="#loginTab">Already registered? Sign in</button>
                         </form>
                     </div>
                 </div>
@@ -2723,7 +2725,7 @@
                                     <option value="" disabled selected>Select School</option>
                                     <option value="School of Business &amp; Technology">School of Business &amp; Technology</option>
                                     <option value="School of Sharia &amp; Islamic Studies">School of Sharia &amp; Islamic Studies</option>
-                                    <option value="School of Law and ShariÃ¢â‚¬â„¢a">School of Law and ShariÃ¢â‚¬â„¢a</option>
+                                    <option value="School of Law and Sharia">School of Law and Sharia</option>
                                     <option value="School of Education &amp; Social Sciences">School of Education &amp; Social Sciences</option>
                                     <option value="School of Nursing &amp; Midwifery">School of Nursing &amp; Midwifery</option>
                                 </select>

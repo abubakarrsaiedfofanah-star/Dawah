@@ -106,7 +106,7 @@ const schoolCourseCatalog = {
         'Diploma Courses': ['Diploma in Arabic Language and Islamic Studies', 'Diploma in Islamic Banking and Finance'],
         'Certificate Courses': ['Certificate in Arabic Language and Islamic Studies']
     },
-    'School of Law and Shariâ€™a': {
+    'School of Law and Sharia': {
         'Undergraduate Courses': ['Bachelor of Laws (LL.B) with Sharia & Law'],
         'Diploma Courses': ['Diploma in Islamic Law and Legal Studies']
     },

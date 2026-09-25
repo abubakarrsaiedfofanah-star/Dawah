@@ -48,7 +48,7 @@ const FALLBACK_ACADEMIC_CATALOG = {
         'Diploma in Islamic Banking and Finance',
         'Certificate in Arabic Language and Islamic Studies'
     ],
-    'School of Law and Shariâ€™a': [
+    'School of Law and Sharia': [
         'Bachelor of Laws (LL.B) with Sharia & Law',
         'Diploma in Islamic Law and Legal Studies'
     ],
