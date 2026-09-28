@@ -1,4 +1,4 @@
-﻿/* Shared responsive layer for the student, admin, and officer workspaces. */
+/* Shared responsive layer for the student, admin, and officer workspaces. */
 :root {
     --mobile-content-gutter: clamp(12px, 3vw, 28px);
     --mobile-control-height: 44px;
@@ -748,3 +748,45 @@ body .officer-shell .officer-card form .row { --bs-gutter-x: 1rem; }
 .auth-form-shortcut:hover,
 .auth-form-shortcut:focus-visible { color: #fff; text-decoration: underline; }
 .auth-form-shortcut:focus-visible { outline: 2px solid #b7edc4; outline-offset: 3px; }
+
+/* Public community contribution page: restore readable card and form contrast over the global dark landing theme. */
+body .landing-page #get-involved .card,
+body .landing-page #get-involved .card-body {
+    background: #ffffff !important;
+    color: #17323a !important;
+}
+body .landing-page #get-involved .card :is(h3, h4, p, label, small, span, div) {
+    color: #17323a !important;
+}
+body .landing-page #get-involved .card .text-muted {
+    color: #5f7880 !important;
+}
+body .landing-page #get-involved .card .btn-success,
+body .landing-page #get-involved .card .btn-success :is(i, span) {
+    color: #ffffff !important;
+}
+body .landing-page #get-involved .card .btn-outline-success {
+    color: #176b45 !important;
+}
+body .landing-page #get-involved .form-control,
+body .landing-page #get-involved .form-select,
+body .landing-page #get-involved textarea {
+    background-color: #ffffff !important;
+    border: 1px solid #a9bdc0 !important;
+    color: #17323a !important;
+}
+body .landing-page #get-involved .form-control::placeholder,
+body .landing-page #get-involved textarea::placeholder {
+    color: #687d83 !important;
+    opacity: 1;
+}
+body .landing-page #get-involved .form-select option {
+    background: #ffffff;
+    color: #17323a;
+}
+body .landing-page #get-involved .form-control:focus,
+body .landing-page #get-involved .form-select:focus,
+body .landing-page #get-involved textarea:focus {
+    border-color: #168052 !important;
+    box-shadow: 0 0 0 .2rem rgba(22, 128, 82, .17) !important;
+}

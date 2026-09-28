@@ -638,14 +638,20 @@ function renderCommunityHelpSection() {
     const selector = document.getElementById('communityHelpInterest');
     if (!container || !selector || typeof getVolunteerOpportunities !== 'function') return;
 
-    if (!container.dataset.opportunitiesLoaded && window.SupabaseBackend?.enabled && window.SupabaseBackend.loadStore) {
+    if (!container.dataset.opportunitiesLoaded) {
         container.dataset.opportunitiesLoaded = 'loading';
-        window.SupabaseBackend.loadStore('volunteerOpportunities').then(opportunities => {
-            if (Array.isArray(opportunities)) localStorage.setItem('volunteerOpportunities', JSON.stringify(opportunities));
+        const loaders = [];
+        if (!frontendOnly && typeof loadVolunteerOpportunitiesFromApi === 'function') {
+            loaders.push(loadVolunteerOpportunitiesFromApi());
+        }
+        if (window.SupabaseBackend?.enabled && window.SupabaseBackend.loadStore) {
+            loaders.push(window.SupabaseBackend.loadStore('volunteerOpportunities').then(opportunities => {
+                if (Array.isArray(opportunities)) localStorage.setItem('volunteerOpportunities', JSON.stringify(opportunities));
+            }));
+        }
+        Promise.allSettled(loaders).then(() => {
             container.dataset.opportunitiesLoaded = 'loaded';
             renderCommunityHelpSection();
-        }).catch(() => {
-            container.dataset.opportunitiesLoaded = 'loaded';
         });
     }
 
