@@ -8,7 +8,11 @@
     source: "index.html#donationsView",
     ids: [
         "donationCards",
+        "donationAppealSummary",
+        "donationDonorName",
+        "donationDonorNameGroup",
         "donationFinanceSummary",
+        "donationFormFeedback",
         "donationHistoryList",
         "donationReviewControls",
         "donationSearchInput",
@@ -18,6 +22,8 @@
     handlers: [
         "exportFinanceCsv",
         "showDonationModal",
+        "submitDonation",
+        "toggleDonationIdentity",
         "toggleSection"
     ]
   };

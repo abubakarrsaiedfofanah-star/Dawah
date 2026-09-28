@@ -14,6 +14,7 @@
         "volunteerOpportunityKind",
         "volunteerOpportunitiesList",
         "volunteerOpportunityDescription",
+        "volunteerOpportunityEndDate",
         "volunteerOpportunityForm",
         "volunteerOpportunityHours",
         "volunteerOpportunitySchedule",
@@ -23,7 +24,12 @@
         "volunteerView"
     ],
     handlers: [
-        "showVolunteerModal"
+        "editCommunityListing",
+        "removeCommunityListing",
+        "saveVolunteerOpportunity",
+        "setCommunityListingStatus",
+        "showVolunteerModal",
+        "updateVolunteerOpportunityFields"
     ]
   };
 }());

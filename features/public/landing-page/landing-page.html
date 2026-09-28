@@ -270,7 +270,8 @@
                                         </div>
                                         <div class="col-md-6">
                                             <label class="form-label" for="communityHelpContact">Phone or email</label>
-                                            <input class="form-control" id="communityHelpContact" name="contact" maxlength="160" autocomplete="email" required>
+                                            <input class="form-control" id="communityHelpContact" name="contact" type="text" maxlength="160" autocomplete="email" aria-describedby="communityHelpContactHint" required>
+                                            <div class="form-text" id="communityHelpContactHint">We’ll reply using this phone number or email.</div>
                                         </div>
                                         <div class="col-12">
                                             <label class="form-label" for="communityHelpInterest">How would you like to help?</label>
@@ -289,6 +290,7 @@
                                         <div class="col-12">
                                             <button class="btn btn-primary" type="submit"><i class="fab fa-whatsapp me-2"></i>Continue to WhatsApp</button>
                                             <p class="small text-muted mt-2 mb-0">Your details are not stored by this form. WhatsApp opens so you can review and send your message to the team.</p>
+                                            <div id="communityHelpFeedback" class="small mt-2" role="status" aria-live="polite"></div>
                                         </div>
                                     </div>
                                 </form>

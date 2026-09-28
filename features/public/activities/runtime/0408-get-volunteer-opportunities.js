@@ -14,7 +14,6 @@ function getVolunteerOpportunities() {
     const seen = new Set();
     return [...savedOpportunities, ...databaseVolunteerOpportunities, ...activityOpportunities, ...defaultVolunteerOpportunities]
         .filter(opportunity => {
-            if (String(opportunity.status || 'open').toLowerCase() !== 'open') return false;
             const key = String(opportunity.title || opportunity.id || '').trim().toLowerCase();
             if (!key || seen.has(key)) return false;
             seen.add(key);

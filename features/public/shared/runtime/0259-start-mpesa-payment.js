@@ -2,17 +2,23 @@
 function startMpesaPayment(details) {
     const phone = normalizeMpesaPhone(details.phone);
     if (!phone || phone.length !== 12 || !phone.startsWith('254')) {
-        alert('Please enter a valid M-Pesa phone number, for example 254712345678.');
+        const formId = details.source === 'donation' ? 'donationForm' : 'paymentForm';
+        const phoneId = details.source === 'donation' ? 'donationMpesaPhone' : 'paymentMpesaPhone';
+        showFinanceFormError(formId, 'Enter a valid M-Pesa phone number, for example 254712345678.', phoneId);
         return;
     }
 
     if (frontendOnly) {
-        alert('M-Pesa STK Push needs the hosted backend, so it is not available on the GitHub Pages demo. Please use Bank Transfer, Normal Transfer, or Cash on the live demo.');
+        const message = 'M-Pesa STK Push is unavailable on this Vercel setup. Choose Bank Transfer, Normal Transfer, or Cash instead.';
+        if (details.source === 'donation') showFinanceFormError('donationForm', message, 'donationPaymentMethod');
+        else showFinanceFormError('paymentForm', message, 'paymentMethod');
         return;
     }
 
     if (!canUseMpesaStk()) {
-        alert('M-Pesa STK Push is not ready on this server. Please use Bank Transfer, Normal Transfer, or Cash Payment.');
+        const message = 'M-Pesa STK Push is not ready on this server. Choose Bank Transfer, Normal Transfer, or Cash instead.';
+        if (details.source === 'donation') showFinanceFormError('donationForm', message, 'donationPaymentMethod');
+        else showFinanceFormError('paymentForm', message, 'paymentMethod');
         return;
     }
 
@@ -26,9 +32,13 @@ function startMpesaPayment(details) {
         payload.payment_type = details.type;
     } else {
         payload.donation_type = details.type;
-        payload.purpose = "UMMA University Dawah Team donation";
+        payload.purpose = details.appealId
+            ? `Charity appeal: ${details.appealTitle} (Reference: ${details.appealId})`
+            : 'UMMA University Dawah Team donation';
+        payload.appeal_id = details.appealId || '';
+        payload.appeal_title = details.appealTitle || '';
         payload.donor_id = currentUser?.dbUserId || 0;
-        payload.donor_name = details.anonymous ? 'Anonymous' : (currentUser?.name || currentUser?.fullName || currentUser?.username || 'Donor');
+        payload.donor_name = details.anonymous ? 'Anonymous' : (details.donorName || currentUser?.name || currentUser?.fullName || currentUser?.username || 'Donor');
         payload.donor_email = currentUser?.email || 'anonymous@dawaah.local';
     }
 
@@ -66,7 +76,10 @@ function startMpesaPayment(details) {
                 bootstrap.Modal.getInstance(document.getElementById('paymentModal')).hide();
                 renderPaymentHistory();
             } else {
-                localRecord.purpose = "UMMA University Dawah Team donation";
+                localRecord.purpose = payload.purpose;
+                localRecord.appealId = details.appealId || '';
+                localRecord.appealTitle = details.appealTitle || '';
+                localRecord.appealReference = details.appealId || '';
                 localRecord.anonymous = details.anonymous;
                 localRecord.donor = payload.donor_name;
                 localRecord.dbDonationId = result.data.donation_id;

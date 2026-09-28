@@ -59,7 +59,10 @@ const SupabaseBackendApi = (() => {
                 : !enabledByHost
                     ? 'This domain is not listed in DAWAH_SUPABASE_ENABLED_HOSTS.'
                     : '';
-    const sdkUrl = 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2';
+    const sdkUrls = [
+        'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2',
+        'https://unpkg.com/@supabase/supabase-js@2'
+    ];
     let sdkPromise = null;
     let clientPromise = null;
 
@@ -87,10 +90,20 @@ const SupabaseBackendApi = (() => {
     async function ensureSdk() {
         if (!enabled) throw new Error(configError || 'Supabase is not configured for this host.');
         if (sdkPromise) return sdkPromise;
-        sdkPromise = loadExternalScript(sdkUrl).then(() => {
-            if (!window.supabase?.createClient) throw new Error('Supabase SDK is unavailable.');
-            return window.supabase;
-        });
+        sdkPromise = (async () => {
+            let lastError;
+            for (const url of sdkUrls) {
+                try {
+                    await loadExternalScript(url);
+                    if (window.supabase?.createClient) return window.supabase;
+                    throw new Error('Supabase SDK did not expose createClient.');
+                } catch (error) {
+                    lastError = error;
+                    console.warn('Supabase SDK source unavailable:', url);
+                }
+            }
+            throw lastError || new Error('Supabase SDK is unavailable.');
+        })();
         return sdkPromise;
     }
 
@@ -347,6 +360,24 @@ const SupabaseBackendApi = (() => {
             .single();
         if (error) throw error;
         return recordFromRow(data);
+    }
+
+    async function submitPublicDonation(donation) {
+        const db = await client();
+        const payload = {
+            type: donation?.type || 'Donation',
+            purpose: donation?.purpose || 'UMMA University Dawah Team donation',
+            amount: donation?.amount,
+            paymentMethod: donation?.paymentMethod,
+            transactionRef: donation?.transactionRef,
+            anonymous: Boolean(donation?.anonymous),
+            donor: donation?.donor || 'Donor',
+            appealId: donation?.appealId || '',
+            appealTitle: donation?.appealTitle || ''
+        };
+        const { data, error } = await db.rpc('dawah_submit_public_donation', { p_payload: payload });
+        if (error) throw error;
+        return { supabaseId: data };
     }
 
     async function listRecords(collection) {
@@ -692,6 +723,7 @@ const SupabaseBackendApi = (() => {
         loadSiteSettings,
         saveSiteSettings,
         createRecord,
+        submitPublicDonation,
         listRecords,
         loadRecord,
         updateRecord,

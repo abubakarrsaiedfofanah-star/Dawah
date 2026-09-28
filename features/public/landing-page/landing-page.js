@@ -20,9 +20,13 @@
         "contactVoiceFile",
         "communityHelpAvailability",
         "communityHelpContact",
+        "communityHelpContactHint",
+        "communityHelpFeedback",
         "communityHelpForm",
         "communityHelpInterest",
         "communityHelpName",
+        "communityCharityOpportunities",
+        "communityCharitySection",
         "communityVolunteerOpportunities",
         "footerContactEmail",
         "footerContactHours",
@@ -77,6 +81,8 @@
         "activateAuthTab",
         "rememberPortalAudience",
         "return showPublicSection(",
+        "startCommunityCharityDonation",
+        "selectCommunityHelpOpportunity",
         "submitCommunityHelpApplication",
         "showLanding"
     ]

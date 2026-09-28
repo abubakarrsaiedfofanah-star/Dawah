@@ -7,7 +7,7 @@
     <meta http-equiv="Cache-Control" content="no-store, no-cache, must-revalidate">
     <meta http-equiv="Pragma" content="no-cache">
     <meta http-equiv="Expires" content="0">
-    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; base-uri 'self'; object-src 'none'; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://www.google.com https://www.google.com/recaptcha/ https://www.google.com/recaptcha/enterprise.js https://www.gstatic.com https://www.gstatic.com/recaptcha/; style-src 'self' 'unsafe-inline'; font-src 'self' data:; img-src 'self' data: blob: https:; media-src 'self' data: blob:; manifest-src 'self'; connect-src 'self' https://*.supabase.co wss://*.supabase.co https://www.google.com https://www.google.com/recaptcha/ https://umma-dawah-groq-ai.abubakarrsaiedfofanah.workers.dev; frame-src https://www.google.com https://www.google.com/recaptcha/ https://recaptcha.google.com/recaptcha/; form-action 'self'; upgrade-insecure-requests">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; base-uri 'self'; object-src 'none'; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://unpkg.com https://www.google.com https://www.google.com/recaptcha/ https://www.google.com/recaptcha/enterprise.js https://www.gstatic.com https://www.gstatic.com/recaptcha/; style-src 'self' 'unsafe-inline'; font-src 'self' data:; img-src 'self' data: blob: https:; media-src 'self' data: blob:; manifest-src 'self'; connect-src 'self' https://*.supabase.co wss://*.supabase.co https://www.google.com https://www.google.com/recaptcha/ https://umma-dawah-groq-ai.abubakarrsaiedfofanah.workers.dev; frame-src https://www.google.com https://www.google.com/recaptcha/ https://recaptcha.google.com/recaptcha/; form-action 'self'; upgrade-insecure-requests">
     <script src="canonical_redirect.js?v=20260527-one-link"></script>
     <script>
         if (window.top !== window.self) {
@@ -166,7 +166,7 @@
                         <div class="portal-icon"><img src="assets/umma-university-logo-color.png?v=20260522-logo2" alt="UMMA University logo"></div>
                         <h3>Officer Portal</h3>
                         <div class="portal-actions">
-                            <a class="btn btn-success" href="officer.html" onclick="rememberPortalAudience('officer')"><i class="fas fa-right-to-bracket"></i> Officer Access</a>
+                            <a class="btn btn-success" href="https://dawah-six.vercel.app/officer.html" onclick="rememberPortalAudience('officer')"><i class="fas fa-right-to-bracket"></i> Officer Access</a>
                         </div>
                     </article>
                     <article class="portal-card portal-card-admin" data-admin-portal-card>
@@ -174,7 +174,7 @@
                         <div class="portal-icon"><img src="assets/umma-university-logo-color.png?v=20260522-logo2" alt="UMMA University logo"></div>
                         <h3>Admin Portal</h3>
                         <div class="portal-actions">
-                            <a class="btn btn-dark" href="admin.html"><i class="fas fa-lock"></i> Admin Login</a>
+                            <a class="btn btn-dark" href="https://dawah-six.vercel.app/admin.html"><i class="fas fa-lock"></i> Admin Login</a>
                         </div>
                     </article>
                 </div>
@@ -338,7 +338,8 @@
                                         </div>
                                         <div class="col-md-6">
                                             <label class="form-label" for="communityHelpContact">Phone or email</label>
-                                            <input class="form-control" id="communityHelpContact" name="contact" maxlength="160" autocomplete="email" required>
+                                            <input class="form-control" id="communityHelpContact" name="contact" type="text" maxlength="160" autocomplete="email" aria-describedby="communityHelpContactHint" required>
+                                            <div class="form-text" id="communityHelpContactHint">We’ll reply using this phone number or email.</div>
                                         </div>
                                         <div class="col-12">
                                             <label class="form-label" for="communityHelpInterest">How would you like to help?</label>
@@ -357,6 +358,7 @@
                                         <div class="col-12">
                                             <button class="btn btn-primary" type="submit"><i class="fab fa-whatsapp me-2"></i>Continue to WhatsApp</button>
                                             <p class="small text-muted mt-2 mb-0">Your details are not stored by this form. WhatsApp opens so you can review and send your message to the team.</p>
+                                            <div id="communityHelpFeedback" class="small mt-2" role="status" aria-live="polite"></div>
                                         </div>
                                     </div>
                                 </form>
@@ -877,8 +879,8 @@
                             </button>
                             <ul class="dropdown-menu dropdown-menu-end">
                                 <li><button class="dropdown-item" type="button" onclick="rememberPortalAudience('student'); showNotification('Student portal selected.', 'success')"><i class="fas fa-user-graduate"></i> Student Portal</button></li>
-                                <li><a class="dropdown-item" href="officer.html" onclick="localStorage.setItem('dawaahPortalAudience', 'officer')"><i class="fas fa-user-tie"></i> Officer Portal</a></li>
-                                <li><a class="dropdown-item" href="admin.html" onclick="localStorage.setItem('dawaahPortalAudience', 'admin')"><i class="fas fa-user-shield"></i> Admin Portal</a></li>
+                                <li><a class="dropdown-item" href="https://dawah-six.vercel.app/officer.html" onclick="localStorage.setItem('dawaahPortalAudience', 'officer')"><i class="fas fa-user-tie"></i> Officer Portal</a></li>
+                                <li><a class="dropdown-item" href="https://dawah-six.vercel.app/admin.html" onclick="localStorage.setItem('dawaahPortalAudience', 'admin')"><i class="fas fa-user-shield"></i> Admin Portal</a></li>
                             </ul>
                         </li>
                         <li class="nav-item">
@@ -1945,6 +1947,12 @@
                                             <input type="text" class="form-control" id="volunteerOpportunitySchedule" maxlength="160" placeholder="e.g. Saturdays" required>
                                         </div>
                                     </div>
+                                    <div class="row">
+                                        <div class="col-md-4 mb-3">
+                                            <label class="form-label" for="volunteerOpportunityEndDate">Last day to apply / appeal closes</label>
+                                            <input type="date" class="form-control" id="volunteerOpportunityEndDate">
+                                        </div>
+                                    </div>
                                     <div class="mb-3">
                                         <label class="form-label">Description</label>
                                         <textarea class="form-control" id="volunteerOpportunityDescription" rows="2" placeholder="What volunteers will help with" required></textarea>
@@ -2985,8 +2993,18 @@
                     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
                 <div class="modal-body">
-                    <form id="donationForm">
+                    <form id="donationForm" novalidate>
                         <p class="finance-modal__hint">Choose your amount and payment method. Your receipt will be ready after the donation is confirmed.</p>
+                        <div id="donationAppealSummary" class="alert alert-success d-none" role="status"></div>
+                        <div id="donationFormFeedback" class="alert alert-danger d-none" role="alert" aria-live="assertive"></div>
+                        <div class="form-check mb-3">
+                            <input type="checkbox" class="form-check-input" id="anonymousDonation" onchange="toggleDonationIdentity()">
+                            <label class="form-check-label" for="anonymousDonation">Make this donation anonymous</label>
+                        </div>
+                        <div class="mb-3" id="donationDonorNameGroup">
+                            <label class="form-label" for="donationDonorName">Your name for the donation receipt</label>
+                            <input type="text" class="form-control" id="donationDonorName" maxlength="100" autocomplete="name" required>
+                        </div>
                         <div class="mb-3">
                             <label class="form-label">Amount</label>
                             <input type="number" inputmode="decimal" class="form-control" id="donationAmount" placeholder="Amount in KSh" min="1" step="1" required>
@@ -3020,17 +3038,11 @@
                             <input type="file" class="form-control" id="donationProof" accept="image/*,application/pdf" capture="environment">
                             <div class="form-text">Optional on this free setup. You can upload a file or snap a proof photo on mobile.</div>
                         </div>
-                        <div class="form-check mb-3">
-                            <input type="checkbox" class="form-check-input" id="anonymousDonation">
-                            <label class="form-check-label" for="anonymousDonation">
-                                Anonymous Donation
-                            </label>
-                        </div>
                     </form>
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                    <button type="button" class="btn btn-primary" onclick="submitDonation()">Send Donation</button>
+                    <button type="button" class="btn btn-primary" id="submitDonationButton" onclick="submitDonation()">Send Donation</button>
                 </div>
             </div>
         </div>
@@ -3422,7 +3434,7 @@
     <script src="ai_worker_config.js?v=cloudflare-ai-20260613-1"></script>
     <script src="ai_assistant_widget.js?v=dashboard-chat-20260924-v1"></script>
     <script src="supabase_config.js?v=dawah-supabase-config-20260707"></script>
-    <script src="supabase_shared.js?v=finance-security-20260924-v5"></script>
+    <script src="supabase_shared.js?v=public-donations-20260929-v1"></script>
     <script>
         (function() {
             function isStandaloneApp() {
@@ -3476,6 +3488,6 @@
             document.addEventListener('DOMContentLoaded', updateFooterInstallButton);
         })();
     </script>
-    <script src="daawah.js?v=registration-security-20260924-v1"></script>
+    <script src="daawah.js?v=community-listings-20260929-v1"></script>
 </body>
 </html>

@@ -19,6 +19,8 @@ let loginFailedAttempts = 0;
 let loginLockedUntil = 0;
 let hostingCapabilities = null;
 let resetPasswordEmail = '';
+let activeCharityAppeal = null;
+let editingVolunteerListingId = null;
 const LOCAL_RESET_CODE_STORE = 'dawaahPasswordResetCodes';
 const LOCAL_RESET_CODE_TTL_MS = 15 * 60 * 1000;
 const APP_VERSION = '2026.06.04.4';
@@ -639,6 +641,21 @@ function getCommunityListingKind(opportunity) {
     return ['charity', 'charity_appeal', 'donation', 'fundraiser'].includes(kind) ? 'charity' : 'volunteer';
 }
 
+function isCommunityListingOpen(opportunity) {
+    const status = String(opportunity?.status || 'open').trim().toLowerCase();
+    if (!['open', 'active', 'published'].includes(status)) return false;
+    const lastDay = opportunity?.endDate || opportunity?.endsAt || opportunity?.expiresAt || '';
+    if (!lastDay) return true;
+    const end = new Date(`${String(lastDay).slice(0, 10)}T23:59:59`);
+    return Number.isNaN(end.getTime()) || end.getTime() >= Date.now();
+}
+
+function formatCommunityListingDate(value) {
+    if (!value) return '';
+    const date = new Date(value);
+    return Number.isNaN(date.getTime()) ? '' : date.toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' });
+}
+
 function renderCommunityHelpSection() {
     const container = document.getElementById('communityVolunteerOpportunities');
     const charityContainer = document.getElementById('communityCharityOpportunities');
@@ -662,7 +679,7 @@ function renderCommunityHelpSection() {
         });
     }
 
-    const allListings = getVolunteerOpportunities();
+    const allListings = getVolunteerOpportunities().filter(isCommunityListingOpen);
     const volunteerListings = allListings.filter(item => getCommunityListingKind(item) === 'volunteer');
     const charityListings = allListings.filter(item => getCommunityListingKind(item) === 'charity');
     const otherOptions = Array.from(selector.options).filter(option => option.value && !option.dataset.opportunity);
@@ -686,7 +703,10 @@ function renderCommunityHelpSection() {
             const description = escapeHtml(opportunity.description || 'Help the team serve the campus and wider community.');
             const schedule = escapeHtml(opportunity.schedule || 'Schedule to be confirmed');
             const hours = Number(opportunity.requiredHours || opportunity.required_hours || 0);
-            return `<div class="col-md-6"><article class="card h-100 border"><div class="card-body d-flex flex-column"><h4 class="h6">${title}</h4><p class="small text-muted">${description}</p><p class="small mb-3">${schedule}${hours > 0 ? ` &middot; About ${hours} hours` : ''}</p><button type="button" class="btn btn-outline-primary btn-sm mt-auto" onclick="selectCommunityHelpOpportunity(${index})">Apply for this</button></div></article></div>`;
+            const postedBy = escapeHtml(opportunity.postedBy || 'Dawah Team');
+            const postedDate = formatCommunityListingDate(opportunity.postedAt);
+            const closes = formatCommunityListingDate(opportunity.endDate || opportunity.endsAt);
+            return `<div class="col-md-6"><article class="card h-100 border"><div class="card-body d-flex flex-column"><div class="d-flex justify-content-between gap-2"><span class="badge text-bg-success">Open</span>${closes ? `<span class="small text-muted">Closes ${escapeHtml(closes)}</span>` : ''}</div><h4 class="h6 mt-2">${title}</h4><p class="small text-muted">${description}</p><p class="small mb-2">${schedule}${hours > 0 ? ` &middot; About ${hours} hours` : ''}</p><p class="small text-muted mt-auto mb-2">Posted by ${postedBy}${postedDate ? ` &middot; ${escapeHtml(postedDate)}` : ''}</p><button type="button" class="btn btn-outline-primary btn-sm" onclick="selectCommunityHelpOpportunity(${index})">Apply for this</button></div></article></div>`;
         }).join('');
     }
 
@@ -699,20 +719,23 @@ function renderCommunityHelpSection() {
             const schedule = escapeHtml(appeal.schedule || 'Open appeal');
             const goal = Number(appeal.goalAmount || appeal.targetAmount || 0);
             const goalLabel = goal > 0 ? `<p class="small fw-semibold">Goal: KSh ${goal.toLocaleString()}</p>` : '';
-            return `<div class="col-md-6 col-lg-4"><article class="card h-100 border-success"><div class="card-body d-flex flex-column"><span class="badge text-bg-success align-self-start mb-2">Charity appeal</span><h4 class="h6">${title}</h4><p class="small text-muted">${description}</p><p class="small">${schedule}</p>${goalLabel}<button type="button" class="btn btn-success mt-auto" onclick="startCommunityCharityDonation(${index})">Donate to this appeal</button></div></article></div>`;
+            const postedBy = escapeHtml(appeal.postedBy || 'Dawah Team');
+            const postedDate = formatCommunityListingDate(appeal.postedAt);
+            const closes = formatCommunityListingDate(appeal.endDate || appeal.endsAt);
+            return `<div class="col-md-6 col-lg-4"><article class="card h-100 border-success"><div class="card-body d-flex flex-column"><div class="d-flex justify-content-between gap-2"><span class="badge text-bg-success">Open</span>${closes ? `<span class="small text-muted">Closes ${escapeHtml(closes)}</span>` : ''}</div><span class="badge text-bg-success align-self-start mt-2 mb-2">Charity appeal</span><h4 class="h6">${title}</h4><p class="small text-muted">${description}</p><p class="small">${schedule}</p>${goalLabel}<p class="small text-muted mt-auto mb-2">Posted by ${postedBy}${postedDate ? ` &middot; ${escapeHtml(postedDate)}` : ''}</p><button type="button" class="btn btn-success" onclick="startCommunityCharityDonation(${index})">Donate to this appeal</button></div></article></div>`;
         }).join('');
     }
 }
 
 function startCommunityCharityDonation(index) {
-    const appeals = getVolunteerOpportunities().filter(item => getCommunityListingKind(item) === 'charity');
+    const appeals = getVolunteerOpportunities().filter(item => getCommunityListingKind(item) === 'charity' && isCommunityListingOpen(item));
     const appeal = appeals[Number(index)];
     if (!appeal || typeof showDonationModal !== 'function') return;
-    showDonationModal(String(appeal.title || 'Charity Appeal').slice(0, 100));
+    showDonationModal('Charity Appeal', appeal);
 }
 function selectCommunityHelpOpportunity(index) {
     const opportunity = (typeof getVolunteerOpportunities === 'function' ? getVolunteerOpportunities() : [])
-        .filter(item => getCommunityListingKind(item) === 'volunteer')[Number(index)];
+        .filter(item => getCommunityListingKind(item) === 'volunteer' && isCommunityListingOpen(item))[Number(index)];
     const selector = document.getElementById('communityHelpInterest');
     if (!opportunity || !selector) return;
     selector.value = opportunity.title || '';
@@ -729,10 +752,19 @@ function submitCommunityHelpApplication(event) {
     const interest = document.getElementById('communityHelpInterest').value.trim();
     const details = document.getElementById('communityHelpAvailability').value.trim();
     if (!name || !contact || !interest || !details) return false;
+    const validEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(contact);
+    const validPhone = /^\+?[0-9][0-9\s().-]{6,20}$/.test(contact);
+    if (!validEmail && !validPhone) {
+        const field = document.getElementById('communityHelpContact');
+        field?.setCustomValidity('Enter a valid email address or phone number.');
+        field?.reportValidity();
+        field?.addEventListener('input', () => field.setCustomValidity(''), { once: true });
+        return false;
+    }
 
     const message = [
         'Assalamu alaikum UMMA University Dawah Team,',
-        'I would like to offer community help.',
+        'I would like to apply for community volunteer support.',
         `Name: ${name}`,
         `Phone or email: ${contact}`,
         `Help requested: ${interest}`,
@@ -756,7 +788,12 @@ function submitCommunityHelpApplication(event) {
         url.searchParams.set('body', message);
         destination = url.href;
     }
-    const opened = window.open(destination, '_blank', 'noopener,noreferrer');
+    const opened = window.open(destination, '_blank');
+    if (opened) opened.opener = null;
+    const feedback = document.getElementById('communityHelpFeedback');
+    if (feedback) feedback.textContent = opened
+        ? 'WhatsApp opened with your application. Review the message and press Send; the team will contact you using the details you provided.'
+        : 'Opening your message in this tab. Review it and press Send so the team can contact you.';
     if (!opened) window.location.href = destination;
     return false;
 }
@@ -5680,6 +5717,24 @@ function isDuplicateFinanceReference(reference) {
     return payments.concat(donations).some(item => normalizeFinanceReference(item.transactionRef) === normalized);
 }
 
+function showFinanceFormError(formId, message, focusId = '') {
+    const form = document.getElementById(formId);
+    if (!form) return;
+    let feedback = document.getElementById(`${formId}Feedback`);
+    if (!feedback) {
+        feedback = document.createElement('div');
+        feedback.id = `${formId}Feedback`;
+        feedback.className = 'alert alert-danger mb-3';
+        feedback.setAttribute('role', 'alert');
+        feedback.setAttribute('aria-live', 'assertive');
+        form.prepend(feedback);
+    }
+    feedback.textContent = message;
+    feedback.classList.remove('d-none');
+    form.classList.add('was-validated');
+    if (focusId) document.getElementById(focusId)?.focus();
+}
+
 // Runtime slice from daawah.js: buildReceiptVerificationPayload.
 function buildReceiptVerificationPayload(kind, record) {
     return {
@@ -5693,6 +5748,10 @@ function buildReceiptVerificationPayload(kind, record) {
             : (currentUser?.fullName || currentUser?.name || currentUser?.username || 'Member'),
         method: record.paymentMethod || 'Not specified',
         transactionRef: record.transactionRef || '',
+        purpose: record.purpose || '',
+        appealId: record.appealId || '',
+        appealTitle: record.appealTitle || '',
+        appealReference: record.appealReference || record.appealId || '',
         approvedBy: record.approvedBy || getFinanceActorName(),
         approvedAt: record.approvedAt || new Date().toISOString(),
         createdAt: record.createdAt || record.date || new Date().toISOString(),
@@ -5708,13 +5767,16 @@ function processPayment() {
     const paymentMethod = document.getElementById('paymentMethod').value;
     const reference = document.getElementById('paymentReference')?.value.trim() || '';
     const proofLink = document.getElementById('paymentProofLink')?.value.trim() || '';
+    const paymentError = message => showFinanceFormError('paymentForm', message);
+    const oldFeedback = document.getElementById('paymentFormFeedback');
+    if (oldFeedback) { oldFeedback.textContent = ''; oldFeedback.classList.add('d-none'); }
 
     if (!paymentType || !amount || !paymentMethod) {
-        alert('Please fill in all payment details');
+        paymentError('Choose the payment type, amount, and payment method to continue.');
         return;
     }
     if (Number(amount) <= 0) {
-        alert('Enter a valid positive amount.');
+        paymentError('Enter an amount greater than zero.');
         return;
     }
 
@@ -5733,18 +5795,18 @@ function processPayment() {
     }
 
     if (paymentMethod !== 'cash' && !reference) {
-        alert('Enter the real transaction code or bank reference.');
+        showFinanceFormError('paymentForm', 'Enter the transaction code or bank reference from your payment.', 'paymentReference');
         return;
     }
 
     const transactionRef = reference || `CASH-${Date.now()}`;
     if (paymentMethod !== 'cash' && isDuplicateFinanceReference(transactionRef)) {
         recordSuspiciousActivity('duplicate_payment_reference', { transactionRef, type: paymentType });
-        alert('This transaction reference is already recorded. Please check the code before submitting again.');
+        showFinanceFormError('paymentForm', 'This transaction reference is already recorded. Check the code or contact the Treasurer.', 'paymentReference');
         return;
     }
     if (proofLink && !/^https?:\/\/.+/i.test(proofLink)) {
-        alert('Paste a valid Google Drive proof link starting with https://');
+        showFinanceFormError('paymentForm', 'Paste a complete proof link beginning with https://, or clear the field.', 'paymentProofLink');
         return;
     }
     if (paymentMethod !== 'cash' && !confirm('Before submitting: confirm the transaction reference is correct and you pasted a Google Drive proof link or will send the screenshot by WhatsApp. Continue?')) {
@@ -5804,17 +5866,23 @@ function processPayment() {
 function startMpesaPayment(details) {
     const phone = normalizeMpesaPhone(details.phone);
     if (!phone || phone.length !== 12 || !phone.startsWith('254')) {
-        alert('Please enter a valid M-Pesa phone number, for example 254712345678.');
+        const formId = details.source === 'donation' ? 'donationForm' : 'paymentForm';
+        const phoneId = details.source === 'donation' ? 'donationMpesaPhone' : 'paymentMpesaPhone';
+        showFinanceFormError(formId, 'Enter a valid M-Pesa phone number, for example 254712345678.', phoneId);
         return;
     }
 
     if (frontendOnly) {
-        alert('M-Pesa STK Push needs the hosted backend, so it is not available on the GitHub Pages demo. Please use Bank Transfer, Normal Transfer, or Cash on the live demo.');
+        const message = 'M-Pesa STK Push is unavailable on this Vercel setup. Choose Bank Transfer, Normal Transfer, or Cash instead.';
+        if (details.source === 'donation') showFinanceFormError('donationForm', message, 'donationPaymentMethod');
+        else showFinanceFormError('paymentForm', message, 'paymentMethod');
         return;
     }
 
     if (!canUseMpesaStk()) {
-        alert('M-Pesa STK Push is not ready on this server. Please use Bank Transfer, Normal Transfer, or Cash Payment.');
+        const message = 'M-Pesa STK Push is not ready on this server. Choose Bank Transfer, Normal Transfer, or Cash instead.';
+        if (details.source === 'donation') showFinanceFormError('donationForm', message, 'donationPaymentMethod');
+        else showFinanceFormError('paymentForm', message, 'paymentMethod');
         return;
     }
 
@@ -5828,9 +5896,13 @@ function startMpesaPayment(details) {
         payload.payment_type = details.type;
     } else {
         payload.donation_type = details.type;
-        payload.purpose = "UMMA University Dawah Team donation";
+        payload.purpose = details.appealId
+            ? `Charity appeal: ${details.appealTitle} (Reference: ${details.appealId})`
+            : 'UMMA University Dawah Team donation';
+        payload.appeal_id = details.appealId || '';
+        payload.appeal_title = details.appealTitle || '';
         payload.donor_id = currentUser?.dbUserId || 0;
-        payload.donor_name = details.anonymous ? 'Anonymous' : (currentUser?.name || currentUser?.fullName || currentUser?.username || 'Donor');
+        payload.donor_name = details.anonymous ? 'Anonymous' : (details.donorName || currentUser?.name || currentUser?.fullName || currentUser?.username || 'Donor');
         payload.donor_email = currentUser?.email || 'anonymous@dawaah.local';
     }
 
@@ -5868,7 +5940,10 @@ function startMpesaPayment(details) {
                 bootstrap.Modal.getInstance(document.getElementById('paymentModal')).hide();
                 renderPaymentHistory();
             } else {
-                localRecord.purpose = "UMMA University Dawah Team donation";
+                localRecord.purpose = payload.purpose;
+                localRecord.appealId = details.appealId || '';
+                localRecord.appealTitle = details.appealTitle || '';
+                localRecord.appealReference = details.appealId || '';
                 localRecord.anonymous = details.anonymous;
                 localRecord.donor = payload.donor_name;
                 localRecord.dbDonationId = result.data.donation_id;
@@ -6705,6 +6780,7 @@ async function openOfficialReceipt(details = {}) {
             <tr><td>Receipt Number</td><td>${escapeHtml(receiptNumber)}</td></tr>
             <tr><td>Name</td><td>${escapeHtml(details.name || 'Member')}</td></tr>
             <tr><td>Type</td><td>${escapeHtml(details.type || details.kind)}</td></tr>
+            ${details.appealTitle ? `<tr><td>Charity appeal</td><td>${escapeHtml(details.appealTitle)}${details.appealReference ? ` (Reference: ${escapeHtml(details.appealReference)})` : ''}</td></tr>` : ''}
             <tr><td>Amount</td><td class="amount">KSh ${escapeHtml(details.amount || '0')}</td></tr>
             <tr><td>Payment Method</td><td>${escapeHtml(details.method || 'Not specified')}</td></tr>
             <tr><td>Transaction Reference</td><td>${escapeHtml(details.transactionRef || 'Not recorded')}</td></tr>
@@ -6919,11 +6995,40 @@ function formatReportLabel(value) {
 }
 
 // Runtime slice from daawah.js: showDonationModal.
-function showDonationModal(donationType) {
-    document.getElementById('donationModalTitle').textContent = 'Make ' + donationType + ' Donation';
+function showDonationModal(donationType, appeal = null) {
+    activeCharityAppeal = appeal?.id ? {
+        id: String(appeal.id).slice(0, 120),
+        title: String(appeal.title || '').slice(0, 120)
+    } : null;
+    document.getElementById('donationModalTitle').textContent = activeCharityAppeal ? 'Make Charity Appeal Donation' : 'Make ' + donationType + ' Donation';
+    const appealSummary = document.getElementById('donationAppealSummary');
+    if (appealSummary) {
+        appealSummary.classList.toggle('d-none', !activeCharityAppeal);
+        appealSummary.textContent = activeCharityAppeal
+            ? `Your donation will support: ${activeCharityAppeal.title} (Appeal reference: ${activeCharityAppeal.id})`
+            : '';
+    }
+    const feedback = document.getElementById('donationFormFeedback');
+    if (feedback) { feedback.textContent = ''; feedback.classList.add('d-none'); }
+    document.getElementById('donationForm')?.reset();
+    toggleDonationIdentity();
+    const submitButton = document.getElementById('submitDonationButton');
+    if (submitButton) { submitButton.disabled = false; submitButton.textContent = 'Send Donation'; }
+    document.getElementById('donationForm')?.classList.remove('was-validated');
     updatePaymentInstructions('donation');
     const modal = new bootstrap.Modal(document.getElementById('donationModal'));
     modal.show();
+}
+
+function toggleDonationIdentity() {
+    const anonymous = Boolean(document.getElementById('anonymousDonation')?.checked);
+    const group = document.getElementById('donationDonorNameGroup');
+    const name = document.getElementById('donationDonorName');
+    group?.classList.toggle('d-none', anonymous);
+    if (name) {
+        name.required = !anonymous;
+        if (anonymous) name.value = '';
+    }
 }
 
 // Runtime slice from daawah.js: submitDonation.
@@ -6931,71 +7036,101 @@ function submitDonation() {
     const amount = document.getElementById('donationAmount').value;
     const paymentMethod = document.getElementById('donationPaymentMethod').value;
     const isAnonymous = document.getElementById('anonymousDonation').checked;
+    const donorName = document.getElementById('donationDonorName')?.value.trim() || '';
     const reference = document.getElementById('donationReference')?.value.trim() || '';
     const proofLink = document.getElementById('donationProofLink')?.value.trim() || '';
 
+    const form = document.getElementById('donationForm');
+    const feedback = document.getElementById('donationFormFeedback');
+    const showError = (message, targetId) => {
+        if (feedback) { feedback.textContent = message; feedback.classList.remove('d-none'); }
+        const button = document.getElementById('submitDonationButton');
+        if (button) { button.disabled = false; button.textContent = 'Send Donation'; }
+        form?.classList.add('was-validated');
+        document.getElementById(targetId)?.focus();
+    };
+    if (feedback) { feedback.textContent = ''; feedback.classList.add('d-none'); }
     if (!amount || !paymentMethod) {
-        alert('Please enter the donation amount and payment method');
+        showError('Enter a donation amount and choose a payment method to continue.', !amount ? 'donationAmount' : 'donationPaymentMethod');
+        return;
+    }
+    if (!isAnonymous && !donorName) {
+        showError('Enter your name for the receipt, or choose anonymous donation.', 'donationDonorName');
         return;
     }
     if (Number(amount) <= 0) {
-        alert('Enter a valid positive amount.');
+        showError('Enter an amount greater than zero.', 'donationAmount');
         return;
     }
 
     if (paymentMethod === 'mpesaStk') {
         if (!canUseMpesaStk()) {
-            alert('M-Pesa STK Push is not available on this hosting setup yet. Please use Bank Transfer, Normal Transfer, or Cash Payment.');
+            showError('M-Pesa STK Push is unavailable on this Vercel setup. Choose Bank Transfer, Normal Transfer, or Cash instead.', 'donationPaymentMethod');
             return;
         }
         startMpesaPayment({
             source: 'donation',
-            type: document.getElementById('donationModalTitle').textContent.replace('Make ', '').replace(' Donation', ''),
+            type: activeCharityAppeal ? 'Charity Appeal' : document.getElementById('donationModalTitle').textContent.replace('Make ', '').replace(' Donation', ''),
             amount: amount,
             phone: document.getElementById('donationMpesaPhone').value,
-            anonymous: isAnonymous
+            anonymous: isAnonymous,
+            donorName,
+            appealId: activeCharityAppeal?.id || '',
+            appealTitle: activeCharityAppeal?.title || ''
         });
         return;
     }
 
     if (paymentMethod !== 'cash' && !reference) {
-        alert('Enter the real transaction code or bank reference.');
+        showError('Enter the transaction code or bank reference from your payment.', 'donationReference');
         return;
     }
 
     const transactionRef = reference || `CASH-DON-${Date.now()}`;
     if (paymentMethod !== 'cash' && isDuplicateFinanceReference(transactionRef)) {
         recordSuspiciousActivity('duplicate_donation_reference', { transactionRef, type: 'donation' });
-        alert('This transaction reference is already recorded. Please check the code before submitting again.');
+        showError('This transaction reference is already recorded. Check the code or contact the Treasurer.', 'donationReference');
         return;
     }
     if (proofLink && !/^https?:\/\/.+/i.test(proofLink)) {
-        alert('Paste a valid Google Drive proof link starting with https://');
+        showError('Paste a complete proof link beginning with https://, or clear the field.', 'donationProofLink');
         return;
     }
     if (paymentMethod !== 'cash' && !confirm('Before submitting: confirm the transaction reference is correct and you pasted a Google Drive proof link or will send the screenshot by WhatsApp. Continue?')) {
         return;
     }
+    const submitButton = document.getElementById('submitDonationButton');
+    if (submitButton) { submitButton.disabled = true; submitButton.textContent = 'Saving donation…'; }
     readFinanceProof('donationProof')
         .then(proofData => {
             const donation = {
                 id: Date.now(),
-                type: document.getElementById('donationModalTitle').textContent.replace('Make ', '').replace(' Donation', ''),
-                purpose: "UMMA University Dawah Team donation",
+                type: activeCharityAppeal ? 'Charity Appeal' : document.getElementById('donationModalTitle').textContent.replace('Make ', '').replace(' Donation', ''),
+                purpose: activeCharityAppeal
+                    ? `Charity appeal: ${activeCharityAppeal.title} (Reference: ${activeCharityAppeal.id})`
+                    : 'UMMA University Dawah Team donation',
+                appealId: activeCharityAppeal?.id || '',
+                appealTitle: activeCharityAppeal?.title || '',
+                appealReference: activeCharityAppeal?.id || '',
                 amount: amount,
                 date: new Date().toLocaleDateString(),
                 paymentMethod: paymentAccounts[paymentMethod].label,
                 transactionRef: transactionRef,
                 status: 'Pending Approval',
                 anonymous: isAnonymous,
-                donor: isAnonymous ? 'Anonymous' : (currentUser?.name || currentUser?.fullName || currentUser?.username || 'Donor'),
+                donor: isAnonymous ? 'Anonymous' : donorName,
                 receiptNumber: '',
                 proofUrl: proofLink || (proofData ? 'Attached proof' : ''),
                 proofMethod: proofLink ? 'Google Drive link' : (proofData ? 'Local attachment' : 'WhatsApp/manual')
             };
             if (frontendOnly) {
-                saveDonationLocally(donation);
-                return null;
+                if (!window.SupabaseBackend?.enabled || !window.SupabaseBackend.submitPublicDonation) {
+                    throw new Error('Online donation recording is not configured. Please contact the Dawah Team before sending payment.');
+                }
+                return window.SupabaseBackend.submitPublicDonation(donation).then(saved => {
+                    donation.supabaseId = saved.supabaseId;
+                    saveDonationLocally(donation);
+                });
             }
             return fetch('supabase-required-endpoint?action=recordDonation', {
                 method: 'POST',
@@ -7007,6 +7142,8 @@ function submitDonation() {
                     amount: amount,
                     donation_type: donation.type,
                     purpose: donation.purpose,
+                    appeal_id: donation.appealId,
+                    appeal_title: donation.appealTitle,
                     payment_method: donation.paymentMethod,
                     transaction_id: transactionRef,
                     proof_data: proofData,
@@ -7025,7 +7162,7 @@ function submitDonation() {
         })
         .catch(error => {
             console.error('Donation database error:', error);
-            alert(error.message || 'Donation could not be saved to the database.');
+            showError(error.message || 'Donation could not be saved online. Check your connection and try again.', 'donationAmount');
         });
 }
 
@@ -7033,10 +7170,14 @@ function submitDonation() {
 function saveDonationLocally(donation) {
     donations.push(donation);
     localStorage.setItem('donations', JSON.stringify(donations));
-    saveOwnedCloudRecord('donations', donation, 'donations');
-    const sendProof = confirm('Donation submitted. The treasurer must confirm it before a receipt is available.\n\nDo you want to send proof screenshot by WhatsApp now?');
+    if (!donation.supabaseId) saveOwnedCloudRecord('donations', donation, 'donations');
+    const campaignNote = donation.appealTitle
+        ? ` for “${donation.appealTitle}” (appeal ${donation.appealReference || donation.appealId})`
+        : '';
+    const sendProof = confirm(`Donation submitted${campaignNote}. Payment reference: ${donation.transactionRef}. It will remain pending until the Treasurer confirms it.\n\nWould you like to send proof by WhatsApp now?`);
     if (sendProof) {
-        const message = `Assalamu alaikum Treasurer, donation proof from ${donation.donor || 'Donor'}. Reference: ${donation.transactionRef}. Amount: KSh ${donation.amount}.`;
+        const appealNote = donation.appealTitle ? ` Appeal: ${donation.appealTitle} (${donation.appealReference || donation.appealId}).` : '';
+        const message = `Assalamu alaikum Treasurer, donation proof from ${donation.donor || 'Donor'}.${appealNote} Transaction reference: ${donation.transactionRef}. Amount: KSh ${donation.amount}.`;
         window.open(getTreasurerWhatsappUrl(message), '_blank', 'noopener');
     }
 
@@ -7044,6 +7185,7 @@ function saveDonationLocally(donation) {
     updatePaymentInstructions('donation');
     bootstrap.Modal.getInstance(document.getElementById('donationModal')).hide();
     renderDonationHistory();
+    showNotification('Donation submitted. It will show as pending until the Treasurer confirms it.', 'success');
 }
 
 // Runtime slice from daawah.js: renderDonationHistory.
@@ -7181,6 +7323,10 @@ function downloadDonationReceipt(index) {
         transactionRef: donation.transactionRef,
         name: donation.donor || currentUser?.fullName || currentUser?.name || currentUser?.username || 'Donor',
         type: donation.type || 'Donation',
+        purpose: donation.purpose || '',
+        appealId: donation.appealId || '',
+        appealTitle: donation.appealTitle || '',
+        appealReference: donation.appealReference || donation.appealId || '',
         amount: donation.amount,
         method: donation.paymentMethod || 'Not specified',
         status: donation.status,
@@ -9103,7 +9249,6 @@ function getVolunteerOpportunities() {
     const seen = new Set();
     return [...savedOpportunities, ...databaseVolunteerOpportunities, ...activityOpportunities, ...defaultVolunteerOpportunities]
         .filter(opportunity => {
-            if (String(opportunity.status || 'open').toLowerCase() !== 'open') return false;
             const key = String(opportunity.title || opportunity.id || '').trim().toLowerCase();
             if (!key || seen.has(key)) return false;
             seen.add(key);
@@ -9116,32 +9261,110 @@ function renderVolunteerOpportunities() {
     const container = document.getElementById('volunteerOpportunitiesList');
     if (!container) return;
 
-    const opportunities = getVolunteerOpportunities().filter(item => getCommunityListingKind(item) === 'volunteer');
+    const canManage = hasPermission('manage_events');
+    const opportunities = getVolunteerOpportunities()
+        .filter(item => canManage || getCommunityListingKind(item) === 'volunteer')
+        .filter(item => canManage || isCommunityListingOpen(item));
     if (!opportunities.length) {
         container.innerHTML = '<div class="col-12 text-center text-muted">No volunteer opportunities have been added yet.</div>';
         return;
     }
 
-    container.innerHTML = opportunities.map(opportunity => `
+    container.innerHTML = opportunities.map((opportunity, index) => {
+        const isManagerListing = canManage && String(opportunity.id || '').startsWith('community-listing-');
+        const isOpen = isCommunityListingOpen(opportunity);
+        const kind = getCommunityListingKind(opportunity);
+        const safeId = escapeHtml(opportunity.id || '');
+        const postedBy = opportunity.postedBy ? `<br><small>Posted by ${escapeHtml(opportunity.postedBy)}${opportunity.postedAt ? ` · ${escapeHtml(formatCommunityListingDate(opportunity.postedAt))}` : ''}</small>` : '';
+        const expiry = formatCommunityListingDate(opportunity.endDate || opportunity.endsAt);
+        const controls = isManagerListing ? `<div class="d-flex flex-wrap gap-2 mt-3"><button class="btn btn-sm btn-outline-primary" onclick="editCommunityListing('${safeId}')">Edit</button><button class="btn btn-sm btn-outline-secondary" onclick="setCommunityListingStatus('${safeId}', '${isOpen ? 'closed' : 'open'}')">${isOpen ? 'Close listing' : 'Reopen listing'}</button><button class="btn btn-sm btn-outline-danger" onclick="removeCommunityListing('${safeId}')">Remove</button></div>` : '';
+        return `
         <div class="col-md-6 col-lg-4 mb-3">
             <div class="card volunteer-card h-100">
                 <div class="card-header">
                     <h6 class="mb-0">${escapeHtml(opportunity.title)}</h6>
-                    <small>${escapeHtml(opportunity.schedule || 'Schedule will be announced')}</small>
+                    <small>${escapeHtml(opportunity.schedule || 'Schedule will be announced')}${postedBy}</small>
                 </div>
                 <div class="card-body d-flex flex-column">
                     <p class="text-muted">${escapeHtml(opportunity.description || 'Details will be shared soon.')}</p>
                     <div class="volunteer-details mt-auto">
-                        <small><strong>Hours:</strong> ${escapeHtml(String(opportunity.requiredHours || opportunity.required_hours || 'Flexible'))}</small>
+                        ${isManagerListing ? `<span class="badge ${isOpen ? 'bg-success' : 'bg-secondary'}">${isOpen ? 'Open' : 'Closed'}</span>${expiry ? `<small class="d-block mt-2">Closes ${escapeHtml(expiry)}</small>` : ''}` : ''}
+                        <span class="badge text-bg-light">${kind === 'charity' ? 'Charity appeal' : 'Volunteer'}</span>
+                        ${kind === 'volunteer' ? `<small class="d-block mt-2"><strong>Hours:</strong> ${escapeHtml(String(opportunity.requiredHours || opportunity.required_hours || 'Flexible'))}</small>` : `<small class="d-block mt-2"><strong>Goal:</strong> ${Number(opportunity.goalAmount || 0) > 0 ? `KSh ${Number(opportunity.goalAmount).toLocaleString()}` : 'Not set'}</small>`}
                         ${opportunity.signupCount ? `<br><small><strong>Signups:</strong> ${escapeHtml(String(opportunity.signupCount))}</small>` : ''}
                     </div>
-                    <button class="btn btn-sm btn-primary mt-2" onclick="registerVolunteer('${encodeURIComponent(opportunity.id || opportunity.title)}')">
+                    ${isOpen && kind === 'volunteer' ? `<button class="btn btn-sm btn-primary mt-2" onclick="registerVolunteer('${encodeURIComponent(opportunity.id || opportunity.title)}')">
                         <i class="fas fa-user-plus"></i> Sign Up
-                    </button>
+                    </button>` : ''}
+                    ${controls}
                 </div>
             </div>
         </div>
-    `).join('');
+    `;
+    }).join('');
+}
+
+function saveCommunityListings(listings) {
+    if (window.SupabaseBackend?.enabled && window.SupabaseBackend.saveStore) {
+        return window.SupabaseBackend.saveStore('volunteerOpportunities', listings).then(() => {
+            localStorage.setItem('volunteerOpportunities', JSON.stringify(listings));
+            return listings;
+        });
+    }
+    if (frontendOnly) {
+        localStorage.setItem('volunteerOpportunities', JSON.stringify(listings));
+        return Promise.resolve(listings);
+    }
+    return Promise.reject(new Error('Shared Supabase listing storage is not configured.'));
+}
+
+function editCommunityListing(listingId) {
+    if (!hasPermission('manage_events')) return;
+    const listing = readList('volunteerOpportunities').find(item => item.id === listingId);
+    if (!listing || !String(listing.id || '').startsWith('community-listing-')) return;
+    editingVolunteerListingId = listing.id;
+    document.getElementById('volunteerOpportunityKind').value = getCommunityListingKind(listing);
+    document.getElementById('volunteerOpportunityTitle').value = listing.title || '';
+    document.getElementById('volunteerOpportunityDescription').value = listing.description || '';
+    document.getElementById('volunteerOpportunityHours').value = listing.requiredHours || '';
+    document.getElementById('volunteerOpportunitySchedule').value = listing.schedule || '';
+    document.getElementById('volunteerOpportunityGoal').value = listing.goalAmount || '';
+    document.getElementById('volunteerOpportunityEndDate').value = String(listing.endDate || listing.endsAt || '').slice(0, 10);
+    updateVolunteerOpportunityFields();
+    const submit = document.querySelector('#volunteerOpportunityForm [type="submit"]');
+    if (submit) submit.innerHTML = '<i class="fas fa-floppy-disk"></i> Save Changes';
+    document.getElementById('volunteerOpportunityForm')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+}
+
+function setCommunityListingStatus(listingId, status) {
+    if (!hasPermission('manage_events')) return;
+    const listing = readList('volunteerOpportunities').find(item => item.id === listingId);
+    if (!listing || !String(listing.id || '').startsWith('community-listing-')) return;
+    if (status === 'open' && !isCommunityListingOpen({ ...listing, status: 'open' })) {
+        showNotification('This listing has passed its closing date. Edit it and set a future closing date before reopening.', 'warning');
+        return;
+    }
+    const next = readList('volunteerOpportunities').map(item => item.id === listing.id
+        ? { ...item, status: status === 'open' ? 'open' : 'closed', updatedAt: new Date().toISOString() }
+        : item);
+    saveCommunityListings(next).then(() => {
+        renderCommunityHelpSection();
+        return loadVolunteerData();
+    }).then(() => showNotification(status === 'open' ? 'Listing reopened and visible publicly.' : 'Listing closed and removed from the public page.', 'success'))
+        .catch(error => showNotification(error.message || 'Could not update this listing.', 'danger'));
+}
+
+function removeCommunityListing(listingId) {
+    if (!hasPermission('manage_events')) return;
+    const listing = readList('volunteerOpportunities').find(item => item.id === listingId);
+    if (!listing || !String(listing.id || '').startsWith('community-listing-')) return;
+    if (!window.confirm(`Remove “${listing.title}” permanently?`)) return;
+    const next = readList('volunteerOpportunities').filter(item => item.id !== listing.id);
+    saveCommunityListings(next).then(() => {
+        renderCommunityHelpSection();
+        return loadVolunteerData();
+    }).then(() => showNotification('Listing removed.', 'success'))
+        .catch(error => showNotification(error.message || 'Could not remove this listing.', 'danger'));
 }
 
 // Runtime slice from daawah.js: populateVolunteerOpportunities.
@@ -9149,7 +9372,7 @@ function populateVolunteerOpportunities() {
     const select = document.getElementById('volunteerOpportunity');
     if (!select) return;
 
-    const opportunities = getVolunteerOpportunities().filter(item => getCommunityListingKind(item) === 'volunteer');
+    const opportunities = getVolunteerOpportunities().filter(item => getCommunityListingKind(item) === 'volunteer' && isCommunityListingOpen(item));
     select.innerHTML = '<option value="">Select opportunity</option>' + opportunities.map(opportunity =>
         `<option value="${escapeHtml(opportunity.id || opportunity.title)}">${escapeHtml(opportunity.title)}</option>`
     ).join('');
@@ -9240,16 +9463,23 @@ function saveVolunteerOpportunity(event) {
 
     const kind = document.getElementById('volunteerOpportunityKind')?.value === 'charity' ? 'charity' : 'volunteer';
     const schedule = document.getElementById('volunteerOpportunitySchedule').value.trim();
+    const existing = editingVolunteerListingId
+        ? readList('volunteerOpportunities').find(item => item.id === editingVolunteerListingId)
+        : null;
     const opportunity = {
-        id: `community-listing-${Date.now()}`,
+        ...(existing || {}),
+        id: editingVolunteerListingId || `community-listing-${Date.now()}`,
         kind,
         title: document.getElementById('volunteerOpportunityTitle').value.trim(),
         description: document.getElementById('volunteerOpportunityDescription').value.trim(),
         requiredHours: kind === 'volunteer' ? (Number(document.getElementById('volunteerOpportunityHours').value) || 1) : 0,
         schedule: schedule || (kind === 'charity' ? 'Open appeal' : ''),
         goalAmount: kind === 'charity' ? (Number(document.getElementById('volunteerOpportunityGoal').value) || 0) : 0,
-        status: 'open',
-        postedAt: new Date().toISOString()
+        endDate: document.getElementById('volunteerOpportunityEndDate')?.value || '',
+        status: existing?.status || 'open',
+        postedBy: existing?.postedBy || currentUser?.fullName || currentUser?.name || currentUser?.username || 'Dawah Team Organizer',
+        postedAt: existing?.postedAt || new Date().toISOString(),
+        updatedAt: new Date().toISOString()
     };
 
     if (!opportunity.title || !opportunity.description || (kind === 'volunteer' && !opportunity.schedule)) {
@@ -9263,21 +9493,24 @@ function saveVolunteerOpportunity(event) {
             .then(current => {
                 const listings = Array.isArray(current) ? current : [];
                 const next = [opportunity, ...listings.filter(item => item.id !== opportunity.id)];
-                return window.SupabaseBackend.saveStore('volunteerOpportunities', next).then(() => next);
+                return saveCommunityListings(next);
             })
             .then(listings => {
-                localStorage.setItem('volunteerOpportunities', JSON.stringify(listings));
-                logLocalRoleActivity(kind === 'charity' ? 'createCharityAppeal' : 'createVolunteerOp', { title: opportunity.title });
-                document.getElementById('volunteerOpportunityForm').reset();
-                updateVolunteerOpportunityFields();
-                showNotification(kind === 'charity' ? 'Charity appeal posted publicly.' : 'Volunteer opportunity posted publicly.', 'success');
+                logLocalRoleActivity(existing ? 'updateCommunityListing' : (kind === 'charity' ? 'createCharityAppeal' : 'createVolunteerOp'), { title: opportunity.title });
+                resetVolunteerListingForm();
+                showNotification(existing ? 'Listing updated.' : (kind === 'charity' ? 'Charity appeal posted publicly.' : 'Volunteer opportunity posted publicly.'), 'success');
                 return loadVolunteerData();
             })
+            .then(() => renderCommunityHelpSection())
             .catch(error => showNotification(error.message || 'Could not publish this community listing.', 'danger'));
         return;
     }
 
     if (!frontendOnly) {
+        if (existing) {
+            showNotification('Editing shared listings needs the Supabase public listing store enabled.', 'warning');
+            return;
+        }
         if (kind === 'charity') {
             showNotification('Public charity appeals need the Supabase public listing store enabled.', 'warning');
             return;
@@ -9309,13 +9542,20 @@ function saveVolunteerOpportunity(event) {
     }
 
     const opportunities = readList('volunteerOpportunities');
-    opportunities.unshift(opportunity);
-    localStorage.setItem('volunteerOpportunities', JSON.stringify(opportunities));
+    const next = [opportunity, ...opportunities.filter(item => item.id !== opportunity.id)];
+    localStorage.setItem('volunteerOpportunities', JSON.stringify(next));
     logLocalRoleActivity(kind === 'charity' ? 'createCharityAppeal' : 'createVolunteerOp', { title: opportunity.title });
-    document.getElementById('volunteerOpportunityForm').reset();
-    updateVolunteerOpportunityFields();
+    resetVolunteerListingForm();
     loadVolunteerData();
     showNotification(kind === 'charity' ? 'Charity appeal posted.' : 'Volunteer opportunity posted.', 'success');
+}
+
+function resetVolunteerListingForm() {
+    editingVolunteerListingId = null;
+    document.getElementById('volunteerOpportunityForm')?.reset();
+    const submit = document.querySelector('#volunteerOpportunityForm [type="submit"]');
+    if (submit) submit.innerHTML = '<i class="fas fa-plus"></i> Publish Listing';
+    updateVolunteerOpportunityFields();
 }
 
 // Runtime slice from daawah.js: suggestOfficerHadithArabic.

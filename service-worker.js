@@ -1,4 +1,4 @@
-const DAWAAH_CACHE = 'dawah-shell-supabase-v4'; // Supabase: bump cache after config cache-bust update.
+const DAWAAH_CACHE = 'dawah-shell-supabase-v5'; // Community listing and public donation update.
 const SHELL_ASSETS = [
   './',
   './index.html',

@@ -27,3 +27,48 @@ function loadVolunteerOpportunityStore() {
             return readList('volunteerOpportunities');
         });
 }
+
+// Runtime slice from daawah.js: loadVolunteerOpportunitiesFromApi.
+function loadVolunteerOpportunitiesFromApi() {
+    if (frontendOnly) {
+        databaseVolunteerOpportunities = [];
+        return Promise.resolve([]);
+    }
+    return fetch('supabase-required-endpoint?action=getVolunteerOps', { credentials: 'same-origin' })
+        .then(response => parseJsonResponse(response))
+        .then(result => {
+            if (!result.success) throw new Error(result.message || 'Could not load volunteer opportunities');
+            databaseVolunteerOpportunities = (result.data || []).map(normalizeDatabaseVolunteerOpportunity);
+            return databaseVolunteerOpportunities;
+        })
+        .catch(error => {
+            console.warn('Database volunteer opportunities unavailable:', error);
+            databaseVolunteerOpportunities = [];
+            return [];
+        });
+}
+
+// Runtime slice from daawah.js: loadVolunteerRecordsFromApi.
+function loadVolunteerRecordsFromApi() {
+    if (frontendOnly || !currentUser) {
+        databaseVolunteerRecords = [];
+        return Promise.resolve([]);
+    }
+    const actor = authQuery();
+    const loadRecords = studentId => fetch(`supabase-required-endpoint?action=getVolunteerRegistrations&${actor}&student_id=${encodeURIComponent(studentId || 0)}`, { credentials: 'same-origin' });
+    const request = hasPermission('manage_events')
+        ? loadRecords(0)
+        : getCurrentStudentId().then(loadRecords);
+    return request
+        .then(response => parseJsonResponse(response))
+        .then(result => {
+            if (!result.success) throw new Error(result.message || 'Could not load volunteer records');
+            databaseVolunteerRecords = (result.data || []).map(normalizeDatabaseVolunteerRecord);
+            return databaseVolunteerRecords;
+        })
+        .catch(error => {
+            console.warn('Database volunteer records unavailable:', error);
+            databaseVolunteerRecords = [];
+            return [];
+        });
+}

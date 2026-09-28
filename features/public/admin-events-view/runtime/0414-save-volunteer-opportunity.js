@@ -23,16 +23,23 @@ function saveVolunteerOpportunity(event) {
 
     const kind = document.getElementById('volunteerOpportunityKind')?.value === 'charity' ? 'charity' : 'volunteer';
     const schedule = document.getElementById('volunteerOpportunitySchedule').value.trim();
+    const existing = editingVolunteerListingId
+        ? readList('volunteerOpportunities').find(item => item.id === editingVolunteerListingId)
+        : null;
     const opportunity = {
-        id: `community-listing-${Date.now()}`,
+        ...(existing || {}),
+        id: editingVolunteerListingId || `community-listing-${Date.now()}`,
         kind,
         title: document.getElementById('volunteerOpportunityTitle').value.trim(),
         description: document.getElementById('volunteerOpportunityDescription').value.trim(),
         requiredHours: kind === 'volunteer' ? (Number(document.getElementById('volunteerOpportunityHours').value) || 1) : 0,
         schedule: schedule || (kind === 'charity' ? 'Open appeal' : ''),
         goalAmount: kind === 'charity' ? (Number(document.getElementById('volunteerOpportunityGoal').value) || 0) : 0,
-        status: 'open',
-        postedAt: new Date().toISOString()
+        endDate: document.getElementById('volunteerOpportunityEndDate')?.value || '',
+        status: existing?.status || 'open',
+        postedBy: existing?.postedBy || currentUser?.fullName || currentUser?.name || currentUser?.username || 'Dawah Team Organizer',
+        postedAt: existing?.postedAt || new Date().toISOString(),
+        updatedAt: new Date().toISOString()
     };
 
     if (!opportunity.title || !opportunity.description || (kind === 'volunteer' && !opportunity.schedule)) {
@@ -46,45 +53,67 @@ function saveVolunteerOpportunity(event) {
             .then(current => {
                 const listings = Array.isArray(current) ? current : [];
                 const next = [opportunity, ...listings.filter(item => item.id !== opportunity.id)];
-                return window.SupabaseBackend.saveStore('volunteerOpportunities', next).then(() => next);
+                return saveCommunityListings(next);
             })
             .then(listings => {
-                localStorage.setItem('volunteerOpportunities', JSON.stringify(listings));
-                logLocalRoleActivity(kind === 'charity' ? 'createCharityAppeal' : 'createVolunteerOp', { title: opportunity.title });
-                document.getElementById('volunteerOpportunityForm').reset();
-                updateVolunteerOpportunityFields();
-                showNotification(kind === 'charity' ? 'Charity appeal posted publicly.' : 'Volunteer opportunity posted publicly.', 'success');
+                logLocalRoleActivity(existing ? 'updateCommunityListing' : (kind === 'charity' ? 'createCharityAppeal' : 'createVolunteerOp'), { title: opportunity.title });
+                resetVolunteerListingForm();
+                showNotification(existing ? 'Listing updated.' : (kind === 'charity' ? 'Charity appeal posted publicly.' : 'Volunteer opportunity posted publicly.'), 'success');
                 return loadVolunteerData();
             })
+            .then(() => renderCommunityHelpSection())
             .catch(error => showNotification(error.message || 'Could not publish this community listing.', 'danger'));
         return;
     }
 
     if (!frontendOnly) {
+        if (existing) {
+            showNotification('Editing shared listings needs the Supabase public listing store enabled.', 'warning');
+            return;
+        }
         if (kind === 'charity') {
             showNotification('Public charity appeals need the Supabase public listing store enabled.', 'warning');
             return;
         }
         fetch('supabase-required-endpoint?action=createVolunteerOp', {
-            method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'same-origin',
-            body: JSON.stringify(authPayload({ title: opportunity.title, description: opportunity.description, required_hours: opportunity.requiredHours, duration: opportunity.schedule, schedule: opportunity.schedule, created_by: currentUser?.dbUserId || currentUser?.user_id || currentUser?.id || 0 }))
-        }).then(response => parseJsonResponse(response)).then(result => {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            credentials: 'same-origin',
+            body: JSON.stringify(authPayload({
+                title: opportunity.title,
+                description: opportunity.description,
+                required_hours: opportunity.requiredHours,
+                duration: opportunity.schedule,
+                schedule: opportunity.schedule,
+                created_by: currentUser?.dbUserId || currentUser?.user_id || currentUser?.id || 0
+            }))
+        })
+        .then(response => parseJsonResponse(response))
+        .then(result => {
             if (!result.success) throw new Error(result.message || 'Could not add volunteer opportunity');
-            logLocalRoleActivity('createVolunteerOp', { title: opportunity.title });
+            logLocalRoleActivity('createVolunteerOp', { title: opportunity.title, requiredHours: opportunity.requiredHours, schedule: opportunity.schedule });
             document.getElementById('volunteerOpportunityForm').reset();
             updateVolunteerOpportunityFields();
             showNotification('Volunteer opportunity saved.', 'success');
             return loadVolunteerData();
-        }).catch(error => showNotification(error.message || 'Could not add volunteer opportunity', 'danger'));
+        })
+        .catch(error => showNotification(error.message || 'Could not add volunteer opportunity', 'danger'));
         return;
     }
 
     const opportunities = readList('volunteerOpportunities');
-    opportunities.unshift(opportunity);
-    localStorage.setItem('volunteerOpportunities', JSON.stringify(opportunities));
+    const next = [opportunity, ...opportunities.filter(item => item.id !== opportunity.id)];
+    localStorage.setItem('volunteerOpportunities', JSON.stringify(next));
     logLocalRoleActivity(kind === 'charity' ? 'createCharityAppeal' : 'createVolunteerOp', { title: opportunity.title });
-    document.getElementById('volunteerOpportunityForm').reset();
-    updateVolunteerOpportunityFields();
+    resetVolunteerListingForm();
     loadVolunteerData();
     showNotification(kind === 'charity' ? 'Charity appeal posted.' : 'Volunteer opportunity posted.', 'success');
+}
+
+function resetVolunteerListingForm() {
+    editingVolunteerListingId = null;
+    document.getElementById('volunteerOpportunityForm')?.reset();
+    const submit = document.querySelector('#volunteerOpportunityForm [type="submit"]');
+    if (submit) submit.innerHTML = '<i class="fas fa-plus"></i> Publish Listing';
+    updateVolunteerOpportunityFields();
 }

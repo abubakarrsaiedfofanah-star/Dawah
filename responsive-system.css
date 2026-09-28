@@ -790,3 +790,71 @@ body .landing-page #get-involved textarea:focus {
     border-color: #168052 !important;
     box-shadow: 0 0 0 .2rem rgba(22, 128, 82, .17) !important;
 }
+
+/* Public volunteer and payment forms remain easy to use on narrow touch screens. */
+body .landing-page #get-involved :is(input, select, textarea, button),
+body #volunteerView :is(input, select, textarea, button),
+body .finance-modal :is(input, select, textarea, button) {
+    font-size: max(1rem, 16px);
+}
+body .landing-page #get-involved button,
+body #volunteerView button,
+body .finance-modal .modal-footer .btn {
+    min-height: 44px;
+}
+body #volunteerView .volunteer-card,
+body .landing-page #get-involved .card {
+    min-width: 0;
+    overflow-wrap: anywhere;
+}
+body #volunteerView .volunteer-details {
+    display: grid;
+    gap: .35rem;
+}
+body #volunteerView .d-flex.flex-wrap > .btn {
+    flex: 1 1 auto;
+}
+body .finance-modal .modal-body {
+    max-height: min(70dvh, 680px);
+    overflow-y: auto;
+    overscroll-behavior: contain;
+}
+body .finance-modal .modal-footer {
+    position: sticky;
+    bottom: 0;
+    background: #fff;
+}
+body .finance-modal .alert,
+body .landing-page #get-involved .form-text {
+    overflow-wrap: anywhere;
+}
+body .admin-login-screen :is(input, select, textarea, button),
+body .officer-shell :is(input, select, textarea, button) {
+    font-size: max(1rem, 16px);
+}
+body .admin-login-screen :is(button, .nav-link),
+body .officer-shell :is(button, .nav-link) {
+    min-height: 44px;
+}
+
+@media (max-width: 575.98px) {
+    body .landing-page #get-involved .card-body {
+        padding: 1rem !important;
+    }
+    body .landing-page #get-involved .btn,
+    body #volunteerView #volunteerOpportunityForm [type="submit"],
+    body .finance-modal .modal-footer .btn {
+        width: 100%;
+    }
+    body .finance-modal .modal-dialog {
+        margin: .5rem;
+    }
+    body .admin-login-card,
+    body .officer-card {
+        width: min(100% - 1rem, 620px);
+        padding-inline: 1rem;
+    }
+    body .finance-modal .modal-content {
+        max-height: calc(100dvh - 1rem);
+    }
+}
