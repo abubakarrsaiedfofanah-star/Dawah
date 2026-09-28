@@ -42,6 +42,12 @@
                         <li class="nav-item">
                             <a class="nav-link" href="#contact" onclick="return showPublicSection('contact', this)"><i class="fas fa-bell"></i> Contact Us</a>
                         </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="#get-involved" onclick="return showPublicSection('get-involved', this)"><i class="fas fa-hand-holding-heart"></i> Get Involved</a>
+                        </li>
+                        <li class="nav-item nav-join-item">
+                            <a class="nav-link nav-join-link" href="#register" onclick="activateAuthTab('register'); return false;">Join Us</a>
+                        </li>
                     </ul>
                 </div>
             </div>
@@ -56,9 +62,9 @@
                 </h1>
                 <p class="hero-description">Building a compassionate community of Muslims.</p>
                 <div class="hero-highlights" aria-label="UMMA University Dawah Team highlights">
-                    <span><i class="fas fa-mosque"></i> Prayer & Guidance</span>
-                    <span><i class="fas fa-hands-helping"></i> Welfare & Service</span>
-                    <span><i class="fas fa-photo-film"></i> Events & Media</span>
+                    <span><strong>Faith</strong><small>Prayer & guidance</small></span>
+                    <span><strong>Community</strong><small>Welfare & service</small></span>
+                    <span><strong>Growth</strong><small>Events & learning</small></span>
                 </div>
                 <div class="hero-buttons">
                     <a href="#portals" onclick="return showPublicSection('portals', this)" class="btn btn-primary btn-lg"><i class="fas fa-door-open"></i> Open Portals</a>
@@ -83,11 +89,11 @@
                         <div class="portal-icon"><img src="assets/umma-university-logo-color.png?v=20260522-logo2" alt="UMMA University logo"></div>
                         <h3>Student Portal</h3>
                         <div class="portal-actions">
-                            <button class="btn btn-primary" onclick="activateAuthTab('login')"><i class="fas fa-right-to-bracket"></i> Student Login</button>
+                            <button class="btn btn-primary" onclick="activateAuthTab('login')"><i class="fas fa-right-to-bracket"></i> Member Login</button>
                             <button class="btn btn-outline-primary" onclick="activateAuthTab('register')"><i class="fas fa-user-plus"></i> Student Register</button>
                         </div>
                     </article>
-                    <article class="portal-card portal-card-officer">
+                    <article class="portal-card portal-card-officer" hidden aria-hidden="true">
                         <div class="portal-card-brand">UMMA University Dawah Team</div>
                         <div class="portal-icon"><img src="assets/umma-university-logo-color.png?v=20260522-logo2" alt="UMMA University logo"></div>
                         <h3>Officer Portal</h3>
@@ -204,6 +210,82 @@
                 </div>
                 <div id="publicActivitiesPreview" class="activity-public-grid">
                     <div class="text-center text-muted">Activities will be updated soon.</div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Public Community Help Section -->
+        <section id="get-involved" class="landing-section bg-light">
+            <div class="container">
+                <div class="text-center mb-4">
+                    <span class="badge text-bg-success mb-2">Everyone is welcome</span>
+                    <h2 class="section-title">Community Giving &amp; Volunteering</h2>
+                    <p class="lead text-muted">You do not need to be a UMMA student or Dawah Team member to help. Give, volunteer, share a skill, or support an activity.</p>
+                </div>
+                <div class="row g-4 mb-5">
+                    <div class="col-lg-7">
+                        <div class="card h-100 shadow-sm">
+                            <div class="card-body p-4">
+                                <h3 class="h4"><i class="fas fa-people-group text-success me-2"></i>Volunteer opportunities</h3>
+                                <p class="text-muted">Browse current service opportunities and apply directly. The team will contact you to confirm details.</p>
+                                <div id="communityVolunteerOpportunities" class="row g-3" aria-live="polite">
+                                    <div class="col-12 text-muted">Loading opportunities…</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-lg-5">
+                        <div class="card h-100 shadow-sm border-success">
+                            <div class="card-body p-4 d-flex flex-column">
+                                <h3 class="h4"><i class="fas fa-hand-holding-dollar text-success me-2"></i>Give to the community</h3>
+                                <p class="text-muted">Support Dawah activities and community care. You can choose to donate anonymously in the payment form.</p>
+                                <div class="d-grid gap-2 mt-auto">
+                                    <button type="button" class="btn btn-success" onclick="showDonationModal('Community Support')"><i class="fas fa-heart me-2"></i>Donate now</button>
+                                    <a class="btn btn-outline-success" href="#contact" onclick="return showPublicSection('contact', this)">Ask about giving supplies</a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="row justify-content-center">
+                    <div class="col-lg-9">
+                        <div class="card shadow-sm">
+                            <div class="card-body p-4 p-md-5">
+                                <h3 class="h4">Offer your time, skills, or other help</h3>
+                                <p class="text-muted">Share how you would like to help. No account or student ID is needed.</p>
+                                <form id="communityHelpForm" onsubmit="return submitCommunityHelpApplication(event)">
+                                    <div class="row g-3">
+                                        <div class="col-md-6">
+                                            <label class="form-label" for="communityHelpName">Your name</label>
+                                            <input class="form-control" id="communityHelpName" name="name" maxlength="100" autocomplete="name" required>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <label class="form-label" for="communityHelpContact">Phone or email</label>
+                                            <input class="form-control" id="communityHelpContact" name="contact" maxlength="160" autocomplete="email" required>
+                                        </div>
+                                        <div class="col-12">
+                                            <label class="form-label" for="communityHelpInterest">How would you like to help?</label>
+                                            <select class="form-select" id="communityHelpInterest" name="interest" required>
+                                                <option value="">Choose an opportunity or type of help</option>
+                                                <option value="Offer supplies or equipment">Offer supplies or equipment</option>
+                                                <option value="Share a skill or professional service">Share a skill or professional service</option>
+                                                <option value="Partner with or host an activity">Partner with or host an activity</option>
+                                                <option value="Other community support">Other community support</option>
+                                            </select>
+                                        </div>
+                                        <div class="col-12">
+                                            <label class="form-label" for="communityHelpAvailability">Availability or details</label>
+                                            <textarea class="form-control" id="communityHelpAvailability" name="details" rows="3" maxlength="1000" placeholder="When are you available? What would you like to contribute?" required></textarea>
+                                        </div>
+                                        <div class="col-12">
+                                            <button class="btn btn-primary" type="submit"><i class="fab fa-whatsapp me-2"></i>Continue to WhatsApp</button>
+                                            <p class="small text-muted mt-2 mb-0">Your details are not stored by this form. WhatsApp opens so you can review and send your message to the team.</p>
+                                        </div>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
         </section>
@@ -341,7 +423,7 @@
                     <div class="col-lg-3 col-md-6">
                         <h6>Connect With Us</h6>
                         <div class="social-links" id="publicSocialLinks">
-                            <a href="https://api.whatsapp.com/send?phone=23231422167&text=Assalamu%20alaikum%2C%20I%20would%20like%20to%20contact%20Da%27awah%20Team." target="_blank" rel="noopener" aria-label="WhatsApp"><i class="fab fa-whatsapp"></i></a>
+                            <a href="https://api.whatsapp.com/send?phone=23231422167&text=Assalamu%20alaikum%2C%20I%20would%20like%20to%20contact%20Da%27awah%20Team." target="_blank" rel="noopener" aria-label="WhatsApp" title="WhatsApp"><span class="social-link-mark" aria-hidden="true">WA</span></a>
                         </div>
                     </div>
                 </div>

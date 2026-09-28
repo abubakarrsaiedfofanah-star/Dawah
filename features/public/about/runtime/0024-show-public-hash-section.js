@@ -1,7 +1,7 @@
 // Runtime slice from daawah.js: showPublicHashSection.
 function showPublicHashSection() {
     const sectionId = String(window.location.hash || '').replace(/^#/, '');
-    const publicSections = ['home', 'portals', 'about', 'mission', 'activities', 'leadership', 'gallery', 'contact'];
+    const publicSections = ['home', 'portals', 'about', 'mission', 'activities', 'leadership', 'gallery', 'contact', 'get-involved'];
     if (!sectionId || !publicSections.includes(sectionId)) return false;
     if (getStoredCurrentUser()) return false;
     showLanding();

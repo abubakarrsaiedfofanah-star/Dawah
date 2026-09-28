@@ -18,6 +18,12 @@
         "contactSubject",
         "contactSubmitButton",
         "contactVoiceFile",
+        "communityHelpAvailability",
+        "communityHelpContact",
+        "communityHelpForm",
+        "communityHelpInterest",
+        "communityHelpName",
+        "communityVolunteerOpportunities",
         "footerContactEmail",
         "footerContactHours",
         "footerContactLocation",
@@ -26,6 +32,7 @@
         "footerInstallWrapper",
         "gallery",
         "galleryContainer",
+        "get-involved",
         "home",
         "landingNavbarNav",
         "landingPage",
@@ -70,6 +77,7 @@
         "activateAuthTab",
         "rememberPortalAudience",
         "return showPublicSection(",
+        "submitCommunityHelpApplication",
         "showLanding"
     ]
   };
