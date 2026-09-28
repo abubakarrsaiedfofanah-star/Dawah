@@ -315,6 +315,15 @@
                         </div>
                     </div>
                 </div>
+                <div class="card shadow-sm mb-5" id="communityCharitySection">
+                    <div class="card-body p-4">
+                        <h3 class="h4">Charity appeals posted by organizers</h3>
+                        <p class="text-muted">Choose a current appeal and donate through the same payment options, with no Dawah account required.</p>
+                        <div id="communityCharityOpportunities" class="row g-3" aria-live="polite">
+                            <div class="col-12 text-muted">Loading charity appeals...</div>
+                        </div>
+                    </div>
+                </div>
                 <div class="row justify-content-center">
                     <div class="col-lg-9">
                         <div class="card shadow-sm">
@@ -1905,22 +1914,35 @@
 
                         <div id="volunteerManagerPanel" class="card d-none">
                             <div class="card-header">
-                                <h5 class="mb-0">Add Volunteer Opportunity</h5>
+                                <h5 class="mb-0">Post a public opportunity or charity appeal</h5>
                             </div>
                             <div class="card-body">
                                 <form id="volunteerOpportunityForm" onsubmit="saveVolunteerOpportunity(event)">
                                     <div class="row">
-                                        <div class="col-md-5 mb-3">
-                                            <label class="form-label">Title</label>
-                                            <input type="text" class="form-control" id="volunteerOpportunityTitle" placeholder="Opportunity title" required>
+                                        <div class="col-md-4 mb-3">
+                                            <label class="form-label" for="volunteerOpportunityKind">Listing type</label>
+                                            <select class="form-select" id="volunteerOpportunityKind" onchange="updateVolunteerOpportunityFields()">
+                                                <option value="volunteer">Volunteer opportunity</option>
+                                                <option value="charity">Charity appeal</option>
+                                            </select>
                                         </div>
-                                        <div class="col-md-3 mb-3">
-                                            <label class="form-label">Hours</label>
+                                        <div class="col-md-4 mb-3 d-none" id="volunteerOpportunityGoalField">
+                                            <label class="form-label" for="volunteerOpportunityGoal">Donation goal (KSh, optional)</label>
+                                            <input type="number" class="form-control" id="volunteerOpportunityGoal" min="1" step="1" placeholder="e.g. 50000">
+                                        </div>
+                                    </div>
+                                    <div class="row">
+                                        <div class="col-md-5 mb-3">
+                                            <label class="form-label" for="volunteerOpportunityTitle">Title</label>
+                                            <input type="text" class="form-control" id="volunteerOpportunityTitle" maxlength="120" placeholder="Opportunity or charity appeal title" required>
+                                        </div>
+                                        <div class="col-md-3 mb-3" id="volunteerOpportunityHoursField">
+                                            <label class="form-label" for="volunteerOpportunityHours">Hours</label>
                                             <input type="number" class="form-control" id="volunteerOpportunityHours" min="1" placeholder="Hours" required>
                                         </div>
                                         <div class="col-md-4 mb-3">
-                                            <label class="form-label">Schedule</label>
-                                            <input type="text" class="form-control" id="volunteerOpportunitySchedule" placeholder="e.g. Saturdays" required>
+                                            <label class="form-label" id="volunteerOpportunityScheduleLabel" for="volunteerOpportunitySchedule">Schedule</label>
+                                            <input type="text" class="form-control" id="volunteerOpportunitySchedule" maxlength="160" placeholder="e.g. Saturdays" required>
                                         </div>
                                     </div>
                                     <div class="mb-3">
@@ -1928,7 +1950,7 @@
                                         <textarea class="form-control" id="volunteerOpportunityDescription" rows="2" placeholder="What volunteers will help with" required></textarea>
                                     </div>
                                     <button type="submit" class="btn btn-primary">
-                                        <i class="fas fa-plus"></i> Add Opportunity
+                                        <i class="fas fa-plus"></i> Publish Listing
                                     </button>
                                 </form>
                             </div>

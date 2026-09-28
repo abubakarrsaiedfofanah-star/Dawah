@@ -16,10 +16,17 @@ function setPublicSectionVisibility(sectionId) {
     if (activeSectionId === 'get-involved') renderCommunityHelpSection();
 }
 
+function getCommunityListingKind(opportunity) {
+    const kind = String(opportunity?.kind || opportunity?.type || opportunity?.category || 'volunteer')
+        .trim().toLowerCase().replace(/[ -]+/g, '_');
+    return ['charity', 'charity_appeal', 'donation', 'fundraiser'].includes(kind) ? 'charity' : 'volunteer';
+}
+
 function renderCommunityHelpSection() {
     const container = document.getElementById('communityVolunteerOpportunities');
+    const charityContainer = document.getElementById('communityCharityOpportunities');
     const selector = document.getElementById('communityHelpInterest');
-    if (!container || !selector || typeof getVolunteerOpportunities !== 'function') return;
+    if (!container || !charityContainer || !selector || typeof getVolunteerOpportunities !== 'function') return;
 
     if (!container.dataset.opportunitiesLoaded) {
         container.dataset.opportunitiesLoaded = 'loading';
@@ -28,8 +35,8 @@ function renderCommunityHelpSection() {
             loaders.push(loadVolunteerOpportunitiesFromApi());
         }
         if (window.SupabaseBackend?.enabled && window.SupabaseBackend.loadStore) {
-            loaders.push(window.SupabaseBackend.loadStore('volunteerOpportunities').then(opportunities => {
-                if (Array.isArray(opportunities)) localStorage.setItem('volunteerOpportunities', JSON.stringify(opportunities));
+            loaders.push(window.SupabaseBackend.loadStore('volunteerOpportunities').then(items => {
+                if (Array.isArray(items)) localStorage.setItem('volunteerOpportunities', JSON.stringify(items));
             }));
         }
         Promise.allSettled(loaders).then(() => {
@@ -38,10 +45,12 @@ function renderCommunityHelpSection() {
         });
     }
 
-    const opportunities = getVolunteerOpportunities();
+    const allListings = getVolunteerOpportunities();
+    const volunteerListings = allListings.filter(item => getCommunityListingKind(item) === 'volunteer');
+    const charityListings = allListings.filter(item => getCommunityListingKind(item) === 'charity');
     const otherOptions = Array.from(selector.options).filter(option => option.value && !option.dataset.opportunity);
     selector.innerHTML = '<option value="">Choose an opportunity or type of help</option>';
-    opportunities.forEach(opportunity => {
+    volunteerListings.forEach(opportunity => {
         const title = String(opportunity.title || '').trim();
         if (!title) return;
         const option = document.createElement('option');
@@ -52,22 +61,41 @@ function renderCommunityHelpSection() {
     });
     otherOptions.forEach(option => selector.appendChild(option));
 
-    if (!opportunities.length) {
-        container.innerHTML = '<div class="col-12"><p class="mb-0 text-muted">There are no listed opportunities right now. You can still use the form below to offer help.</p></div>';
-        return;
+    if (!volunteerListings.length) {
+        container.innerHTML = '<div class="col-12"><p class="mb-0 text-muted">No volunteer openings are posted right now. You can still use the form below to offer your time or skills.</p></div>';
+    } else {
+        container.innerHTML = volunteerListings.map((opportunity, index) => {
+            const title = escapeHtml(opportunity.title || 'Volunteer opportunity');
+            const description = escapeHtml(opportunity.description || 'Help the team serve the campus and wider community.');
+            const schedule = escapeHtml(opportunity.schedule || 'Schedule to be confirmed');
+            const hours = Number(opportunity.requiredHours || opportunity.required_hours || 0);
+            return `<div class="col-md-6"><article class="card h-100 border"><div class="card-body d-flex flex-column"><h4 class="h6">${title}</h4><p class="small text-muted">${description}</p><p class="small mb-3">${schedule}${hours > 0 ? ` &middot; About ${hours} hours` : ''}</p><button type="button" class="btn btn-outline-primary btn-sm mt-auto" onclick="selectCommunityHelpOpportunity(${index})">Apply for this</button></div></article></div>`;
+        }).join('');
     }
 
-    container.innerHTML = opportunities.map((opportunity, index) => {
-        const title = escapeHtml(opportunity.title || 'Volunteer opportunity');
-        const description = escapeHtml(opportunity.description || 'Help the team serve the campus and wider community.');
-        const schedule = escapeHtml(opportunity.schedule || 'Schedule to be confirmed');
-        const hours = Number(opportunity.requiredHours || 0);
-        return `<div class="col-md-6"><article class="card h-100 border"><div class="card-body d-flex flex-column"><h4 class="h6">${title}</h4><p class="small text-muted">${description}</p><p class="small mb-3"><i class="far fa-calendar me-1"></i>${schedule}${hours > 0 ? ` · About ${hours} hours` : ''}</p><button type="button" class="btn btn-outline-primary btn-sm mt-auto" onclick="selectCommunityHelpOpportunity(${index})">Apply for this</button></div></article></div>`;
-    }).join('');
+    if (!charityListings.length) {
+        charityContainer.innerHTML = '<div class="col-12"><p class="mb-0 text-muted">No organizer charity appeals are open right now. General community donations are available above.</p></div>';
+    } else {
+        charityContainer.innerHTML = charityListings.map((appeal, index) => {
+            const title = escapeHtml(appeal.title || 'Charity appeal');
+            const description = escapeHtml(appeal.description || 'Support this community appeal.');
+            const schedule = escapeHtml(appeal.schedule || 'Open appeal');
+            const goal = Number(appeal.goalAmount || appeal.targetAmount || 0);
+            const goalLabel = goal > 0 ? `<p class="small fw-semibold">Goal: KSh ${goal.toLocaleString()}</p>` : '';
+            return `<div class="col-md-6 col-lg-4"><article class="card h-100 border-success"><div class="card-body d-flex flex-column"><span class="badge text-bg-success align-self-start mb-2">Charity appeal</span><h4 class="h6">${title}</h4><p class="small text-muted">${description}</p><p class="small">${schedule}</p>${goalLabel}<button type="button" class="btn btn-success mt-auto" onclick="startCommunityCharityDonation(${index})">Donate to this appeal</button></div></article></div>`;
+        }).join('');
+    }
 }
 
+function startCommunityCharityDonation(index) {
+    const appeals = getVolunteerOpportunities().filter(item => getCommunityListingKind(item) === 'charity');
+    const appeal = appeals[Number(index)];
+    if (!appeal || typeof showDonationModal !== 'function') return;
+    showDonationModal(String(appeal.title || 'Charity Appeal').slice(0, 100));
+}
 function selectCommunityHelpOpportunity(index) {
-    const opportunity = (typeof getVolunteerOpportunities === 'function' ? getVolunteerOpportunities() : [])[Number(index)];
+    const opportunity = (typeof getVolunteerOpportunities === 'function' ? getVolunteerOpportunities() : [])
+        .filter(item => getCommunityListingKind(item) === 'volunteer')[Number(index)];
     const selector = document.getElementById('communityHelpInterest');
     if (!opportunity || !selector) return;
     selector.value = opportunity.title || '';

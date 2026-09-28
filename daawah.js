@@ -633,10 +633,17 @@ function setPublicSectionVisibility(sectionId) {
     if (activeSectionId === 'get-involved') renderCommunityHelpSection();
 }
 
+function getCommunityListingKind(opportunity) {
+    const kind = String(opportunity?.kind || opportunity?.type || opportunity?.category || 'volunteer')
+        .trim().toLowerCase().replace(/[ -]+/g, '_');
+    return ['charity', 'charity_appeal', 'donation', 'fundraiser'].includes(kind) ? 'charity' : 'volunteer';
+}
+
 function renderCommunityHelpSection() {
     const container = document.getElementById('communityVolunteerOpportunities');
+    const charityContainer = document.getElementById('communityCharityOpportunities');
     const selector = document.getElementById('communityHelpInterest');
-    if (!container || !selector || typeof getVolunteerOpportunities !== 'function') return;
+    if (!container || !charityContainer || !selector || typeof getVolunteerOpportunities !== 'function') return;
 
     if (!container.dataset.opportunitiesLoaded) {
         container.dataset.opportunitiesLoaded = 'loading';
@@ -645,8 +652,8 @@ function renderCommunityHelpSection() {
             loaders.push(loadVolunteerOpportunitiesFromApi());
         }
         if (window.SupabaseBackend?.enabled && window.SupabaseBackend.loadStore) {
-            loaders.push(window.SupabaseBackend.loadStore('volunteerOpportunities').then(opportunities => {
-                if (Array.isArray(opportunities)) localStorage.setItem('volunteerOpportunities', JSON.stringify(opportunities));
+            loaders.push(window.SupabaseBackend.loadStore('volunteerOpportunities').then(items => {
+                if (Array.isArray(items)) localStorage.setItem('volunteerOpportunities', JSON.stringify(items));
             }));
         }
         Promise.allSettled(loaders).then(() => {
@@ -655,10 +662,12 @@ function renderCommunityHelpSection() {
         });
     }
 
-    const opportunities = getVolunteerOpportunities();
+    const allListings = getVolunteerOpportunities();
+    const volunteerListings = allListings.filter(item => getCommunityListingKind(item) === 'volunteer');
+    const charityListings = allListings.filter(item => getCommunityListingKind(item) === 'charity');
     const otherOptions = Array.from(selector.options).filter(option => option.value && !option.dataset.opportunity);
     selector.innerHTML = '<option value="">Choose an opportunity or type of help</option>';
-    opportunities.forEach(opportunity => {
+    volunteerListings.forEach(opportunity => {
         const title = String(opportunity.title || '').trim();
         if (!title) return;
         const option = document.createElement('option');
@@ -669,22 +678,41 @@ function renderCommunityHelpSection() {
     });
     otherOptions.forEach(option => selector.appendChild(option));
 
-    if (!opportunities.length) {
-        container.innerHTML = '<div class="col-12"><p class="mb-0 text-muted">There are no listed opportunities right now. You can still use the form below to offer help.</p></div>';
-        return;
+    if (!volunteerListings.length) {
+        container.innerHTML = '<div class="col-12"><p class="mb-0 text-muted">No volunteer openings are posted right now. You can still use the form below to offer your time or skills.</p></div>';
+    } else {
+        container.innerHTML = volunteerListings.map((opportunity, index) => {
+            const title = escapeHtml(opportunity.title || 'Volunteer opportunity');
+            const description = escapeHtml(opportunity.description || 'Help the team serve the campus and wider community.');
+            const schedule = escapeHtml(opportunity.schedule || 'Schedule to be confirmed');
+            const hours = Number(opportunity.requiredHours || opportunity.required_hours || 0);
+            return `<div class="col-md-6"><article class="card h-100 border"><div class="card-body d-flex flex-column"><h4 class="h6">${title}</h4><p class="small text-muted">${description}</p><p class="small mb-3">${schedule}${hours > 0 ? ` &middot; About ${hours} hours` : ''}</p><button type="button" class="btn btn-outline-primary btn-sm mt-auto" onclick="selectCommunityHelpOpportunity(${index})">Apply for this</button></div></article></div>`;
+        }).join('');
     }
 
-    container.innerHTML = opportunities.map((opportunity, index) => {
-        const title = escapeHtml(opportunity.title || 'Volunteer opportunity');
-        const description = escapeHtml(opportunity.description || 'Help the team serve the campus and wider community.');
-        const schedule = escapeHtml(opportunity.schedule || 'Schedule to be confirmed');
-        const hours = Number(opportunity.requiredHours || 0);
-        return `<div class="col-md-6"><article class="card h-100 border"><div class="card-body d-flex flex-column"><h4 class="h6">${title}</h4><p class="small text-muted">${description}</p><p class="small mb-3"><i class="far fa-calendar me-1"></i>${schedule}${hours > 0 ? ` · About ${hours} hours` : ''}</p><button type="button" class="btn btn-outline-primary btn-sm mt-auto" onclick="selectCommunityHelpOpportunity(${index})">Apply for this</button></div></article></div>`;
-    }).join('');
+    if (!charityListings.length) {
+        charityContainer.innerHTML = '<div class="col-12"><p class="mb-0 text-muted">No organizer charity appeals are open right now. General community donations are available above.</p></div>';
+    } else {
+        charityContainer.innerHTML = charityListings.map((appeal, index) => {
+            const title = escapeHtml(appeal.title || 'Charity appeal');
+            const description = escapeHtml(appeal.description || 'Support this community appeal.');
+            const schedule = escapeHtml(appeal.schedule || 'Open appeal');
+            const goal = Number(appeal.goalAmount || appeal.targetAmount || 0);
+            const goalLabel = goal > 0 ? `<p class="small fw-semibold">Goal: KSh ${goal.toLocaleString()}</p>` : '';
+            return `<div class="col-md-6 col-lg-4"><article class="card h-100 border-success"><div class="card-body d-flex flex-column"><span class="badge text-bg-success align-self-start mb-2">Charity appeal</span><h4 class="h6">${title}</h4><p class="small text-muted">${description}</p><p class="small">${schedule}</p>${goalLabel}<button type="button" class="btn btn-success mt-auto" onclick="startCommunityCharityDonation(${index})">Donate to this appeal</button></div></article></div>`;
+        }).join('');
+    }
 }
 
+function startCommunityCharityDonation(index) {
+    const appeals = getVolunteerOpportunities().filter(item => getCommunityListingKind(item) === 'charity');
+    const appeal = appeals[Number(index)];
+    if (!appeal || typeof showDonationModal !== 'function') return;
+    showDonationModal(String(appeal.title || 'Charity Appeal').slice(0, 100));
+}
 function selectCommunityHelpOpportunity(index) {
-    const opportunity = (typeof getVolunteerOpportunities === 'function' ? getVolunteerOpportunities() : [])[Number(index)];
+    const opportunity = (typeof getVolunteerOpportunities === 'function' ? getVolunteerOpportunities() : [])
+        .filter(item => getCommunityListingKind(item) === 'volunteer')[Number(index)];
     const selector = document.getElementById('communityHelpInterest');
     if (!opportunity || !selector) return;
     selector.value = opportunity.title || '';
@@ -8948,12 +8976,29 @@ window.loadViewData = function(viewName) {
 function loadVolunteerData() {
     const managerPanel = document.getElementById('volunteerManagerPanel');
     managerPanel?.classList.toggle('d-none', !hasPermission('manage_events'));
-    return Promise.allSettled([loadVolunteerOpportunitiesFromApi(), loadVolunteerRecordsFromApi()])
+    return Promise.allSettled([loadVolunteerOpportunitiesFromApi(), loadVolunteerOpportunityStore(), loadVolunteerRecordsFromApi()])
         .finally(() => {
             const volunteerRecords = getVolunteerRecords();
             renderVolunteerOpportunities();
             renderVolunteerRecords(volunteerRecords);
             populateVolunteerOpportunities();
+        });
+}
+
+// Load organizer listings from the shared store so public visitors and officers see the same posts.
+function loadVolunteerOpportunityStore() {
+    if (!window.SupabaseBackend?.enabled || !window.SupabaseBackend.loadStore) {
+        return Promise.resolve(readList('volunteerOpportunities'));
+    }
+    return window.SupabaseBackend.loadStore('volunteerOpportunities')
+        .then(items => {
+            const listings = Array.isArray(items) ? items : [];
+            localStorage.setItem('volunteerOpportunities', JSON.stringify(listings));
+            return listings;
+        })
+        .catch(error => {
+            console.warn('Shared public opportunity list unavailable:', error);
+            return readList('volunteerOpportunities');
         });
 }
 
@@ -9011,7 +9056,9 @@ function normalizeDatabaseVolunteerOpportunity(opportunity) {
         source: 'database',
         title: opportunity.title,
         description: opportunity.description,
+        kind: opportunity.kind || opportunity.type || opportunity.category || 'volunteer',
         requiredHours: opportunity.required_hours,
+        goalAmount: Number(opportunity.goal_amount || opportunity.goalAmount || 0),
         schedule,
         signupCount: Number(opportunity.signup_count || 0)
     };
@@ -9053,10 +9100,15 @@ function getVolunteerOpportunities() {
             schedule: activity.schedule || 'Schedule will be announced'
         }));
 
-    return [...databaseVolunteerOpportunities, ...savedOpportunities, ...activityOpportunities, ...defaultVolunteerOpportunities].filter((opportunity, index, list) => {
-        const key = opportunity.id || opportunity.title;
-        return index === list.findIndex(item => (item.id || item.title) === key);
-    });
+    const seen = new Set();
+    return [...savedOpportunities, ...databaseVolunteerOpportunities, ...activityOpportunities, ...defaultVolunteerOpportunities]
+        .filter(opportunity => {
+            if (String(opportunity.status || 'open').toLowerCase() !== 'open') return false;
+            const key = String(opportunity.title || opportunity.id || '').trim().toLowerCase();
+            if (!key || seen.has(key)) return false;
+            seen.add(key);
+            return true;
+        });
 }
 
 // Runtime slice from daawah.js: renderVolunteerOpportunities.
@@ -9064,7 +9116,7 @@ function renderVolunteerOpportunities() {
     const container = document.getElementById('volunteerOpportunitiesList');
     if (!container) return;
 
-    const opportunities = getVolunteerOpportunities();
+    const opportunities = getVolunteerOpportunities().filter(item => getCommunityListingKind(item) === 'volunteer');
     if (!opportunities.length) {
         container.innerHTML = '<div class="col-12 text-center text-muted">No volunteer opportunities have been added yet.</div>';
         return;
@@ -9097,7 +9149,7 @@ function populateVolunteerOpportunities() {
     const select = document.getElementById('volunteerOpportunity');
     if (!select) return;
 
-    const opportunities = getVolunteerOpportunities();
+    const opportunities = getVolunteerOpportunities().filter(item => getCommunityListingKind(item) === 'volunteer');
     select.innerHTML = '<option value="">Select opportunity</option>' + opportunities.map(opportunity =>
         `<option value="${escapeHtml(opportunity.id || opportunity.title)}">${escapeHtml(opportunity.title)}</option>`
     ).join('');
@@ -9164,27 +9216,72 @@ function updateVolunteerStatus(registrationId, status) {
 }
 
 // Runtime slice from daawah.js: saveVolunteerOpportunity.
+function updateVolunteerOpportunityFields() {
+    const isCharity = document.getElementById('volunteerOpportunityKind')?.value === 'charity';
+    document.getElementById('volunteerOpportunityHoursField')?.classList.toggle('d-none', isCharity);
+    document.getElementById('volunteerOpportunityGoalField')?.classList.toggle('d-none', !isCharity);
+    const hours = document.getElementById('volunteerOpportunityHours');
+    const schedule = document.getElementById('volunteerOpportunitySchedule');
+    const scheduleLabel = document.getElementById('volunteerOpportunityScheduleLabel');
+    if (hours) hours.required = !isCharity;
+    if (schedule) {
+        schedule.required = !isCharity;
+        schedule.placeholder = isCharity ? 'e.g. Open until 30 November' : 'e.g. Saturdays';
+    }
+    if (scheduleLabel) scheduleLabel.textContent = isCharity ? 'Appeal dates (optional)' : 'Schedule';
+}
+
 function saveVolunteerOpportunity(event) {
     event.preventDefault();
     if (!hasPermission('manage_events')) {
-        showNotification('Only event managers and organizers can add volunteer opportunities.', 'warning');
+        showNotification('Only event managers and organizers can post public opportunities.', 'warning');
         return;
     }
 
+    const kind = document.getElementById('volunteerOpportunityKind')?.value === 'charity' ? 'charity' : 'volunteer';
+    const schedule = document.getElementById('volunteerOpportunitySchedule').value.trim();
     const opportunity = {
-        id: `custom-volunteer-${Date.now()}`,
+        id: `community-listing-${Date.now()}`,
+        kind,
         title: document.getElementById('volunteerOpportunityTitle').value.trim(),
         description: document.getElementById('volunteerOpportunityDescription').value.trim(),
-        requiredHours: Number(document.getElementById('volunteerOpportunityHours').value) || 1,
-        schedule: document.getElementById('volunteerOpportunitySchedule').value.trim()
+        requiredHours: kind === 'volunteer' ? (Number(document.getElementById('volunteerOpportunityHours').value) || 1) : 0,
+        schedule: schedule || (kind === 'charity' ? 'Open appeal' : ''),
+        goalAmount: kind === 'charity' ? (Number(document.getElementById('volunteerOpportunityGoal').value) || 0) : 0,
+        status: 'open',
+        postedAt: new Date().toISOString()
     };
 
-    if (!opportunity.title || !opportunity.description || !opportunity.schedule) {
-        showNotification('Please fill in all volunteer opportunity fields.', 'warning');
+    if (!opportunity.title || !opportunity.description || (kind === 'volunteer' && !opportunity.schedule)) {
+        showNotification('Add a title, description, and schedule for the volunteer opportunity.', 'warning');
+        return;
+    }
+
+    if (window.SupabaseBackend?.enabled && window.SupabaseBackend.saveStore) {
+        window.SupabaseBackend.loadStore('volunteerOpportunities')
+            .catch(() => [])
+            .then(current => {
+                const listings = Array.isArray(current) ? current : [];
+                const next = [opportunity, ...listings.filter(item => item.id !== opportunity.id)];
+                return window.SupabaseBackend.saveStore('volunteerOpportunities', next).then(() => next);
+            })
+            .then(listings => {
+                localStorage.setItem('volunteerOpportunities', JSON.stringify(listings));
+                logLocalRoleActivity(kind === 'charity' ? 'createCharityAppeal' : 'createVolunteerOp', { title: opportunity.title });
+                document.getElementById('volunteerOpportunityForm').reset();
+                updateVolunteerOpportunityFields();
+                showNotification(kind === 'charity' ? 'Charity appeal posted publicly.' : 'Volunteer opportunity posted publicly.', 'success');
+                return loadVolunteerData();
+            })
+            .catch(error => showNotification(error.message || 'Could not publish this community listing.', 'danger'));
         return;
     }
 
     if (!frontendOnly) {
+        if (kind === 'charity') {
+            showNotification('Public charity appeals need the Supabase public listing store enabled.', 'warning');
+            return;
+        }
         fetch('supabase-required-endpoint?action=createVolunteerOp', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -9203,7 +9300,8 @@ function saveVolunteerOpportunity(event) {
             if (!result.success) throw new Error(result.message || 'Could not add volunteer opportunity');
             logLocalRoleActivity('createVolunteerOp', { title: opportunity.title, requiredHours: opportunity.requiredHours, schedule: opportunity.schedule });
             document.getElementById('volunteerOpportunityForm').reset();
-            showNotification('Volunteer opportunity saved to the database.', 'success');
+            updateVolunteerOpportunityFields();
+            showNotification('Volunteer opportunity saved.', 'success');
             return loadVolunteerData();
         })
         .catch(error => showNotification(error.message || 'Could not add volunteer opportunity', 'danger'));
@@ -9213,10 +9311,11 @@ function saveVolunteerOpportunity(event) {
     const opportunities = readList('volunteerOpportunities');
     opportunities.unshift(opportunity);
     localStorage.setItem('volunteerOpportunities', JSON.stringify(opportunities));
-    logLocalRoleActivity('createVolunteerOp', { title: opportunity.title, requiredHours: opportunity.requiredHours, schedule: opportunity.schedule });
+    logLocalRoleActivity(kind === 'charity' ? 'createCharityAppeal' : 'createVolunteerOp', { title: opportunity.title });
     document.getElementById('volunteerOpportunityForm').reset();
+    updateVolunteerOpportunityFields();
     loadVolunteerData();
-    showNotification('Volunteer opportunity added.', 'success');
+    showNotification(kind === 'charity' ? 'Charity appeal posted.' : 'Volunteer opportunity posted.', 'success');
 }
 
 // Runtime slice from daawah.js: suggestOfficerHadithArabic.

@@ -3,7 +3,7 @@ function renderVolunteerOpportunities() {
     const container = document.getElementById('volunteerOpportunitiesList');
     if (!container) return;
 
-    const opportunities = getVolunteerOpportunities();
+    const opportunities = getVolunteerOpportunities().filter(item => getCommunityListingKind(item) === 'volunteer');
     if (!opportunities.length) {
         container.innerHTML = '<div class="col-12 text-center text-muted">No volunteer opportunities have been added yet.</div>';
         return;

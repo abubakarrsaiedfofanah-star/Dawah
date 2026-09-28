@@ -8,12 +8,17 @@
     source: "index.html#volunteerView",
     ids: [
         "volunteerManagerPanel",
+        "volunteerOpportunityGoal",
+        "volunteerOpportunityGoalField",
+        "volunteerOpportunityHoursField",
+        "volunteerOpportunityKind",
         "volunteerOpportunitiesList",
         "volunteerOpportunityDescription",
         "volunteerOpportunityForm",
         "volunteerOpportunityHours",
         "volunteerOpportunitySchedule",
         "volunteerOpportunityTitle",
+        "volunteerOpportunityScheduleLabel",
         "volunteerRecordsList",
         "volunteerView"
     ],

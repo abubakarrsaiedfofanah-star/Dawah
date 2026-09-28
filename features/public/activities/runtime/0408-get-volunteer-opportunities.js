@@ -11,8 +11,13 @@ function getVolunteerOpportunities() {
             schedule: activity.schedule || 'Schedule will be announced'
         }));
 
-    return [...databaseVolunteerOpportunities, ...savedOpportunities, ...activityOpportunities, ...defaultVolunteerOpportunities].filter((opportunity, index, list) => {
-        const key = opportunity.id || opportunity.title;
-        return index === list.findIndex(item => (item.id || item.title) === key);
-    });
+    const seen = new Set();
+    return [...savedOpportunities, ...databaseVolunteerOpportunities, ...activityOpportunities, ...defaultVolunteerOpportunities]
+        .filter(opportunity => {
+            if (String(opportunity.status || 'open').toLowerCase() !== 'open') return false;
+            const key = String(opportunity.title || opportunity.id || '').trim().toLowerCase();
+            if (!key || seen.has(key)) return false;
+            seen.add(key);
+            return true;
+        });
 }

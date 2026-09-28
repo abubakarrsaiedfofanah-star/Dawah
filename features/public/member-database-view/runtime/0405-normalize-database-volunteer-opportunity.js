@@ -7,7 +7,9 @@ function normalizeDatabaseVolunteerOpportunity(opportunity) {
         source: 'database',
         title: opportunity.title,
         description: opportunity.description,
+        kind: opportunity.kind || opportunity.type || opportunity.category || 'volunteer',
         requiredHours: opportunity.required_hours,
+        goalAmount: Number(opportunity.goal_amount || opportunity.goalAmount || 0),
         schedule,
         signupCount: Number(opportunity.signup_count || 0)
     };
