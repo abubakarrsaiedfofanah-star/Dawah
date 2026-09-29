@@ -12,7 +12,7 @@ returns boolean
 language sql
 stable
 security definer
-set search_path = public, pg_temp
+set search_path = ''
 as $$
     select exists (
         select 1
@@ -32,7 +32,7 @@ returns boolean
 language sql
 stable
 security definer
-set search_path = public, pg_temp
+set search_path = ''
 as $$
     select exists (
         select 1
@@ -50,7 +50,7 @@ returns jsonb
 language sql
 stable
 security definer
-set search_path = public, pg_temp
+set search_path = ''
 as $$
     select jsonb_build_object(
         'cardId', card.data ->> 'cardId',
@@ -95,19 +95,16 @@ returns jsonb
 language sql
 stable
 security definer
-set search_path = public, pg_temp
+set search_path = ''
 as $$
     select jsonb_build_object(
         'fullName', coalesce(verification.data ->> 'fullName', verification.data ->> 'name'),
-        'studentId', coalesce(verification.data ->> 'studentId', verification.data ->> 'student_id'),
-        'username', verification.data ->> 'username',
-        'role', verification.data ->> 'role',
-        'status', verification.data ->> 'status',
-        'course', verification.data ->> 'course'
+        'studentId', coalesce(verification.data ->> 'studentId', verification.data ->> 'student_id', verification.data ->> 'username')
     )
     from public.app_records verification
     where verification.collection = 'memberVerifications'
       and lower(coalesce(verification.data ->> 'status', 'active')) in ('active', 'approved')
+      and length(trim(coalesce(lookup_identifier, ''))) between 5 and 120
       and (
           lower(coalesce(verification.data ->> 'studentId', verification.data ->> 'student_id', '')) = lower(trim(lookup_identifier))
           or lower(coalesce(verification.data ->> 'username', '')) = lower(trim(lookup_identifier))
@@ -125,7 +122,7 @@ returns jsonb
 language sql
 stable
 security definer
-set search_path = public, pg_temp
+set search_path = ''
 as $$
     select jsonb_build_object(
         'receiptNumber', receipt.data ->> 'receiptNumber',
@@ -172,7 +169,7 @@ create or replace function public.protect_dawah_finance_signature()
 returns trigger
 language plpgsql
 security definer
-set search_path = public, pg_temp
+set search_path = ''
 as $$
 declare
     previous_settings jsonb := '{}'::jsonb;
@@ -214,7 +211,7 @@ returns boolean
 language plpgsql
 stable
 security definer
-set search_path = public, pg_temp
+set search_path = ''
 as $$
 declare
     member_role text;
@@ -336,7 +333,7 @@ returns boolean
 language plpgsql
 stable
 security definer
-set search_path = public, pg_temp
+set search_path = ''
 as $$
 declare
     source_collection text;
@@ -513,7 +510,7 @@ create or replace function public.protect_dawah_privileged_fields()
 returns trigger
 language plpgsql
 security definer
-set search_path = public, pg_temp
+set search_path = ''
 as $$
 declare
     requested_role text;
@@ -591,10 +588,10 @@ begin
             ''
         )));
 
-        if case
-            when finance_amount ~ '^[0-9]+([.][0-9]{1,2})?$' then finance_amount::numeric <= 0
-            else true
-        end then
+        if finance_amount !~ '^[0-9]+([.][0-9]{1,2})?$' then
+            raise exception 'Payment amount must be a positive amount with no more than two decimal places';
+        end if;
+        if finance_amount::numeric <= 0 then
             raise exception 'Payment amount must be a positive amount with no more than two decimal places';
         end if;
 

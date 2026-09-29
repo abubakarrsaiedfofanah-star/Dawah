@@ -108,9 +108,6 @@
                     <table class="table table-bordered bg-white mb-0">
                         <tr><th>Name</th><td>${escapeText(member.fullName || member.name || member.username)}</td></tr>
                         <tr><th>Student ID</th><td>${escapeText(member.studentId || member.username)}</td></tr>
-                        <tr><th>Role</th><td>${escapeText(member.role || 'student')}</td></tr>
-                        <tr><th>Status</th><td>${escapeText(member.status || 'Active')}</td></tr>
-                        <tr><th>Course</th><td>${escapeText(member.course || 'Not shown')}</td></tr>
                     </table>
                 `;
             } catch (error) {

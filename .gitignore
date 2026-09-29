@@ -12,6 +12,7 @@ test-output*.txt
 .wrangler/
 *.sql
 !supabase_schema.sql
+!supabase_security_hardening.sql
 supabase_config.js
 app_config.local.php
 dist/

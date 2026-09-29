@@ -37,7 +37,9 @@ module.exports = async function deleteStudentAccount(req, res) {
         });
         const adminRows = await readJson(adminResponse);
         const roleData = Array.isArray(adminRows) ? adminRows[0]?.data : null;
-        if (!adminResponse.ok || !(roleData?.isMainAdmin === true || roleData?.isMainAdmin === 'true')) {
+        const roleStatus = String(roleData?.status || 'active').trim().toLowerCase().replace(/[ -]+/g, '_');
+        const roleIsActive = !['inactive', 'suspended', 'disabled', 'revoked', 'pending', 'pending_approval', 'rejected'].includes(roleStatus);
+        if (!adminResponse.ok || !roleIsActive || !(roleData?.isMainAdmin === true || roleData?.isMainAdmin === 'true')) {
             return json(res, 403, { success: false, message: 'Only the main admin can delete student accounts.' });
         }
 

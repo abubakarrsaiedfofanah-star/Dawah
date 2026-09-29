@@ -6,7 +6,7 @@ create or replace function public.dawah_submit_public_donation(p_payload jsonb)
 returns uuid
 language plpgsql
 security definer
-set search_path = pg_catalog, public, pg_temp
+set search_path = ''
 as $$
 declare
     v_id uuid;
@@ -19,6 +19,8 @@ declare
     v_purpose text;
     v_appeal_id text;
     v_appeal_title text;
+    v_appeal_end_date text;
+    v_appeal jsonb;
     v_anonymous boolean;
 begin
     if jsonb_typeof(p_payload) is distinct from 'object' then
@@ -42,6 +44,56 @@ begin
     v_appeal_id := left(trim(coalesce(p_payload ->> 'appealId', '')), 120);
     v_appeal_title := left(trim(coalesce(p_payload ->> 'appealTitle', '')), 120);
     v_anonymous := coalesce((p_payload ->> 'anonymous')::boolean, false);
+
+    -- Never trust appeal IDs or titles supplied by the browser. Link a donation only
+    -- to a currently published charity appeal in the organizer-managed public store.
+    if v_appeal_id <> '' then
+        select listing.item
+        into v_appeal
+        from public.app_stores store
+        cross join lateral jsonb_array_elements(
+            case
+                when jsonb_typeof(store.data -> 'items') = 'array' then store.data -> 'items'
+                else '[]'::jsonb
+            end
+        ) as listing(item)
+        where store.key = 'volunteerOpportunities'
+          and listing.item ->> 'id' = v_appeal_id
+          and lower(replace(replace(trim(coalesce(
+              listing.item ->> 'kind', listing.item ->> 'type', listing.item ->> 'category', ''
+          )), '-', '_'), ' ', '_')) in ('charity', 'charity_appeal', 'donation', 'fundraiser')
+          and lower(trim(coalesce(listing.item ->> 'status', 'open'))) in ('open', 'active', 'published')
+        limit 1;
+
+        if v_appeal is null then
+            raise exception 'This charity appeal is not available for donations';
+        end if;
+
+        v_appeal_end_date := left(coalesce(
+            nullif(v_appeal ->> 'endDate', ''),
+            nullif(v_appeal ->> 'endsAt', ''),
+            nullif(v_appeal ->> 'expiresAt', ''),
+            ''
+        ), 10);
+        if v_appeal_end_date <> '' then
+            begin
+                if v_appeal_end_date::date < current_date then
+                    raise exception 'This charity appeal has closed';
+                end if;
+            exception when invalid_datetime_format or datetime_field_overflow then
+                raise exception 'This charity appeal has an invalid closing date';
+            end;
+        end if;
+
+        v_appeal_title := left(trim(coalesce(v_appeal ->> 'title', '')), 120);
+        if v_appeal_title = '' then
+            raise exception 'This charity appeal has no title';
+        end if;
+        v_type := 'Charity Appeal';
+        v_purpose := left('Charity appeal: ' || v_appeal_title || ' (Reference: ' || v_appeal_id || ')', 300);
+    else
+        v_appeal_title := '';
+    end if;
 
     if v_method not in ('M-Pesa STK Push', 'Bank Transfer', 'Normal Transfer Number', 'Cash Payment') then
         raise exception 'Choose one of the listed payment methods';
@@ -90,6 +142,7 @@ end;
 $$;
 
 revoke all on function public.dawah_submit_public_donation(jsonb) from public;
+revoke all on function public.dawah_submit_public_donation(jsonb) from anon, authenticated;
 grant execute on function public.dawah_submit_public_donation(jsonb) to anon, authenticated;
 
 -- Treasurer and other finance officers need to publish approved receipt lookups.

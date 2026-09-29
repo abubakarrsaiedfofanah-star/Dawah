@@ -113,7 +113,10 @@ const SupabaseBackendApi = (() => {
             auth: {
                 persistSession: true,
                 autoRefreshToken: true,
-                detectSessionInUrl: true
+                detectSessionInUrl: true,
+                // Keep bearer tokens scoped to this browser tab session. The DB remains
+                // the authorization boundary; this only reduces persistence at rest.
+                storage: window.sessionStorage
             },
             realtime: {
                 params: { eventsPerSecond: 8 }
@@ -141,23 +144,18 @@ const SupabaseBackendApi = (() => {
         const uid = user?.id || '';
         if (accessToken) {
             sessionStorage.setItem('dawahSupabaseAccessToken', accessToken);
-            localStorage.setItem('dawahSupabaseAccessToken', accessToken);
         }
         if (refreshToken) {
             sessionStorage.setItem('dawahSupabaseRefreshToken', refreshToken);
-            localStorage.setItem('dawahSupabaseRefreshToken', refreshToken);
         }
         if (expiresAt) {
             sessionStorage.setItem('dawahSupabaseTokenExpiresAt', expiresAt);
-            localStorage.setItem('dawahSupabaseTokenExpiresAt', expiresAt);
         }
         if (email) {
             sessionStorage.setItem('dawahsupabaseEmail', email);
-            localStorage.setItem('dawahsupabaseEmail', email);
         }
         if (uid) {
             sessionStorage.setItem('dawahsupabaseUid', uid);
-            localStorage.setItem('dawahsupabaseUid', uid);
         }
         return authSession;
     }
@@ -168,32 +166,42 @@ const SupabaseBackendApi = (() => {
             'dawahSupabaseRefreshToken',
             'dawahSupabaseTokenExpiresAt',
             'dawahsupabaseEmail',
-            'dawahsupabaseUid',
-            'dawahSupabaseAccessToken',
-            'dawahSupabaseRefreshToken',
-            'dawahSupabaseTokenExpiresAt',
-            'dawahsupabaseEmail',
             'dawahsupabaseUid'
         ].forEach(key => {
             sessionStorage.removeItem(key);
             localStorage.removeItem(key);
         });
+        try {
+            const projectRef = new URL(config.url).hostname.split('.')[0];
+            localStorage.removeItem(`sb-${projectRef}-auth-token`);
+        } catch (_) {}
     }
 
+    // Older releases copied bearer tokens into localStorage. Clear those copies
+    // once and keep future Supabase sessions in sessionStorage only.
+    try {
+        [
+            'dawahSupabaseAccessToken', 'dawahSupabaseRefreshToken',
+            'dawahSupabaseTokenExpiresAt', 'dawahsupabaseEmail', 'dawahsupabaseUid'
+        ].forEach(key => localStorage.removeItem(key));
+        const projectRef = new URL(config.url).hostname.split('.')[0];
+        localStorage.removeItem(`sb-${projectRef}-auth-token`);
+    } catch (_) {}
+
     function storedAuthValue(key) {
-        return sessionStorage.getItem(key) || localStorage.getItem(key) || '';
+        return sessionStorage.getItem(key) || '';
     }
 
     function hasAuthSession() {
-        return Boolean(storedAuthValue('dawahSupabaseAccessToken') || storedAuthValue('dawahSupabaseRefreshToken') || storedAuthValue('dawahSupabaseAccessToken') || storedAuthValue('dawahSupabaseRefreshToken'));
+        return Boolean(storedAuthValue('dawahSupabaseAccessToken') || storedAuthValue('dawahSupabaseRefreshToken'));
     }
 
     function currentUid() {
-        return storedAuthValue('dawahsupabaseUid') || storedAuthValue('dawahsupabaseUid');
+        return storedAuthValue('dawahsupabaseUid');
     }
 
     function currentEmail() {
-        return storedAuthValue('dawahsupabaseEmail') || storedAuthValue('dawahsupabaseEmail');
+        return storedAuthValue('dawahsupabaseEmail');
     }
 
     function requireEmail(identifier) {

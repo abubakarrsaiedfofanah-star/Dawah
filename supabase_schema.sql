@@ -53,7 +53,7 @@ returns boolean
 language sql
 stable
 security definer
-set search_path = public, pg_temp
+set search_path = ''
 as $$
     select exists (
         select 1
@@ -71,7 +71,7 @@ returns boolean
 language sql
 stable
 security definer
-set search_path = public, pg_temp
+set search_path = ''
 as $$
     select exists (
         select 1
@@ -85,7 +85,7 @@ create or replace function public.dawah_record_is_owned(record_data jsonb)
 returns boolean
 language sql
 stable
-set search_path = public, pg_temp
+set search_path = ''
 as $$
     select auth.uid() is not null and (
         coalesce(record_data ->> 'ownerUid', '') = auth.uid()::text
@@ -144,13 +144,7 @@ create policy "Users read owned records and admins read all"
     using (
         public.is_dawah_admin()
         or public.dawah_record_is_owned(data)
-        or collection in ('receiptVerifications', 'memberVerifications', 'membershipCards')
     );
-
-create policy "Public users can verify receipts and members"
-    on public.app_records for select
-    to anon
-    using (collection in ('receiptVerifications', 'memberVerifications', 'membershipCards'));
 
 create policy "Users create owned records and admins create all"
     on public.app_records for insert
@@ -207,7 +201,7 @@ create or replace function public.protect_dawah_privileged_fields()
 returns trigger
 language plpgsql
 security definer
-set search_path = public, pg_temp
+set search_path = ''
 as $$
 begin
     if public.is_dawah_admin(auth.uid()) then
